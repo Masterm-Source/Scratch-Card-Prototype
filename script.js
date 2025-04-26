@@ -12,17 +12,17 @@ scratchCanvas.height = 100;
 
 // Preload love-themed background sound
 const loveSound = new Audio('assets/love-theme.mp3');
-loveSound.loop = true;
+loveSound.loop = false; // Changed to false so it doesn't loop automatically
 loveSound.volume = 1.0;
 
 // Draw the message on the message canvas (bottom layer)
 function drawMessage() {
     messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-    messageCtx.font = '28px Comic Sans MS'; // Reduced from 32px to 28px
+    messageCtx.font = '28px Comic Sans MS';
     messageCtx.fillStyle = '#000';
     messageCtx.textAlign = 'center';
     messageCtx.textBaseline = 'middle';
-    messageCtx.fillText('Wamboi, you’re the apple', messageCanvas.width / 2, messageCanvas.height / 2 - 16); // Adjusted spacing
+    messageCtx.fillText('Wamboi, you’re the apple', messageCanvas.width / 2, messageCanvas.height / 2 - 16);
     messageCtx.fillText('of my eye, happy birthday!', messageCanvas.width / 2, messageCanvas.height / 2 + 16);
 }
 
@@ -72,6 +72,7 @@ const totalPixels = scratchCanvas.width * scratchCanvas.height;
 const intervalThreshold = totalPixels * 0.05;
 let lastBurstAt = 0;
 let fadeOutInterval = null;
+let isSoundPlaying = false; // New flag to track if the sound is currently playing
 
 // Fade out the sound gradually
 function fadeOutSound() {
@@ -87,12 +88,40 @@ function fadeOutSound() {
             loveSound.pause();
             loveSound.currentTime = 0;
             loveSound.volume = 1.0;
+            isSoundPlaying = false; // Reset the flag when the sound stops
             clearInterval(fadeOutInterval);
             fadeOutInterval = null;
             console.log('Sound stopped and reset.');
+            // If still scratching after the sound ends, play it again
+            if (isScratching) {
+                playSound();
+            }
         }
     }, 100);
 }
+
+// Function to play the sound
+function playSound() {
+    if (!isSoundPlaying) {
+        isSoundPlaying = true;
+        if (fadeOutInterval) {
+            clearInterval(fadeOutInterval);
+            fadeOutInterval = null;
+            loveSound.volume = 1.0;
+        }
+        loveSound.play().catch(err => console.log('Sound play error:', err));
+    }
+}
+
+// Add an event listener to detect when the sound ends naturally
+loveSound.addEventListener('ended', () => {
+    isSoundPlaying = false;
+    console.log('Sound finished playing naturally.');
+    // If still scratching, play the sound again
+    if (isScratching) {
+        playSound();
+    }
+});
 
 // Stop sound if the mouse leaves the canvas
 function stopSoundOnLeave() {
@@ -105,33 +134,19 @@ function stopSoundOnLeave() {
 scratchCanvas.addEventListener('mousedown', (e) => {
     e.preventDefault();
     isScratching = true;
-    if (fadeOutInterval) {
-        clearInterval(fadeOutInterval);
-        fadeOutInterval = null;
-        loveSound.volume = 1.0;
-    }
-    if (!loveSound.currentTime || loveSound.paused) {
-        loveSound.play().catch(err => console.log('Sound play error:', err));
-    }
+    playSound();
 });
 scratchCanvas.addEventListener('mouseup', (e) => {
     e.preventDefault();
     isScratching = false;
     fadeOutSound();
 });
-scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave); // Added to stop sound if mouse leaves canvas
+scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
 scratchCanvas.addEventListener('mousemove', scratch);
 scratchCanvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     isScratching = true;
-    if (fadeOutInterval) {
-        clearInterval(fadeOutInterval);
-        fadeOutInterval = null;
-        loveSound.volume = 1.0;
-    }
-    if (!loveSound.currentTime || loveSound.paused) {
-        loveSound.play().catch(err => console.log('Sound play error:', err));
-    }
+    playSound();
 });
 scratchCanvas.addEventListener('touchend', (e) => {
     e.preventDefault();

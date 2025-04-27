@@ -11,14 +11,14 @@ scratchCanvas.width = 380;
 scratchCanvas.height = 100;
 
 // Preload new background sound
-const loveSound = new Audio('assets/song1.mp3');
+const loveSound = new Audio('assets/sound1.mp3');
 loveSound.loop = false;
 loveSound.volume = 1.0;
 
 // Draw the message on the message canvas (bottom layer)
 function drawMessage() {
     messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-    messageCtx.font = '28px Comic Sans MS';
+    messageCtx.font = '26px Comic Sans MS';
     messageCtx.fillStyle = '#FFF'; // White for better contrast on pink
     messageCtx.textAlign = 'center';
     messageCtx.textBaseline = 'middle';

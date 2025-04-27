@@ -10,20 +10,22 @@ messageCanvas.height = 100;
 scratchCanvas.width = 380;
 scratchCanvas.height = 100;
 
-// Preload love-themed background sound
-const loveSound = new Audio('assets/love-theme.mp3');
-loveSound.loop = false; // No looping, we control restarts manually
+// Preload new background sound
+const loveSound = new Audio('assets/song1.mp3');
+loveSound.loop = false;
 loveSound.volume = 1.0;
 
 // Draw the message on the message canvas (bottom layer)
 function drawMessage() {
     messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
     messageCtx.font = '28px Comic Sans MS';
-    messageCtx.fillStyle = '#000';
+    messageCtx.fillStyle = '#FFF'; // White for better contrast on pink
     messageCtx.textAlign = 'center';
     messageCtx.textBaseline = 'middle';
-    messageCtx.fillText('Wamboi, you’re the apple', messageCanvas.width / 2, messageCanvas.height / 2 - 16);
-    messageCtx.fillText('of my eye, happy birthday!', messageCanvas.width / 2, messageCanvas.height / 2 + 16);
+    messageCtx.fillText('Sarah, you’re the heartbeat to', messageCanvas.width / 2, messageCanvas.height / 2 - 24);
+    messageCtx.fillText('my every moment. Happy', messageCanvas.width / 2, messageCanvas.height / 2);
+    messageCtx.fillText('Valentine’s Day, my forever', messageCanvas.width / 2, messageCanvas.height / 2 + 24);
+    messageCtx.fillText('favorite.', messageCanvas.width / 2, messageCanvas.height / 2 + 48);
 }
 
 // Draw the scratch layer on the scratch canvas (top layer)
@@ -32,13 +34,13 @@ function drawScratchLayer() {
     scratchLayer.src = 'assets/silver_gradient.png';
     scratchLayer.onload = () => {
         scratchCtx.drawImage(scratchLayer, 0, 0, scratchCanvas.width, scratchCanvas.height);
-        scratchCtx.strokeStyle = '#000';
+        scratchCtx.strokeStyle = '#FFF'; // White border for Valentine’s theme
         scratchCtx.lineWidth = 2;
         scratchCtx.setLineDash([5, 5]);
         scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
         scratchCtx.setLineDash([]);
         scratchCtx.font = '40px Comic Sans MS';
-        scratchCtx.fillStyle = '#000';
+        scratchCtx.fillStyle = '#FFF'; // White text
         scratchCtx.textAlign = 'center';
         scratchCtx.textBaseline = 'middle';
         scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
@@ -47,13 +49,13 @@ function drawScratchLayer() {
         console.log('Failed to load silver_gradient.png. Using fallback.');
         scratchCtx.fillStyle = '#C0C0C0';
         scratchCtx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-        scratchCtx.strokeStyle = '#000';
+        scratchCtx.strokeStyle = '#FFF';
         scratchCtx.lineWidth = 2;
         scratchCtx.setLineDash([5, 5]);
         scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
         scratchCtx.setLineDash([]);
         scratchCtx.font = '40px Comic Sans MS';
-        scratchCtx.fillStyle = '#000';
+        scratchCtx.fillStyle = '#FFF';
         scratchCtx.textAlign = 'center';
         scratchCtx.textBaseline = 'middle';
         scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
@@ -71,7 +73,7 @@ const brushRadius = 12;
 const totalPixels = scratchCanvas.width * scratchCanvas.height;
 const intervalThreshold = totalPixels * 0.05;
 let lastBurstAt = 0;
-let isSoundPlaying = false; // Flag to track if the sound is currently playing
+let isSoundPlaying = false;
 
 // Function to play the sound
 function playSound() {
@@ -86,7 +88,6 @@ function playSound() {
 loveSound.addEventListener('ended', () => {
     isSoundPlaying = false;
     console.log('Sound finished playing naturally.');
-    // If still scratching, play the sound again
     if (isScratching) {
         playSound();
     }
@@ -96,7 +97,6 @@ loveSound.addEventListener('ended', () => {
 function stopSoundOnLeave() {
     if (isScratching) {
         isScratching = false;
-        // Removed fadeOutSound() call to let the sound play fully
     }
 }
 
@@ -108,7 +108,6 @@ scratchCanvas.addEventListener('mousedown', (e) => {
 scratchCanvas.addEventListener('mouseup', (e) => {
     e.preventDefault();
     isScratching = false;
-    // Removed fadeOutSound() call to let the sound play fully
 });
 scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
 scratchCanvas.addEventListener('mousemove', scratch);
@@ -120,7 +119,6 @@ scratchCanvas.addEventListener('touchstart', (e) => {
 scratchCanvas.addEventListener('touchend', (e) => {
     e.preventDefault();
     isScratching = false;
-    // Removed fadeOutSound() call to let the sound play fully
 });
 scratchCanvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
@@ -157,7 +155,7 @@ function checkReveal() {
                 particleCount: 30,
                 spread: 30,
                 origin: { y: 0.6 },
-                colors: ['#FF69B4', '#FF1493', '#C71585']
+                colors: ['#FF69B4', '#FF1493', '#FFB6C1'] // Valentine’s Day pinks
             });
         } else {
             console.log('Confetti library not loaded.');
@@ -175,7 +173,7 @@ window.addEventListener('load', () => {
             particleCount: 30,
             spread: 30,
             origin: { y: 0.6 },
-            colors: ['#FF69B4', '#FF1493', '#C71585']
+            colors: ['#FF69B4', '#FF1493', '#FFB6C1']
         });
     }
 });

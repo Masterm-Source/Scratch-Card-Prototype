@@ -1,5 +1,5 @@
 [build]
-  command = "node scripts/generate-links.js && npm run build"
+  command = "node scripts/generate-links.js && mkdir -p public/cards && cp -r cards/* public/cards/ && npm run build"
   publish = "public"
 
 [[redirects]]

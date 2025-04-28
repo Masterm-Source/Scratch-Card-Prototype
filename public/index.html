@@ -13,15 +13,21 @@
             padding: 20px;
             margin: 0;
         }
+        .logo {
+            max-width: 150px; /* Adjust size as needed */
+            margin: 0 auto 20px; /* Center logo and add space below */
+            display: block;
+        }
         h1 {
             font-size: 3em;
             color: #FFFFFF; /* White title */
             text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.2);
+            margin: 0;
         }
         p {
             font-size: 1.2em;
             color: #FFFFFF; /* White description */
-            margin-bottom: 40px;
+            margin: 10px 0 40px;
         }
         .card-list {
             display: flex;
@@ -45,8 +51,9 @@
     </style>
 </head>
 <body>
+    <img src="/logo.png" alt="Masterm Cards Logo" class="logo">
     <h1>Masterm Cards</h1>
-    <p>Create and share custom digital cards with special messages for your clients.</p>
+    <p>Moments that Matter, Made Brighter by Masterm Cards</p>
     <div class="card-list" id="cardList"></div>
 
     <script>
@@ -59,7 +66,7 @@
                 cards.forEach(card => {
                     const link = document.createElement('a');
                     link.href = `${siteUrl}${card.url}?t=${timestamp}`;
-                    link.textContent = `Go to ${card.name}`;
+                    link.textContent = card.name; /* Display just the card name, e.g., "card1" */
                     link.className = 'card-link';
                     cardList.appendChild(link);
                 });

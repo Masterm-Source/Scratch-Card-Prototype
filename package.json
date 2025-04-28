@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "build": "echo 'Build complete'",
+    "generate-links": "node scripts/generate-links.js"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,13 @@
+[build]
+  command = "node scripts/generate-links.js && npm run build"
+  publish = "public"
+
+[[redirects]]
+  from = "/cards/*"
+  to = "/cards/:splat"
+  status = 200
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"

@@ -9,8 +9,8 @@ body {
 }
 
 .card {
-    width: 450px;
-    height: 300px;
+    width: 600px;
+    height: 450px;
     background: url('assets/jane.jpg') no-repeat center center;
     background-size: cover;
     border-radius: 15px;
@@ -41,21 +41,21 @@ body {
     position: absolute;
     top: 10px;
     left: 10px;
-    width: 240px;
-    height: 40px;
+    width: 320px;
+    height: 50px;
     font-family: 'Comic Sans MS', cursive;
     font-size: 34px;
     color: #fff;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    line-height: 40px;
+    line-height: 50px;
 }
 
 .floral-cluster {
     position: absolute;
     top: -10px;
     right: -10px;
-    width: 300px;
-    height: 195px;
+    width: 400px;
+    height: 260px;
     background: none !important;
     display: block;
     z-index: 1;
@@ -64,14 +64,40 @@ body {
 
 .canvas-container {
     position: absolute;
-    width: 380px;
-    height: 100px;
+    width: 500px;
+    height: 150px;
     bottom: 5px;
     left: 50%;
     transform: translateX(-50%);
     background: url('assets/jane.jpg') no-repeat;
-    background-size: 450px 300px;
-    background-position: -35px -195px;
+    background-size: 600px 450px;
+    background-position: -50px -300px;
     border-radius: 5px;
     z-index: 0;
+}
+
+/* Ensure card fits on smaller mobile screens */
+@media (max-width: 620px) {
+    .card {
+        width: 90vw;
+        height: 67.5vw; /* Maintain 4:3 aspect ratio (600:450) */
+        max-width: 600px;
+        max-height: 450px;
+    }
+    .canvas-container {
+        width: 83.33vw; /* 500/600 * 90vw */
+        height: 25vw; /* 150/600 * 90vw */
+        background-size: 90vw 67.5vw;
+        background-position: -7.5vw -45vw;
+    }
+    .floral-cluster {
+        width: 66.67vw; /* 400/600 * 90vw */
+        height: 43.33vw; /* 260/600 * 90vw */
+    }
+    .header {
+        width: 53.33vw; /* 320/600 * 90vw */
+        height: 8.33vw; /* 50/600 * 90vw */
+        font-size: 5.67vw; /* 34/600 * 90vw */
+        line-height: 8.33vw;
+    }
 }

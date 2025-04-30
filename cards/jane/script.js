@@ -27,6 +27,14 @@ function initializeAudio() {
         sound.src = 'assets/sound5.mp3';
         isAudioInitialized = true;
         console.log('Audio initialized');
+        // Attach ended event listener to sound object
+        sound.addEventListener('ended', () => {
+            isSoundPlaying = false;
+            console.log('Sound finished playing naturally.');
+            if (isScratching) {
+                playSound();
+            }
+        });
     }
 }
 
@@ -39,11 +47,10 @@ function drawMessage() {
     messageCtx.textBaseline = 'middle';
     const message = "My Love, I don’t need gifts — your love is all I need. Your words lift me, your touch sets my soul free. You are my always and forever. I love you💓";
     const maxWidth = messageCanvas.width - 20;
-    const lineHeight = 22;
+    const lineHeight = 20;
     const words = message.split(' ');
     let line = '';
     let lines = [];
-    let y = messageCanvas.height / 2 - (lineHeight * 2); // Adjust for multiple lines
 
     for (let i = 0; i < words.length; i++) {
         const testLine = line + words[i] + ' ';
@@ -56,6 +63,10 @@ function drawMessage() {
         }
     }
     lines.push(line);
+
+    // Center the text block vertically
+    const totalHeight = lines.length * lineHeight;
+    let y = (messageCanvas.height - totalHeight) / 2 + lineHeight / 2;
 
     lines.forEach((line, index) => {
         messageCtx.fillText(line, messageCanvas.width / 2, y + (index * lineHeight));
@@ -122,17 +133,6 @@ function playSound() {
     }
 }
 
-// Add an event listener to detect when the sound ends naturally
-if (scratchSound) {
-    scratchSound.addEventListener('ended', () => {
-        isSoundPlaying = false;
-        console.log('Sound finished playing naturally.');
-        if (isScratching) {
-            playSound();
-        }
-    });
-}
-
 // Stop sound if the mouse leaves the canvas
 function stopSoundOnLeave() {
     if (isScratching) {
@@ -175,63 +175,4 @@ function scratch(event) {
     scratchCtx.beginPath();
     scratchCtx.arc(x, y, brushRadius, 0, Math.PI * 2);
     scratchCtx.fillStyle = 'rgba(0, 0, 0, 1)';
-    scratchCtx.fill();
-
-    const scratchedArea = Math.PI * brushRadius * brushRadius;
-    scratchedPixels += scratchedArea;
-    console.log('Scratched pixels:', scratchedPixels, 'Interval threshold:', intervalThreshold);
-    checkReveal();
-}
-
-// Fireworks logic with love-themed pink bursts from bottom of scratch section
-function checkReveal() {
-    const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
-    if (intervalsPassed > lastBurstAt) {
-        lastBurstAt = intervalsPassed;
-        console.log('Firing love-themed fireworks at interval:', intervalsPassed);
-        if (typeof confetti === 'function') {
-            // Calculate the bottom of the scratch canvas in viewport coordinates
-            const rect = scratchCanvas.getBoundingClientRect();
-            const canvasBottomY = (rect.bottom / window.innerHeight);
-            const canvasCenterX = (rect.left + rect.width / 2) / window.innerWidth;
-
-            // First burst: Pink sparkles
-            confetti({
-                particleCount: 30,
-                spread: 40,
-                origin: { x: canvasCenterX, y: canvasBottomY },
-                colors: ['#FF69B4', '#FF1493'],
-                scalar: 1.2,
-                gravity: 0.8,
-                ticks: 100,
-                angle: 90,
-                startVelocity: 20
-            });
-            // Second burst: Lighter pink accents
-            setTimeout(() => {
-                confetti({
-                    particleCount: 20,
-                    spread: 60,
-                    origin: { x: canvasCenterX, y: canvasBottomY },
-                    colors: ['#C71585', '#FF69B4'],
-                    scalar: 0.8,
-                    gravity: 1.0,
-                    ticks: 80,
-                    angle: 90,
-                    startVelocity: 25
-                });
-            }, 100);
-        } else {
-            console.log('Confetti library not loaded.');
-        }
-    }
-}
-
-// Check if confetti library loaded
-window.addEventListener('load', () => {
-    if (typeof confetti === 'undefined') {
-        console.log('Confetti library failed to load.');
-    } else {
-        console.log('Confetti library loaded successfully.');
-    }
-});
+    scratch

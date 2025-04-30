@@ -26,6 +26,15 @@ function initializeAudio() {
         sound.src = 'assets/sound5.mp3';
         isAudioInitialized = true;
         console.log('Audio initialized');
+        // Attach ended event listener to reset sound state
+        sound.addEventListener('ended', () => {
+            isSoundPlaying = false;
+            sound.currentTime = 0; // Reset to start
+            console.log('Sound ended, ready to replay');
+            if (isScratching) {
+                playSound();
+            }
+        });
     }
 }
 
@@ -127,10 +136,11 @@ let isSoundPlaying = false;
 function playSound() {
     if (isAudioInitialized && sound && !isSoundPlaying) {
         isSoundPlaying = true;
+        sound.currentTime = 0; // Reset to start
         sound.play().then(() => {
-            console.log('Sound playing');
+            console.log('Sound playing, duration:', sound.duration);
         }).catch(err => {
-            console.log('Sound play error:', err);
+            console.error('Sound play error:', err.message, err.name);
             isSoundPlaying = false;
         });
     }
@@ -189,8 +199,8 @@ function scratch(event) {
         console.log('Scratched pixels:', scratchedPixels, 'Interval threshold:', intervalThreshold);
         checkReveal();
 
-        // Replay sound if scratching continues and sound has ended
-        if (isScratching && !isSoundPlaying) {
+        // Replay sound if it has ended
+        if (isScratching && (sound.ended || !isSoundPlaying)) {
             playSound();
         }
     } catch (err) {

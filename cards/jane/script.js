@@ -5,10 +5,10 @@ const messageCtx = messageCanvas.getContext('2d');
 const scratchCtx = scratchCanvas.getContext('2d');
 
 // Set canvas dimensions
-messageCanvas.width = 380;
-messageCanvas.height = 100;
-scratchCanvas.width = 380;
-scratchCanvas.height = 100;
+messageCanvas.width = 500;
+messageCanvas.height = 150;
+scratchCanvas.width = 500;
+scratchCanvas.height = 150;
 
 // Preload sound
 let sound = null;
@@ -29,7 +29,7 @@ function initializeAudio() {
         // Attach ended event listener to reset sound state
         sound.addEventListener('ended', () => {
             isSoundPlaying = false;
-            sound.currentTime = 0; // Reset to start
+            sound.currentTime = 0;
             console.log('Sound ended, ready to replay');
             if (isScratching) {
                 playSound();
@@ -136,7 +136,7 @@ let isSoundPlaying = false;
 function playSound() {
     if (isAudioInitialized && sound && !isSoundPlaying) {
         isSoundPlaying = true;
-        sound.currentTime = 0; // Reset to start
+        sound.currentTime = 0;
         sound.play().then(() => {
             console.log('Sound playing, duration:', sound.duration);
         }).catch(err => {
@@ -150,7 +150,7 @@ function playSound() {
 function stopSoundOnLeave() {
     if (isScratching) {
         isScratching = false;
-        isSoundPlaying = false; // Allow sound to replay on next scratch
+        isSoundPlaying = false;
     }
 }
 

@@ -12,9 +12,23 @@ scratchCanvas.width = 380;
 scratchCanvas.height = 100;
 
 // Preload sound
-const sound = new Audio('assets/sound4.mp3');
-sound.loop = false;
-sound.volume = 1.0;
+let sound = null;
+let isAudioInitialized = false;
+
+// Initialize audio on first user interaction
+function initializeAudio() {
+    if (!isAudioInitialized) {
+        sound = new Audio('assets/sound4.mp3');
+        sound.loop = false;
+        sound.volume = 1.0;
+        // Play a silent sound to unlock audio context on mobile
+        sound.src = 'data:audio/mpeg;base64,/+MYxAAAAANIAAAAAExBTUUzLjEwMAAAAAA'; // Tiny silent MP3
+        sound.play().catch(err => console.log('Silent sound play error:', err));
+        sound.src = 'assets/sound4.mp3'; // Reset to actual sound
+        isAudioInitialized = true;
+        console.log('Audio initialized');
+    }
+}
 
 // Draw the message on the message canvas (bottom layer)
 function drawMessage() {
@@ -23,7 +37,7 @@ function drawMessage() {
     messageCtx.fillStyle = '#fff';
     messageCtx.textAlign = 'center';
     messageCtx.textBaseline = 'middle';
-    const message = "💖Hello babygal💖";
+    const message = "Hello babygal";
     messageCtx.fillText(message, messageCanvas.width / 2, messageCanvas.height / 2);
 }
 
@@ -76,21 +90,27 @@ let isSoundPlaying = false;
 
 // Function to play the sound
 function playSound() {
-    if (!isSoundPlaying) {
+    if (isAudioInitialized && sound && !isSoundPlaying) {
         isSoundPlaying = true;
-        sound.volume = 1.0;
-        sound.play().catch(err => console.log('Sound play error:', err));
+        sound.play().then(() => {
+            console.log('Sound playing');
+        }).catch(err => {
+            console.log('Sound play error:', err);
+            isSoundPlaying = false; // Allow retry
+        });
     }
 }
 
 // Add an event listener to detect when the sound ends naturally
-sound.addEventListener('ended', () => {
-    isSoundPlaying = false;
-    console.log('Sound finished playing naturally.');
-    if (isScratching) {
-        playSound();
-    }
-});
+if (scratchSound) {
+    scratchSound.addEventListener('ended', () => {
+        isSoundPlaying = false;
+        console.log('Sound finished playing naturally.');
+        if (isScratching) {
+            playSound();
+        }
+    });
+}
 
 // Stop sound if the mouse leaves the canvas
 function stopSoundOnLeave() {
@@ -99,24 +119,23 @@ function stopSoundOnLeave() {
     }
 }
 
+// Event listeners for scratching
 scratchCanvas.addEventListener('mousedown', (e) => {
-    e.preventDefault();
+    initializeAudio();
     isScratching = true;
     playSound();
 });
-scratchCanvas.addEventListener('mouseup', (e) => {
-    e.preventDefault();
+scratchCanvas.addEventListener('mouseup', () => {
     isScratching = false;
 });
 scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
 scratchCanvas.addEventListener('mousemove', scratch);
 scratchCanvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
+    initializeAudio();
     isScratching = true;
     playSound();
 });
-scratchCanvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
+scratchCanvas.addEventListener('touchend', () => {
     isScratching = false;
 });
 scratchCanvas.addEventListener('touchmove', (e) => {

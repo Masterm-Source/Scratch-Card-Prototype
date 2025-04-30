@@ -12,19 +12,54 @@ scratchCanvas.width = 380;
 scratchCanvas.height = 100;
 
 // Preload sound
-const sound = new Audio('assets/sound4.mp3');
-sound.loop = false;
-sound.volume = 1.0;
+let sound = null;
+let isAudioInitialized = false;
+
+// Initialize audio on first user interaction
+function initializeAudio() {
+    if (!isAudioInitialized) {
+        sound = new Audio('assets/sound5.mp3');
+        sound.loop = false;
+        sound.volume = 1.0;
+        // Play a silent sound to unlock audio context on mobile
+        sound.src = 'data:audio/mpeg;base64,/+MYxAAAAANIAAAAAExBTUUzLjEwMAAAAAA';
+        sound.play().catch(err => console.log('Silent sound play error:', err));
+        sound.src = 'assets/sound5.mp3';
+        isAudioInitialized = true;
+        console.log('Audio initialized');
+    }
+}
 
 // Draw the message on the message canvas (bottom layer)
 function drawMessage() {
     messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-    messageCtx.font = '30px Comic Sans MS';
+    messageCtx.font = '18px Comic Sans MS';
     messageCtx.fillStyle = '#fff';
     messageCtx.textAlign = 'center';
     messageCtx.textBaseline = 'middle';
-    const message = "💖Hello babygal💖";
-    messageCtx.fillText(message, messageCanvas.width / 2, messageCanvas.height / 2);
+    const message = "My Love, I don’t need gifts — your love is all I need. Your words lift me, your touch sets my soul free. You are my always and forever. I love you💓";
+    const maxWidth = messageCanvas.width - 20;
+    const lineHeight = 22;
+    const words = message.split(' ');
+    let line = '';
+    let lines = [];
+    let y = messageCanvas.height / 2 - (lineHeight * 2); // Adjust for multiple lines
+
+    for (let i = 0; i < words.length; i++) {
+        const testLine = line + words[i] + ' ';
+        const metrics = messageCtx.measureText(testLine);
+        if (metrics.width > maxWidth && line !== '') {
+            lines.push(line);
+            line = words[i] + ' ';
+        } else {
+            line = testLine;
+        }
+    }
+    lines.push(line);
+
+    lines.forEach((line, index) => {
+        messageCtx.fillText(line, messageCanvas.width / 2, y + (index * lineHeight));
+    });
 }
 
 // Draw the scratch layer on the scratch canvas (top layer)
@@ -76,21 +111,27 @@ let isSoundPlaying = false;
 
 // Function to play the sound
 function playSound() {
-    if (!isSoundPlaying) {
+    if (isAudioInitialized && sound && !isSoundPlaying) {
         isSoundPlaying = true;
-        sound.volume = 1.0;
-        sound.play().catch(err => console.log('Sound play error:', err));
+        sound.play().then(() => {
+            console.log('Sound playing');
+        }).catch(err => {
+            console.log('Sound play error:', err);
+            isSoundPlaying = false;
+        });
     }
 }
 
 // Add an event listener to detect when the sound ends naturally
-sound.addEventListener('ended', () => {
-    isSoundPlaying = false;
-    console.log('Sound finished playing naturally.');
-    if (isScratching) {
-        playSound();
-    }
-});
+if (scratchSound) {
+    scratchSound.addEventListener('ended', () => {
+        isSoundPlaying = false;
+        console.log('Sound finished playing naturally.');
+        if (isScratching) {
+            playSound();
+        }
+    });
+}
 
 // Stop sound if the mouse leaves the canvas
 function stopSoundOnLeave() {
@@ -99,24 +140,23 @@ function stopSoundOnLeave() {
     }
 }
 
+// Event listeners for scratching
 scratchCanvas.addEventListener('mousedown', (e) => {
-    e.preventDefault();
+    initializeAudio();
     isScratching = true;
     playSound();
 });
-scratchCanvas.addEventListener('mouseup', (e) => {
-    e.preventDefault();
+scratchCanvas.addEventListener('mouseup', () => {
     isScratching = false;
 });
 scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
 scratchCanvas.addEventListener('mousemove', scratch);
 scratchCanvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
+    initializeAudio();
     isScratching = true;
     playSound();
 });
-scratchCanvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
+scratchCanvas.addEventListener('touchend', () => {
     isScratching = false;
 });
 scratchCanvas.addEventListener('touchmove', (e) => {

@@ -37,7 +37,7 @@ function drawMessage() {
     messageCtx.fillStyle = '#fff';
     messageCtx.textAlign = 'center';
     messageCtx.textBaseline = 'middle';
-    const message = "Hello babygal";
+    const message = "💖Hello babygal💖";
     messageCtx.fillText(message, messageCanvas.width / 2, messageCanvas.height / 2);
 }
 

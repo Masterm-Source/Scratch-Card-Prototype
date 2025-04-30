@@ -42,7 +42,7 @@ function initializeAudio() {
 function drawMessage() {
     try {
         messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-        messageCtx.font = '18px Comic Sans MS';
+        messageCtx.font = '26px Comic Sans MS';
         messageCtx.fillStyle = '#fff';
         messageCtx.textAlign = 'center';
         messageCtx.textBaseline = 'middle';

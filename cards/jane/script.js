@@ -209,23 +209,29 @@ function scratch(event) {
 }
 
 // Function to spawn heart emojis
-function spawnHearts(count, x, y) {
+function spawnHearts(count, canvasRect) {
     const hearts = ['❤️', '💖', '💕'];
+    const card = document.querySelector('.card');
+    const canvasTopRelativeToCard = canvasRect.top - card.getBoundingClientRect().top;
+    const spawnY = canvasTopRelativeToCard + canvasRect.height; // Bottom of canvas
     for (let i = 0; i < count; i++) {
         const heart = document.createElement('span');
         heart.className = 'heart-emoji';
         heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
-        // Calculate spread: -40px to 40px for first burst, -60px to 60px for second
-        const spread = (count === 30 ? (Math.random() * 80 - 40) : (Math.random() * 120 - 60));
+        // Random x-position across canvas width (100px to 500px relative to card)
+        const spawnX = 50 + Math.random() * 400; // Canvas is 50px from card left
+        // Animation spread: ±50px
+        const spread = (Math.random() * 100 - 50);
         heart.style.setProperty('--spread', `${spread}px`);
-        // Position at canvas bottom
-        heart.style.left = `${x + spread}px`;
-        heart.style.top = `${y}px`;
-        document.body.appendChild(heart);
+        // Position relative to card
+        heart.style.left = `${spawnX}px`;
+        heart.style.top = `${spawnY}px`;
+        card.appendChild(heart);
         // Remove after animation
         setTimeout(() => {
             heart.remove();
-        }, 1500);
+        }, 2000);
+        console.log(`Spawned heart at x: ${spawnX}, y: ${spawnY}, spread: ${spread}`);
     }
 }
 
@@ -236,16 +242,13 @@ function checkReveal() {
         if (intervalsPassed > lastBurstAt) {
             lastBurstAt = intervalsPassed;
             console.log('Spawning heart emojis at interval:', intervalsPassed);
-            // Calculate the bottom of the scratch canvas in viewport coordinates
+            // Get canvas rectangle
             const rect = scratchCanvas.getBoundingClientRect();
-            const canvasBottomY = rect.bottom;
-            const canvasCenterX = rect.left + rect.width / 2;
-
             // First burst: 30 hearts
-            spawnHearts(30, canvasCenterX, canvasBottomY);
+            spawnHearts(30, rect);
             // Second burst: 20 hearts after 100ms
             setTimeout(() => {
-                spawnHearts(20, canvasCenterX, canvasBottomY);
+                spawnHearts(20, rect);
             }, 100);
         }
     } catch (err) {

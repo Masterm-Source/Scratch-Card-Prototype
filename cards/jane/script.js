@@ -42,7 +42,7 @@ function initializeAudio() {
 function drawMessage() {
     try {
         messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-        messageCtx.font = '26px Comic Sans MS';
+        messageCtx.font = '30px Comic Sans MS';
         messageCtx.fillStyle = '#fff';
         messageCtx.textAlign = 'center';
         messageCtx.textBaseline = 'middle';
@@ -208,59 +208,47 @@ function scratch(event) {
     }
 }
 
-// Fireworks logic with love-themed pink bursts from bottom of scratch section
+// Function to spawn heart emojis
+function spawnHearts(count, x, y) {
+    const hearts = ['❤️', '💖', '💕'];
+    for (let i = 0; i < count; i++) {
+        const heart = document.createElement('span');
+        heart.className = 'heart-emoji';
+        heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+        // Calculate spread: -40px to 40px for first burst, -60px to 60px for second
+        const spread = (count === 30 ? (Math.random() * 80 - 40) : (Math.random() * 120 - 60));
+        heart.style.setProperty('--spread', `${spread}px`);
+        // Position at canvas bottom
+        heart.style.left = `${x + spread}px`;
+        heart.style.top = `${y}px`;
+        document.body.appendChild(heart);
+        // Remove after animation
+        setTimeout(() => {
+            heart.remove();
+        }, 1500);
+    }
+}
+
+// Heart animation logic
 function checkReveal() {
     try {
         const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
         if (intervalsPassed > lastBurstAt) {
             lastBurstAt = intervalsPassed;
-            console.log('Firing love-themed fireworks at interval:', intervalsPassed);
-            if (typeof confetti === 'function') {
-                // Calculate the bottom of the scratch canvas in viewport coordinates
-                const rect = scratchCanvas.getBoundingClientRect();
-                const canvasBottomY = (rect.bottom / window.innerHeight);
-                const canvasCenterX = (rect.left + rect.width / 2) / window.innerWidth;
+            console.log('Spawning heart emojis at interval:', intervalsPassed);
+            // Calculate the bottom of the scratch canvas in viewport coordinates
+            const rect = scratchCanvas.getBoundingClientRect();
+            const canvasBottomY = rect.bottom;
+            const canvasCenterX = rect.left + rect.width / 2;
 
-                // First burst: Pink sparkles
-                confetti({
-                    particleCount: 30,
-                    spread: 40,
-                    origin: { x: canvasCenterX, y: canvasBottomY },
-                    colors: ['#FF69B4', '#FF1493'],
-                    scalar: 1.2,
-                    gravity: 0.8,
-                    ticks: 100,
-                    angle: 90,
-                    startVelocity: 20
-                });
-                // Second burst: Lighter pink accents
-                setTimeout(() => {
-                    confetti({
-                        particleCount: 20,
-                        spread: 60,
-                        origin: { x: canvasCenterX, y: canvasBottomY },
-                        colors: ['#C71585', '#FF69B4'],
-                        scalar: 0.8,
-                        gravity: 1.0,
-                        ticks: 80,
-                        angle: 90,
-                        startVelocity: 25
-                    });
-                }, 100);
-            } else {
-                console.log('Confetti library not loaded.');
-            }
+            // First burst: 30 hearts
+            spawnHearts(30, canvasCenterX, canvasBottomY);
+            // Second burst: 20 hearts after 100ms
+            setTimeout(() => {
+                spawnHearts(20, canvasCenterX, canvasBottomY);
+            }, 100);
         }
     } catch (err) {
         console.error('Error in checkReveal:', err);
     }
 }
-
-// Check if confetti library loaded
-window.addEventListener('load', () => {
-    if (typeof confetti === 'undefined') {
-        console.log('Confetti library failed to load.');
-    } else {
-        console.log('Confetti library loaded successfully.');
-    }
-});

@@ -82,7 +82,7 @@ body {
     font-size: 24px;
     pointer-events: none;
     z-index: 10;
-    animation: heartsRise 1.5s ease-out forwards;
+    animation: heartsRise 2s ease-out forwards;
 }
 
 @keyframes heartsRise {
@@ -92,7 +92,7 @@ body {
     }
     100% {
         opacity: 0;
-        transform: translateY(-100px) translateX(var(--spread));
+        transform: translateY(-400px) translateX(var(--spread));
     }
 }
 

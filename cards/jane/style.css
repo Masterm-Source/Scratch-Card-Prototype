@@ -76,28 +76,51 @@ body {
     z-index: 0;
 }
 
+/* Heart emoji animation */
+.heart-emoji {
+    position: absolute;
+    font-size: 24px;
+    pointer-events: none;
+    z-index: 10;
+    animation: heartsRise 1.5s ease-out forwards;
+}
+
+@keyframes heartsRise {
+    0% {
+        opacity: 1;
+        transform: translateY(0) translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px) translateX(var(--spread));
+    }
+}
+
 /* Ensure card fits on smaller mobile screens */
 @media (max-width: 620px) {
     .card {
         width: 90vw;
-        height: 67.5vw; /* Maintain 4:3 aspect ratio (600:450) */
+        height: 67.5vw;
         max-width: 600px;
         max-height: 450px;
     }
     .canvas-container {
-        width: 83.33vw; /* 500/600 * 90vw */
-        height: 25vw; /* 150/600 * 90vw */
+        width: 83.33vw;
+        height: 25vw;
         background-size: 90vw 67.5vw;
         background-position: -7.5vw -45vw;
     }
     .floral-cluster {
-        width: 66.67vw; /* 400/600 * 90vw */
-        height: 43.33vw; /* 260/600 * 90vw */
+        width: 66.67vw;
+        height: 43.33vw;
     }
     .header {
-        width: 53.33vw; /* 320/600 * 90vw */
-        height: 8.33vw; /* 50/600 * 90vw */
-        font-size: 5.67vw; /* 34/600 * 90vw */
+        width: 53.33vw;
+        height: 8.33vw;
+        font-size: 5.67vw;
         line-height: 8.33vw;
+    }
+    .heart-emoji {
+        font-size: 4vw;
     }
 }

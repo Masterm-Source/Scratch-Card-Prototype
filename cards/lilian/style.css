@@ -12,7 +12,6 @@ body {
     width: 600px;
     height: 450px;
     background: url('assets/pnk-bg.jpg') no-repeat center center;
-    background-color: #FFC1CC; /* Fallback pink */
     background-size: cover;
     border-radius: 15px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.3);
@@ -71,7 +70,6 @@ body {
     left: 50%;
     transform: translateX(-50%);
     background: url('assets/pnk-bg.jpg') no-repeat;
-    background-color: #FFC1CC; /* Fallback pink */
     background-size: 600px 450px;
     background-position: -50px -300px;
     border-radius: 5px;
@@ -81,21 +79,20 @@ body {
 /* Heart emoji animation */
 .heart-emoji {
     position: absolute;
-    font-size: 24px; /* Base size, overridden in JS */
+    font-size: 24px;
     pointer-events: none;
     z-index: 10;
-    text-shadow: 0 0 8px #FF0000, 0 0 12px #FF69B4; /* Red/pink glow */
-    animation: heartsRise var(--duration, 2s) ease-out forwards;
+    animation: heartsRise 2s ease-out forwards;
 }
 
 @keyframes heartsRise {
     0% {
         opacity: 1;
-        transform: translateY(0) translateX(0) rotate(0);
+        transform: translateY(0) translateX(0);
     }
     100% {
         opacity: 0;
-        transform: translateY(-400px) translateX(var(--spread)) rotate(var(--rotate));
+        transform: translateY(-400px) translateX(var(--spread));
     }
 }
 
@@ -124,6 +121,6 @@ body {
         line-height: 8.33vw;
     }
     .heart-emoji {
-        font-size: 4vw; /* Base size, overridden in JS */
+        font-size: 4vw;
     }
 }

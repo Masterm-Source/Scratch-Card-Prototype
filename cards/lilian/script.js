@@ -14,6 +14,15 @@ scratchCanvas.height = 150;
 let sound = null;
 let isAudioInitialized = false;
 
+// Test background image loading
+function testBackgroundImage() {
+    const img = new Image();
+    img.src = 'assets/pnk-bg.jpg';
+    img.onload = () => console.log('Background image pnk-bg.jpg loaded successfully');
+    img.onerror = () => console.error('Failed to load background image pnk-bg.jpg');
+}
+testBackgroundImage();
+
 // Initialize audio on first user interaction
 function initializeAudio() {
     if (!isAudioInitialized) {
@@ -220,9 +229,18 @@ function spawnHearts(count, canvasRect) {
         heart.textContent = hearts[0]; // Always ❤️
         // Random x-position across canvas width (100px to 500px relative to card)
         const spawnX = 50 + Math.random() * 400; // Canvas is 50px from card left
-        // Animation spread: ±50px
-        const spread = (Math.random() * 100 - 50);
+        // Animation spread: ±100px
+        const spread = Math.random() * 200 - 100;
+        // Random rotation: ±10deg
+        const rotate = Math.random() * 20 - 10;
+        // Random font size: 20-30px
+        const fontSize = 20 + Math.random() * 10;
+        // Random duration: 1.5-2.5s
+        const duration = 1.5 + Math.random() * 1;
         heart.style.setProperty('--spread', `${spread}px`);
+        heart.style.setProperty('--rotate', `${rotate}deg`);
+        heart.style.setProperty('--duration', `${duration}s`);
+        heart.style.fontSize = `${fontSize}px`;
         // Position relative to card
         heart.style.left = `${spawnX}px`;
         heart.style.top = `${spawnY}px`;
@@ -230,8 +248,8 @@ function spawnHearts(count, canvasRect) {
         // Remove after animation
         setTimeout(() => {
             heart.remove();
-        }, 2000);
-        console.log(`Spawned heart at x: ${spawnX}, y: ${spawnY}, spread: ${spread}`);
+        }, duration * 1000);
+        console.log(`Spawned heart at x: ${spawnX}, y: ${spawnY}, spread: ${spread}px, rotate: ${rotate}deg, size: ${fontSize}px, duration: ${duration}s`);
     }
 }
 

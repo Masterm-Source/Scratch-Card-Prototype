@@ -13,6 +13,8 @@ scratchCanvas.height = 150;
 // Preload sound
 let sound = null;
 let isAudioInitialized = false;
+let lastSoundPlayTime = 0;
+const soundDebounceMs = 100;
 
 // Initialize audio on first user interaction
 function initializeAudio() {
@@ -26,14 +28,10 @@ function initializeAudio() {
         sound.src = 'assets/sound6.mp3';
         isAudioInitialized = true;
         console.log('Audio initialized');
-        // Attach ended event listener to reset sound state
+        // Reset sound state on end
         sound.addEventListener('ended', () => {
             isSoundPlaying = false;
-            sound.currentTime = 0;
-            console.log('Sound ended, ready to replay');
-            if (isScratching) {
-                setTimeout(playSound, 0);
-            }
+            console.log('Sound ended');
         });
     }
 }
@@ -122,7 +120,7 @@ drawScratchLayer();
 // Scratching logic on the scratch canvas
 let isScratching = false;
 let scratchedPixels = 0;
-const brushRadius = 15; // Increased for better coverage
+const brushRadius = 15;
 const totalPixels = scratchCanvas.width * scratchCanvas.height;
 const intervalThreshold = totalPixels * 0.05;
 let lastBurstAt = 0;
@@ -133,7 +131,13 @@ let lastY = null;
 // Function to play the sound
 function playSound() {
     if (isAudioInitialized && sound && !isSoundPlaying) {
+        const now = Date.now();
+        if (now - lastSoundPlayTime < soundDebounceMs) {
+            console.log('Sound play debounced');
+            return;
+        }
         isSoundPlaying = true;
+        lastSoundPlayTime = now;
         sound.currentTime = 0;
         sound.play().then(() => {
             console.log('Sound playing, duration:', sound.duration);
@@ -214,11 +218,6 @@ function scratch(event) {
         scratchedPixels += scratchedArea;
         console.log(`Scratch at x: ${x.toFixed(2)}, y: ${y.toFixed(2)}, lastX: ${lastX?.toFixed(2) || 'null'}, lastY: ${lastY?.toFixed(2) || 'null'}, scratchedPixels: ${scratchedPixels.toFixed(2)}, threshold: ${intervalThreshold}`);
         checkReveal();
-
-        // Check sound replay asynchronously
-        if (isScratching && sound && sound.ended && !isSoundPlaying) {
-            setTimeout(playSound, 0);
-        }
     } catch (err) {
         console.error('Error in scratch function:', err);
     }
@@ -235,28 +234,40 @@ function spawnHearts(count, canvasRect) {
         }
         const cardRect = card.getBoundingClientRect();
         const canvasTopRelativeToCard = canvasRect.top - cardRect.top;
-        const spawnY = canvasTopRelativeToCard + canvasRect.height; // Bottom of canvas
-        console.log(`Canvas rect: top=${canvasRect.top}, height=${canvasRect.height}, card top=${cardRect.top}, spawnY=${spawnY}`);
+        const spawnY = canvasTopRelativeToCard + canvasRect.height; // Canvas bottom (~300px)
+        const spawnX = 300; // Card center
+        console.log(`Canvas rect: top=${canvasRect.top}, height=${canvasRect.height}, card top=${cardRect.top}, spawnX=${spawnX}, spawnY=${spawnY}`);
         for (let i = 0; i < count; i++) {
             const heart = document.createElement('span');
             heart.className = 'heart-emoji';
             heart.textContent = hearts[0];
-            // Spawn in a 100px range centered at card's x-center (300px)
-            const spawnX = 250 + Math.random() * 100; // 250-350px
-            // Heart-shaped path on fall: assign to left or right lobe
+            // Random rise duration: 0.6-1.2s
+            const riseDuration = 0.6 + Math.random() * 0.6;
+            // Total duration: rise + 2-2.5s fall
+            const fallDuration = 2 + Math.random() * 0.5;
+            const totalDuration = riseDuration + fallDuration;
+            // Random peak: x: -200 to 200px, y: -400 to -150px (50-200px from top)
+            const xSpreadPeak = (Math.random() - 0.5) * 400; // -200 to 200px
+            const yPeak = -400 + Math.random() * 250; // -400 to -150px
+            // Heart-shaped fall: left or right lobe
             const isLeftLobe = Math.random() < 0.5;
-            // Left lobe: fall to x +20px; Right lobe: fall to x -20px
-            const xSpreadFall = isLeftLobe ? 20 : -20;
+            const xSpreadFall = isLeftLobe ? 20 : -20; // Narrow at bottom
+            // Random fall y: 300-400px (canvas bottom or beyond)
+            const yFall = 300 + Math.random() * 100; // 300-400px
+            heart.style.setProperty('--duration', `${totalDuration}s`);
+            heart.style.setProperty('--x-spread-peak', `${xSpreadPeak}px`);
+            heart.style.setProperty('--y-peak', `${yPeak}px`);
             heart.style.setProperty('--x-spread-fall', `${xSpreadFall}px`);
-            // Position relative to card
+            heart.style.setProperty('--y-fall', `${yFall}px`);
+            // Position at card center
             heart.style.left = `${spawnX}px`;
             heart.style.top = `${spawnY}px`;
             card.appendChild(heart);
             // Remove after animation
             setTimeout(() => {
                 heart.remove();
-            }, 2800);
-            console.log(`Spawned heart ${i + 1}/${count} at x: ${spawnX}, y: ${spawnY}, lobe: ${isLeftLobe ? 'left' : 'right'}, xSpreadFall: ${xSpreadFall}`);
+            }, totalDuration * 1000);
+            console.log(`Spawned heart ${i + 1}/${count}: x=${spawnX}, y=${spawnY}, rise=${riseDuration}s, fall=${fallDuration}s, peak=(${xSpreadPeak}, ${yPeak}), fall=(${xSpreadFall}, ${yFall}), lobe=${isLeftLobe ? 'left' : 'right'}`);
         }
     } catch (err) {
         console.error('Error in spawnHearts:', err);
@@ -273,11 +284,11 @@ function checkReveal() {
             console.log(`Triggering heart burst at interval: ${intervalsPassed}`);
             // Get canvas rectangle
             const rect = scratchCanvas.getBoundingClientRect();
-            // First burst: 30 hearts
-            spawnHearts(30, rect);
-            // Second burst: 20 hearts after 100ms
+            // First burst: 40 hearts
+            spawnHearts(40, rect);
+            // Second burst: 30 hearts after 100ms
             setTimeout(() => {
-                spawnHearts(20, rect);
+                spawnHearts(30, rect);
             }, 100);
         }
     } catch (err) {

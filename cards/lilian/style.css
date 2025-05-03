@@ -16,7 +16,7 @@ body {
     border-radius: 15px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.3);
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* Allow emojis to fall beyond card */
 }
 
 .card::before {
@@ -84,27 +84,27 @@ body {
     pointer-events: none;
     z-index: 10;
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
-    animation: heartsRiseFall 2.8s forwards;
-    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Custom for burst rise */
+    animation: heartsRiseFall var(--duration) forwards;
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Burst rise */
 }
 
 @keyframes heartsRiseFall {
     0% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate(0, 0);
     }
     30% {
         opacity: 1;
-        transform: translateY(-400px); /* Peak: ~50px from card top */
+        transform: translate(var(--x-spread-peak), var(--y-peak));
         animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19); /* Slow fall */
     }
     90% {
         opacity: 1;
-        transform: translateY(-150px) translateX(var(--x-spread-fall)); /* Fall: ~300px from card top */
+        transform: translate(var(--x-spread-fall), var(--y-fall));
     }
     100% {
         opacity: 0;
-        transform: translateY(-150px) translateX(var(--x-spread-fall));
+        transform: translate(var(--x-spread-fall), var(--y-fall));
     }
 }
 

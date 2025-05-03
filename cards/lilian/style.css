@@ -84,25 +84,27 @@ body {
     pointer-events: none;
     z-index: 10;
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
-    animation: heartsRiseFall 2.5s ease-in-out forwards;
+    animation: heartsRiseFall 2.8s forwards;
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Custom for burst rise */
 }
 
 @keyframes heartsRiseFall {
     0% {
         opacity: 1;
-        transform: translateY(0) translateX(0);
+        transform: translateY(0);
     }
-    50% {
+    30% {
         opacity: 1;
-        transform: translateY(-200px) translateX(var(--x-spread-peak));
+        transform: translateY(-400px); /* Peak: ~50px from card top */
+        animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19); /* Slow fall */
     }
-    80% {
+    90% {
         opacity: 1;
-        transform: translateY(-50px) translateX(var(--x-spread-fall));
+        transform: translateY(-150px) translateX(var(--x-spread-fall)); /* Fall: ~300px from card top */
     }
     100% {
         opacity: 0;
-        transform: translateY(-50px) translateX(var(--x-spread-fall));
+        transform: translateY(-150px) translateX(var(--x-spread-fall));
     }
 }
 

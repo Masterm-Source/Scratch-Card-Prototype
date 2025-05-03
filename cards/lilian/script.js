@@ -42,11 +42,11 @@ function initializeAudio() {
 function drawMessage() {
     try {
         messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-        messageCtx.font = '18px Comic Sans MS';
+        messageCtx.font = '30px Comic Sans MS';
         messageCtx.fillStyle = '#fff';
         messageCtx.textAlign = 'center';
         messageCtx.textBaseline = 'middle';
-        const message = "I'll choose you, and I will still choose you over and over. Without pause, without doubt in a heartbeat, I'll still choose you.";
+        const message = "I'll choose you, and I will still choose you over and over. Without pause, without doubt in a heartbeat, I'll still choose you😍.";
         const maxWidth = messageCanvas.width - 20;
         const lineHeight = 20;
         const words = message.split(' ');

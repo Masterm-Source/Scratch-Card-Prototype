@@ -79,20 +79,29 @@ body {
 /* Heart emoji animation */
 .heart-emoji {
     position: absolute;
-    font-size: 24px;
+    font-size: 30px;
     pointer-events: none;
     z-index: 10;
-    animation: heartsRise 2s ease-out forwards;
+    text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
+    animation: heartsRiseFall 2.5s ease-in-out forwards;
 }
 
-@keyframes heartsRise {
+@keyframes heartsRiseFall {
     0% {
         opacity: 1;
         transform: translateY(0) translateX(0);
     }
+    50% {
+        opacity: 1;
+        transform: translateY(-200px) translateX(var(--x-spread));
+    }
+    80% {
+        opacity: 1;
+        transform: translateY(-50px) translateX(var(--x-spread));
+    }
     100% {
         opacity: 0;
-        transform: translateY(-400px) translateX(var(--spread));
+        transform: translateY(-50px) translateX(var(--x-spread));
     }
 }
 
@@ -121,6 +130,7 @@ body {
         line-height: 8.33vw;
     }
     .heart-emoji {
-        font-size: 4vw;
+        font-size: 5vw;
+        text-shadow: 0 0 0.83vw rgba(255, 0, 0, 0.8);
     }
 }

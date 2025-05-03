@@ -4,7 +4,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height:  personally, I like the card to be centered on the page, can you help with that? 100vh;
+    min-height: 100vh;
+    height: 100vh; /* Ensure full viewport height */
+    overflow: auto; /* Handle mobile viewports */
     background: #1a1a1a;
 }
 
@@ -26,24 +28,24 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, transparent 30%) no-repeat;
-    background-size: 200px 200px; /* Smaller gradient circle */
+    background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 50%);
     opacity: 0;
     animation: shimmer 2.5s infinite;
     z-index: 0; /* Behind content */
+    clip-path: inset(0 0 0 0); /* Ensure clipping to card */
 }
 
 @keyframes shimmer {
     0% {
         opacity: 0;
-        background-position: -300px center; /* Start left of card */
+        transform: translateX(-600px); /* Start left of card */
     }
     50% {
-        opacity: 0.6; /* Softer peak opacity */
+        opacity: 0.8; /* Vibrant peak */
     }
     100% {
         opacity: 0;
-        background-position: 900px center; /* End right of card */
+        transform: translateX(600px); /* End right of card */
     }
 }
 
@@ -146,8 +148,5 @@ body {
     .heart-emoji {
         font-size: 5vw;
         text-shadow: 0 0 0.83vw rgba(255, 0, 0, 0.8);
-    }
-    .card::before {
-        background-size: 33.33vw 33.33vw; /* Scale gradient on mobile */
     }
 }

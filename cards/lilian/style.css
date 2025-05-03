@@ -80,6 +80,7 @@ body {
 .heart-emoji {
     position: absolute;
     font-size: 30px;
+    color: red;
     pointer-events: none;
     z-index: 10;
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
@@ -93,15 +94,15 @@ body {
     }
     50% {
         opacity: 1;
-        transform: translateY(-200px) translateX(var(--x-spread));
+        transform: translateY(-200px) translateX(var(--x-spread-peak));
     }
     80% {
         opacity: 1;
-        transform: translateY(-50px) translateX(var(--x-spread));
+        transform: translateY(-50px) translateX(var(--x-spread-fall));
     }
     100% {
         opacity: 0;
-        transform: translateY(-50px) translateX(var(--x-spread));
+        transform: translateY(-50px) translateX(var(--x-spread-fall));
     }
 }
 

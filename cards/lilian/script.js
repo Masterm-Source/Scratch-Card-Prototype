@@ -210,19 +210,22 @@ function scratch(event) {
 
 // Function to spawn heart emojis
 function spawnHearts(count, canvasRect) {
-    const hearts = ['❤️']; // Only red heart
+    const hearts = ['❤️'];
     const card = document.querySelector('.card');
     const canvasTopRelativeToCard = canvasRect.top - card.getBoundingClientRect().top;
     const spawnY = canvasTopRelativeToCard + canvasRect.height; // Bottom of canvas
     for (let i = 0; i < count; i++) {
         const heart = document.createElement('span');
         heart.className = 'heart-emoji';
-        heart.textContent = hearts[0]; // Always ❤️
-        // Random x-position across canvas width (100px to 500px relative to card)
-        const spawnX = 50 + Math.random() * 400; // Canvas is 50px from card left
-        // Animation spread: ±50px
-        const spread = (Math.random() * 100 - 50);
-        heart.style.setProperty('--spread', `${spread}px`);
+        heart.textContent = hearts[0];
+        // Spawn in a 100px range centered at card's x-center (300px)
+        const spawnX = 250 + Math.random() * 100; // 250-350px
+        // Heart-shaped path: assign to left or right lobe
+        const isLeftLobe = Math.random() < 0.5;
+        // Left lobe: move left (-60px) at peak, right (+20px) at fall
+        // Right lobe: move right (+60px) at peak, left (-20px) at fall
+        const xSpread = isLeftLobe ? '-60px,20px' : '60px,-20px';
+        heart.style.setProperty('--x-spread', xSpread);
         // Position relative to card
         heart.style.left = `${spawnX}px`;
         heart.style.top = `${spawnY}px`;
@@ -230,8 +233,8 @@ function spawnHearts(count, canvasRect) {
         // Remove after animation
         setTimeout(() => {
             heart.remove();
-        }, 2000);
-        console.log(`Spawned heart at x: ${spawnX}, y: ${spawnY}, spread: ${spread}`);
+        }, 2500);
+        console.log(`Spawned heart at x: ${spawnX}, y: ${spawnY}, lobe: ${isLeftLobe ? 'left' : 'right'}`);
     }
 }
 

@@ -32,7 +32,7 @@ function initializeAudio() {
             sound.currentTime = 0;
             console.log('Sound ended, ready to replay');
             if (isScratching) {
-                playSound();
+                setTimeout(playSound, 0);
             }
         });
     }
@@ -87,9 +87,7 @@ function drawScratchLayer() {
             scratchCtx.drawImage(scratchLayer, 0, 0, scratchCanvas.width, scratchCanvas.height);
             scratchCtx.strokeStyle = '#000';
             scratchCtx.lineWidth = 2;
-            scratchCtx.setLineDash([5, 5]);
             scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-            scratchCtx.setLineDash([]);
             scratchCtx.font = '40px Comic Sans MS';
             scratchCtx.fillStyle = '#000';
             scratchCtx.textAlign = 'center';
@@ -103,9 +101,7 @@ function drawScratchLayer() {
             scratchCtx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
             scratchCtx.strokeStyle = '#000';
             scratchCtx.lineWidth = 2;
-            scratchCtx.setLineDash([5, 5]);
             scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-            scratchCtx.setLineDash([]);
             scratchCtx.font = '40px Comic Sans MS';
             scratchCtx.fillStyle = '#000';
             scratchCtx.textAlign = 'center';
@@ -126,13 +122,13 @@ drawScratchLayer();
 // Scratching logic on the scratch canvas
 let isScratching = false;
 let scratchedPixels = 0;
-const brushRadius = 10; // Reduced for performance
+const brushRadius = 15; // Increased for better coverage
 const totalPixels = scratchCanvas.width * scratchCanvas.height;
 const intervalThreshold = totalPixels * 0.05;
 let lastBurstAt = 0;
 let isSoundPlaying = false;
-let lastScratchTime = 0;
-const throttleMs = 16; // ~60fps
+let lastX = null;
+let lastY = null;
 
 // Function to play the sound
 function playSound() {
@@ -153,6 +149,8 @@ function stopSoundOnLeave() {
     if (isScratching) {
         isScratching = false;
         isSoundPlaying = false;
+        lastX = null;
+        lastY = null;
     }
 }
 
@@ -165,15 +163,11 @@ scratchCanvas.addEventListener('mousedown', (e) => {
 });
 scratchCanvas.addEventListener('mouseup', () => {
     isScratching = false;
+    lastX = null;
+    lastY = null;
 });
 scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
-scratchCanvas.addEventListener('mousemove', (e) => {
-    const now = Date.now();
-    if (now - lastScratchTime >= throttleMs) {
-        lastScratchTime = now;
-        scratch(e);
-    }
-});
+scratchCanvas.addEventListener('mousemove', scratch);
 scratchCanvas.addEventListener('touchstart', (e) => {
     console.log('Touchstart event');
     initializeAudio();
@@ -182,14 +176,12 @@ scratchCanvas.addEventListener('touchstart', (e) => {
 });
 scratchCanvas.addEventListener('touchend', () => {
     isScratching = false;
+    lastX = null;
+    lastY = null;
 });
 scratchCanvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    const now = Date.now();
-    if (now - lastScratchTime >= throttleMs) {
-        lastScratchTime = now;
-        scratch(e.touches[0]);
-    }
+    scratch(e.touches[0]);
 });
 
 function scratch(event) {
@@ -200,17 +192,32 @@ function scratch(event) {
         const scaleY = scratchCanvas.height / rect.height;
         const x = (event.clientX - rect.left) * scaleX;
         const y = (event.clientY - rect.top) * scaleY;
+
         scratchCtx.globalCompositeOperation = 'destination-out';
         scratchCtx.beginPath();
+        // Draw circle at current point
         scratchCtx.arc(x, y, brushRadius, 0, Math.PI * 2);
         scratchCtx.fill();
+        // Connect with previous point if exists
+        if (lastX !== null && lastY !== null) {
+            scratchCtx.beginPath();
+            scratchCtx.moveTo(lastX, lastY);
+            scratchCtx.lineTo(x, y);
+            scratchCtx.lineWidth = brushRadius * 2;
+            scratchCtx.strokeStyle = 'rgba(0, 0, 0, 1)';
+            scratchCtx.stroke();
+        }
+        lastX = x;
+        lastY = y;
+
         const scratchedArea = Math.PI * brushRadius * brushRadius;
         scratchedPixels += scratchedArea;
-        console.log(`Scratch at x: ${x.toFixed(2)}, y: ${y.toFixed(2)}, scratchedPixels: ${scratchedPixels.toFixed(2)}, threshold: ${intervalThreshold}`);
+        console.log(`Scratch at x: ${x.toFixed(2)}, y: ${y.toFixed(2)}, lastX: ${lastX?.toFixed(2) || 'null'}, lastY: ${lastY?.toFixed(2) || 'null'}, scratchedPixels: ${scratchedPixels.toFixed(2)}, threshold: ${intervalThreshold}`);
         checkReveal();
-        // Check sound replay less frequently
+
+        // Check sound replay asynchronously
         if (isScratching && sound && sound.ended && !isSoundPlaying) {
-            playSound();
+            setTimeout(playSound, 0);
         }
     } catch (err) {
         console.error('Error in scratch function:', err);
@@ -236,13 +243,10 @@ function spawnHearts(count, canvasRect) {
             heart.textContent = hearts[0];
             // Spawn in a 100px range centered at card's x-center (300px)
             const spawnX = 250 + Math.random() * 100; // 250-350px
-            // Heart-shaped path: assign to left or right lobe
+            // Heart-shaped path on fall: assign to left or right lobe
             const isLeftLobe = Math.random() < 0.5;
-            // Left lobe: move left (-60px) at peak, right (+20px) at fall
-            // Right lobe: move right (+60px) at peak, left (-20px) at fall
-            const xSpreadPeak = isLeftLobe ? -60 : 60;
+            // Left lobe: fall to x +20px; Right lobe: fall to x -20px
             const xSpreadFall = isLeftLobe ? 20 : -20;
-            heart.style.setProperty('--x-spread-peak', `${xSpreadPeak}px`);
             heart.style.setProperty('--x-spread-fall', `${xSpreadFall}px`);
             // Position relative to card
             heart.style.left = `${spawnX}px`;
@@ -251,8 +255,8 @@ function spawnHearts(count, canvasRect) {
             // Remove after animation
             setTimeout(() => {
                 heart.remove();
-            }, 2500);
-            console.log(`Spawned heart ${i + 1}/${count} at x: ${spawnX}, y: ${spawnY}, lobe: ${isLeftLobe ? 'left' : 'right'}`);
+            }, 2800);
+            console.log(`Spawned heart ${i + 1}/${count} at x: ${spawnX}, y: ${spawnY}, lobe: ${isLeftLobe ? 'left' : 'right'}, xSpreadFall: ${xSpreadFall}`);
         }
     } catch (err) {
         console.error('Error in spawnHearts:', err);

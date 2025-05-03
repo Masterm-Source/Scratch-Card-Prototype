@@ -126,11 +126,13 @@ drawScratchLayer();
 // Scratching logic on the scratch canvas
 let isScratching = false;
 let scratchedPixels = 0;
-const brushRadius = 12;
+const brushRadius = 10; // Reduced for performance
 const totalPixels = scratchCanvas.width * scratchCanvas.height;
 const intervalThreshold = totalPixels * 0.05;
 let lastBurstAt = 0;
 let isSoundPlaying = false;
+let lastScratchTime = 0;
+const throttleMs = 16; // ~60fps
 
 // Function to play the sound
 function playSound() {
@@ -165,7 +167,13 @@ scratchCanvas.addEventListener('mouseup', () => {
     isScratching = false;
 });
 scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
-scratchCanvas.addEventListener('mousemove', scratch);
+scratchCanvas.addEventListener('mousemove', (e) => {
+    const now = Date.now();
+    if (now - lastScratchTime >= throttleMs) {
+        lastScratchTime = now;
+        scratch(e);
+    }
+});
 scratchCanvas.addEventListener('touchstart', (e) => {
     console.log('Touchstart event');
     initializeAudio();
@@ -177,7 +185,11 @@ scratchCanvas.addEventListener('touchend', () => {
 });
 scratchCanvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
-    scratch(e.touches[0]);
+    const now = Date.now();
+    if (now - lastScratchTime >= throttleMs) {
+        lastScratchTime = now;
+        scratch(e.touches[0]);
+    }
 });
 
 function scratch(event) {
@@ -191,16 +203,13 @@ function scratch(event) {
         scratchCtx.globalCompositeOperation = 'destination-out';
         scratchCtx.beginPath();
         scratchCtx.arc(x, y, brushRadius, 0, Math.PI * 2);
-        scratchCtx.fillStyle = 'rgba(0, 0, 0, 1)';
         scratchCtx.fill();
-
         const scratchedArea = Math.PI * brushRadius * brushRadius;
         scratchedPixels += scratchedArea;
-        console.log('Scratched pixels:', scratchedPixels, 'Interval threshold:', intervalThreshold);
+        console.log(`Scratch at x: ${x.toFixed(2)}, y: ${y.toFixed(2)}, scratchedPixels: ${scratchedPixels.toFixed(2)}, threshold: ${intervalThreshold}`);
         checkReveal();
-
-        // Replay sound if it has ended
-        if (isScratching && (sound.ended || !isSoundPlaying)) {
+        // Check sound replay less frequently
+        if (isScratching && sound && sound.ended && !isSoundPlaying) {
             playSound();
         }
     } catch (err) {
@@ -210,41 +219,54 @@ function scratch(event) {
 
 // Function to spawn heart emojis
 function spawnHearts(count, canvasRect) {
-    const hearts = ['❤️'];
-    const card = document.querySelector('.card');
-    const canvasTopRelativeToCard = canvasRect.top - card.getBoundingClientRect().top;
-    const spawnY = canvasTopRelativeToCard + canvasRect.height; // Bottom of canvas
-    for (let i = 0; i < count; i++) {
-        const heart = document.createElement('span');
-        heart.className = 'heart-emoji';
-        heart.textContent = hearts[0];
-        // Spawn in a 100px range centered at card's x-center (300px)
-        const spawnX = 250 + Math.random() * 100; // 250-350px
-        // Heart-shaped path: assign to left or right lobe
-        const isLeftLobe = Math.random() < 0.5;
-        // Left lobe: move left (-60px) at peak, right (+20px) at fall
-        // Right lobe: move right (+60px) at peak, left (-20px) at fall
-        const xSpread = isLeftLobe ? '-60px,20px' : '60px,-20px';
-        heart.style.setProperty('--x-spread', xSpread);
-        // Position relative to card
-        heart.style.left = `${spawnX}px`;
-        heart.style.top = `${spawnY}px`;
-        card.appendChild(heart);
-        // Remove after animation
-        setTimeout(() => {
-            heart.remove();
-        }, 2500);
-        console.log(`Spawned heart at x: ${spawnX}, y: ${spawnY}, lobe: ${isLeftLobe ? 'left' : 'right'}`);
+    try {
+        const hearts = ['❤️'];
+        const card = document.querySelector('.card');
+        if (!card) {
+            console.error('Card element not found');
+            return;
+        }
+        const cardRect = card.getBoundingClientRect();
+        const canvasTopRelativeToCard = canvasRect.top - cardRect.top;
+        const spawnY = canvasTopRelativeToCard + canvasRect.height; // Bottom of canvas
+        console.log(`Canvas rect: top=${canvasRect.top}, height=${canvasRect.height}, card top=${cardRect.top}, spawnY=${spawnY}`);
+        for (let i = 0; i < count; i++) {
+            const heart = document.createElement('span');
+            heart.className = 'heart-emoji';
+            heart.textContent = hearts[0];
+            // Spawn in a 100px range centered at card's x-center (300px)
+            const spawnX = 250 + Math.random() * 100; // 250-350px
+            // Heart-shaped path: assign to left or right lobe
+            const isLeftLobe = Math.random() < 0.5;
+            // Left lobe: move left (-60px) at peak, right (+20px) at fall
+            // Right lobe: move right (+60px) at peak, left (-20px) at fall
+            const xSpreadPeak = isLeftLobe ? -60 : 60;
+            const xSpreadFall = isLeftLobe ? 20 : -20;
+            heart.style.setProperty('--x-spread-peak', `${xSpreadPeak}px`);
+            heart.style.setProperty('--x-spread-fall', `${xSpreadFall}px`);
+            // Position relative to card
+            heart.style.left = `${spawnX}px`;
+            heart.style.top = `${spawnY}px`;
+            card.appendChild(heart);
+            // Remove after animation
+            setTimeout(() => {
+                heart.remove();
+            }, 2500);
+            console.log(`Spawned heart ${i + 1}/${count} at x: ${spawnX}, y: ${spawnY}, lobe: ${isLeftLobe ? 'left' : 'right'}`);
+        }
+    } catch (err) {
+        console.error('Error in spawnHearts:', err);
     }
 }
 
 // Heart animation logic
 function checkReveal() {
     try {
+        console.log(`Checking reveal: scratchedPixels=${scratchedPixels}, intervalThreshold=${intervalThreshold}, lastBurstAt=${lastBurstAt}`);
         const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
         if (intervalsPassed > lastBurstAt) {
             lastBurstAt = intervalsPassed;
-            console.log('Spawning heart emojis at interval:', intervalsPassed);
+            console.log(`Triggering heart burst at interval: ${intervalsPassed}`);
             // Get canvas rectangle
             const rect = scratchCanvas.getBoundingClientRect();
             // First burst: 30 hearts
@@ -258,3 +280,14 @@ function checkReveal() {
         console.error('Error in checkReveal:', err);
     }
 }
+
+// Test heart spawn on load to debug rendering
+window.addEventListener('load', () => {
+    console.log('Page loaded, testing heart spawn');
+    try {
+        const rect = scratchCanvas.getBoundingClientRect();
+        spawnHearts(1, rect); // Spawn one test heart
+    } catch (err) {
+        console.error('Error in test heart spawn:', err);
+    }
+});

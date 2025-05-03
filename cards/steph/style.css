@@ -4,7 +4,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height:  personally, I like the card to be centered on the page, can you help with that? 100vh;
     background: #1a1a1a;
 }
 
@@ -26,15 +26,25 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 50%);
+    background: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, transparent 30%) no-repeat;
+    background-size: 200px 200px; /* Smaller gradient circle */
     opacity: 0;
     animation: shimmer 2.5s infinite;
+    z-index: 0; /* Behind content */
 }
 
 @keyframes shimmer {
-    0% { opacity: 0; transform: translateX(-100%); }
-    50% { opacity: 0.8; }
-    100% { opacity: 0; transform: translateX(100%); }
+    0% {
+        opacity: 0;
+        background-position: -300px center; /* Start left of card */
+    }
+    50% {
+        opacity: 0.6; /* Softer peak opacity */
+    }
+    100% {
+        opacity: 0;
+        background-position: 900px center; /* End right of card */
+    }
 }
 
 .header {
@@ -48,6 +58,7 @@ body {
     color: #fff;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     line-height: 50px;
+    z-index: 1; /* Above shimmer */
 }
 
 .floral-cluster {
@@ -135,5 +146,8 @@ body {
     .heart-emoji {
         font-size: 5vw;
         text-shadow: 0 0 0.83vw rgba(255, 0, 0, 0.8);
+    }
+    .card::before {
+        background-size: 33.33vw 33.33vw; /* Scale gradient on mobile */
     }
 }

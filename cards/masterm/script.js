@@ -112,27 +112,10 @@ function drawScratchLayer() {
     }
 }
 
-// Initialize sparkles
-function initializeSparkles() {
-    const sparkleContainer = document.querySelector('.sparkle-container');
-    const sparkleCount = 20;
-    for (let i = 0; i < sparkleCount; i++) {
-        const sparkle = document.createElement('span');
-        sparkle.className = 'sparkle';
-        sparkle.textContent = '✦';
-        sparkle.style.left = `${Math.random() * 100}%`;
-        sparkle.style.top = `${Math.random() * 100}%`;
-        sparkle.style.setProperty('--delay', Math.random());
-        sparkleContainer.appendChild(sparkle);
-    }
-    console.log('Initialized', sparkleCount, 'sparkles');
-}
-
-// Initialize canvases and sparkles
+// Initialize canvases
 console.log('Initializing canvases');
 drawMessage();
 drawScratchLayer();
-initializeSparkles();
 
 // Scratching logic
 let isScratching = false;
@@ -285,18 +268,13 @@ function spawnHearts(count, canvasRect) {
 // Update shimmer opacity
 function updateShimmerOpacity() {
     const opacity = Math.max(0, 1 - (scratchedPixels / totalPixels));
-    const sparkles = document.querySelectorAll('.sparkle');
     const chevrons = document.querySelectorAll('.chevron');
-    sparkles.forEach(sparkle => {
-        sparkle.style.opacity = opacity;
-    });
     chevrons.forEach(chevron => {
         chevron.style.opacity = opacity;
     });
     if (scratchedPixels > totalPixels * 0.95) {
-        sparkles.forEach(sparkle => sparkle.remove());
         chevrons.forEach(chevron => chevron.remove());
-        console.log('Removed sparkles and chevrons');
+        console.log('Removed chevrons');
     }
 }
 

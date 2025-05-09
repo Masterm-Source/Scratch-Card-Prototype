@@ -272,22 +272,9 @@ function spawnHearts(count, canvasRect) {
     }
 }
 
-function updateShimmerOpacity() {
-    const opacity = Math.max(0, 1 - (scratchedPixels / totalPixels));
-    const chevrons = document.querySelectorAll('.chevron');
-    chevrons.forEach(chevron => {
-        chevron.style.opacity = opacity;
-    });
-    if (scratchedPixels > totalPixels * 0.95) {
-        chevrons.forEach(chevron => chevron.remove());
-        console.log('Removed chevrons');
-    }
-}
-
 function checkReveal() {
     try {
         console.log(`Checking reveal: scratchedPixels=${scratchedPixels}, intervalThreshold=${intervalThreshold}, lastBurstAt=${lastBurstAt}`);
-        updateShimmerOpacity();
         const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
         if (intervalsPassed > lastBurstAt) {
             lastBurstAt = intervalsPassed;

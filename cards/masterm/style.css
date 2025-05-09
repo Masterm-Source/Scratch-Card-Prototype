@@ -18,7 +18,8 @@ body {
     border-radius: 15px;
     box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.3);
     position: relative;
-    overflow: visible;
+    overflow: hidden; /* Prevent shimmer spillover */
+    isolation: isolate; /* Isolate rendering */
 }
 
 .card::before {
@@ -28,19 +29,51 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 50%);
-    background-size: 600px 450px; /* Match card */
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.6), transparent);
+    background-size: 200px 450px; /* Narrow, sharp band */
     opacity: 0;
     animation: shimmer 2.5s infinite;
     z-index: 0;
-    clip-path: inset(0 0 0 0);
-    overflow: hidden; /* Reinforce clipping */
+    clip-path: inset(0 0 0 0 round 15px); /* Match border-radius */
+    overflow: hidden;
+    contain: strict; /* Strict rendering bounds */
 }
 
 @keyframes shimmer {
-    0% { opacity: 0; transform: translateX(-300px); } /* Center gradient */
-    50% { opacity: 0.8; }
-    100% { opacity: 0; transform: translateX(300px); }
+    0% {
+        opacity: 0;
+        transform: translateX(-400px) rotate(2deg);
+    }
+    50% {
+        opacity: 0.6; /* Subtle, elegant */
+        transform: translateX(0) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(400px) rotate(-2deg);
+    }
+}
+
+.card-sparkle-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1; /* Above shimmer, below content */
+}
+
+.card-sparkle {
+    position: absolute;
+    font-size: 5px;
+    color: #fff;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    animation: cardSparkle 2.5s infinite;
+    animation-delay: calc(var(--delay) * 1s);
+}
+
+@keyframes cardSparkle {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1.2); }
 }
 
 .header {
@@ -54,7 +87,7 @@ body {
     color: #fff;
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     line-height: 50px;
-    z-index: 1;
+    z-index: 2;
 }
 
 .floral-cluster {
@@ -65,7 +98,7 @@ body {
     height: 260px;
     background: none !important;
     display: block;
-    z-index: 1;
+    z-index: 2;
     image-rendering: pixelated;
 }
 
@@ -86,11 +119,11 @@ body {
 
 .chevron {
     position: absolute;
-    font-size: 40px; /* Big arrows */
+    font-size: 40px;
     font-weight: bold;
     color: #fff;
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-    z-index: 3; /* Above canvas */
+    z-index: 3;
     animation: chevronShimmer 1s infinite;
 }
 
@@ -142,6 +175,9 @@ body {
         max-width: 600px;
         max-height: 450px;
     }
+    .card::before {
+        background-size: 33.33vw 67.5vw; /* Scaled for mobile */
+    }
     .canvas-container {
         width: 83.33vw;
         height: 25vw;
@@ -163,11 +199,15 @@ body {
         text-shadow: 0 0 1.33vw rgba(255, 0, 0, 1);
     }
     .chevron {
-        font-size: 6.67vw; /* Scaled big arrows */
+        font-size: 6.67vw;
         text-shadow: 0 0 1.33vw rgba(255, 255, 255, 0.8);
     }
     .chevron.left.top { left: 1.67vw; top: 8.33vw; }
     .chevron.left.bottom { left: 1.67vw; top: 16.67vw; }
     .chevron.right.top { right: 1.67vw; top: 8.33vw; }
     .chevron.right.bottom { right: 1.67vw; top: 16.67vw; }
+    .card-sparkle {
+        font-size: 0.83vw;
+        text-shadow: 0 0 0.83vw rgba(255, 255, 255, 0.8);
+    }
 }

@@ -29,8 +29,8 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, rgba(200,200,200,0.8) 0%, transparent 100%);
-    background-size: 30px 450px; /* Single, thin line */
+    background: linear-gradient(90deg, transparent 0%, rgba(200,200,200,0.6) 50%, transparent 100%);
+    background-size: 20px 450px; /* Single, thin line */
     opacity: 0;
     animation: shimmer 2.5s infinite;
     z-index: 0;
@@ -41,7 +41,7 @@ body {
 
 @keyframes shimmer {
     0% { opacity: 0; transform: translateX(-600px); }
-    50% { opacity: 0.5; transform: translateX(0); }
+    50% { opacity: 0.4; transform: translateX(0); }
     100% { opacity: 0; transform: translateX(600px); }
 }
 
@@ -108,26 +108,6 @@ body {
     overflow: visible;
 }
 
-.chevron {
-    position: absolute;
-    font-size: 40px;
-    font-weight: bold;
-    color: #fff;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-    z-index: 3;
-    animation: chevronShimmer 1s infinite;
-}
-
-.chevron.left.top { left: 10px; top: 50px; }
-.chevron.left.bottom { left: 10px; top: 100px; }
-.chevron.right.top { right: 10px; top: 50px; }
-.chevron.right.bottom { right: 10px; top: 100px; }
-
-@keyframes chevronShimmer {
-    0%, 100% { opacity: 0.5; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.3); }
-}
-
 .heart-emoji {
     position: absolute;
     font-size: 30px;
@@ -154,7 +134,7 @@ body {
         max-height: 450px;
     }
     .card::before {
-        background-size: 5vw 67.5vw; /* Scaled thin line */
+        background-size: 3.33vw 67.5vw; /* Scaled thin line */
     }
     .canvas-container {
         width: 83.33vw;
@@ -176,14 +156,6 @@ body {
         font-size: 5vw;
         text-shadow: 0 0 1.33vw rgba(255, 0, 0, 1);
     }
-    .chevron {
-        font-size: 6.67vw;
-        text-shadow: 0 0 1.33vw rgba(255, 255, 255, 0.8);
-    }
-    .chevron.left.top { left: 1.67vw; top: 8.33vw; }
-    .chevron.left.bottom { left: 1.67vw; top: 16.67vw; }
-    .chevron.right.top { right: 1.67vw; top: 8.33vw; }
-    .chevron.right.bottom { right: 1.67vw; top: 16.67vw; }
     .card-sparkle {
         font-size: 0.67vw;
         text-shadow: 0 0 0.67vw rgba(255, 255, 255, 0.9);

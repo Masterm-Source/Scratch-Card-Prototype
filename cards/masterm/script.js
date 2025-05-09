@@ -1,301 +1,163 @@
-const messageCanvas = document.getElementById('messageCanvas');
-const scratchCanvas = document.getElementById('scratchCanvas');
-const messageCtx = messageCanvas.getContext('2d');
-const scratchCtx = scratchCanvas.getContext('2d');
-
-messageCanvas.width = 500;
-messageCanvas.height = 150;
-scratchCanvas.width = 500;
-scratchCanvas.height = 150;
-
-let sound = null;
-let isAudioInitialized = false;
-let lastSoundPlayTime = 0;
-const soundDebounceMs = 100;
-
-function initializeAudio() {
-    if (!isAudioInitialized) {
-        sound = new Audio('assets/sound7.mp3');
-        sound.loop = false;
-        sound.volume = 1.0;
-        sound.src = 'data:audio/mpeg;base64,/+MYxAAAAANIAAAAAExBTUUzLjEwMAAAAAA';
-        sound.play().catch(err => console.log('Silent sound play error:', err));
-        sound.src = 'assets/sound7.mp3';
-        isAudioInitialized = true;
-        console.log('Audio initialized');
-        sound.addEventListener('ended', () => {
-            isSoundPlaying = false;
-            console.log('Sound ended');
-            if (isScratching) {
-                setTimeout(playSound, soundDebounceMs);
-            }
-        });
-    }
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    height: 100vh;
+    overflow: auto;
+    background: #1a1a1a;
 }
 
-function drawMessage() {
-    try {
-        messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-        messageCtx.font = '18px Comic Sans MS';
-        messageCtx.fillStyle = '#fff';
-        messageCtx.textAlign = 'center';
-        messageCtx.textBaseline = 'middle';
-        const message = "Cheers to the memories we've made and the ones yet to come, you're my confidant, my advocate, my best friend, my everything. I feel safest and happiest when I'm in your arms. Thank you for being you. I love you🤩!!";
-        const maxWidth = messageCanvas.width - 20;
-        const lineHeight = 20;
-        const words = message.split(' ');
-        let line = '';
-        let lines = [];
-
-        for (let i = 0; i < words.length; i++) {
-            const testLine = line + words[i] + ' ';
-            const metrics = messageCtx.measureText(testLine);
-            if (metrics.width > maxWidth && line !== '') {
-                lines.push(line);
-                line = words[i] + ' ';
-            } else {
-                line = testLine;
-            }
-        }
-        lines.push(line);
-
-        const totalHeight = lines.length * lineHeight;
-        let y = (messageCanvas.height - totalHeight) / 2 + lineHeight / 2;
-
-        lines.forEach((line, index) => {
-            messageCtx.fillText(line, messageCanvas.width / 2, y + (index * lineHeight));
-        });
-        console.log('Message drawn successfully with', lines.length, 'lines');
-    } catch (err) {
-        console.error('Error drawing message:', err);
-    }
+.card {
+    width: 600px;
+    height: 450px;
+    background: url('assets/bk-bg.jpg') no-repeat center center;
+    background-size: cover;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.3);
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
 }
 
-function drawScratchLayer() {
-    try {
-        const scratchLayer = new Image();
-        scratchLayer.src = 'assets/scratch-section7.jpg';
-        scratchLayer.onload = () => {
-            scratchCtx.drawImage(scratchLayer, 0, 0, scratchCanvas.width, scratchCanvas.height);
-            scratchCtx.strokeStyle = '#000';
-            scratchCtx.lineWidth = 2;
-            scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-            scratchCtx.font = '40px Comic Sans MS';
-            scratchCtx.fillStyle = '#000';
-            scratchCtx.textAlign = 'center';
-            scratchCtx.textBaseline = 'middle';
-            scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
-            console.log('Scratch layer drawn successfully');
-        };
-        scratchLayer.onerror = () => {
-            console.error('Failed to load scratch-section7.jpg. Using gold fallback.');
-            scratchCtx.fillStyle = '#FFD700';
-            scratchCtx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-            scratchCtx.strokeStyle = '#000';
-            scratchCtx.lineWidth = 2;
-            scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-            scratchCtx.font = '40px Comic Sans MS';
-            scratchCtx.fillStyle = '#000';
-            scratchCtx.textAlign = 'center';
-            scratchCtx.textBaseline = 'middle';
-            scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
-            console.log('Scratch layer drawn with fallback');
-        };
-    } catch (err) {
-        console.error('Error drawing scratch layer:', err);
-    }
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 50%);
+    background-size: 600px 450px;
+    opacity: 0;
+    animation: shimmer 2.5s infinite linear;
+    z-index: 0;
+    clip-path: inset(0 0 0 0 round 15px);
+    overflow: hidden;
+    contain: strict;
 }
 
-function initializeCardSparkles() {
-    const sparkleContainer = document.querySelector('.card-sparkle-container');
-    const sparkleCount = 30;
-    for (let i = 0; i < sparkleCount; i++) {
-        const sparkle = document.createElement('span');
-        sparkle.className = 'card-sparkle';
-        sparkle.textContent = '✦';
-        sparkle.style.left = `${Math.random() * 100}%`;
-        sparkle.style.top = `${Math.random() * 100}%`;
-        sparkle.style.setProperty('--delay', Math.random());
-        if (Math.random() < 0.2) {
-            sparkle.style.setProperty('--color', 'rgba(200,200,255,0.9)'); // Prismatic
-        }
-        sparkleContainer.appendChild(sparkle);
-    }
-    console.log('Initialized', sparkleCount, 'card sparkles');
+@keyframes shimmer {
+    0% { opacity: 0; transform: translateX(-600px); }
+    50% { opacity: 0.8; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(600px); }
 }
 
-console.log('Initializing canvases');
-drawMessage();
-drawScratchLayer();
-initializeCardSparkles();
-
-let isScratching = false;
-let scratchedPixels = 0;
-const brushRadius = 15;
-const totalPixels = scratchCanvas.width * scratchCanvas.height;
-const intervalThreshold = totalPixels * 0.05;
-let lastBurstAt = 0;
-let isSoundPlaying = false;
-let lastX = null;
-let lastY = null;
-
-function playSound() {
-    if (isAudioInitialized && sound && !isSoundPlaying) {
-        const now = Date.now();
-        if (now - lastSoundPlayTime < soundDebounceMs) {
-            console.log('Sound play debounced');
-            return;
-        }
-        isSoundPlaying = true;
-        lastSoundPlayTime = now;
-        sound.currentTime = 0;
-        sound.play().then(() => {
-            console.log('Sound playing, duration:', sound.duration);
-        }).catch(err => {
-            console.error('Sound play error:', err.message, err.name);
-            isSoundPlaying = false;
-        });
-    }
+.card-sparkle-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
 }
 
-function stopSoundOnLeave() {
-    if (isScratching) {
-        isScratching = false;
-        isSoundPlaying = false;
-        lastX = null;
-        lastY = null;
-    }
+.card-sparkle {
+    position: absolute;
+    font-size: 4px;
+    color: var(--color, #fff);
+    text-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
+    animation: cardSparkle 1s infinite;
+    animation-delay: calc(var(--delay) * 2s);
 }
 
-scratchCanvas.addEventListener('mousedown', (e) => {
-    console.log('Mousedown event');
-    initializeAudio();
-    isScratching = true;
-    playSound();
-});
-scratchCanvas.addEventListener('mouseup', () => {
-    isScratching = false;
-    lastX = null;
-    lastY = null;
-});
-scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
-scratchCanvas.addEventListener('mousemove', scratch);
-scratchCanvas.addEventListener('touchstart', (e) => {
-    console.log('Touchstart event');
-    initializeAudio();
-    isScratching = true;
-    playSound();
-});
-scratchCanvas.addEventListener('touchend', () => {
-    isScratching = false;
-    lastX = null;
-    lastY = null;
-});
-scratchCanvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    scratch(e.touches[0]);
-});
-
-function scratch(event) {
-    if (!isScratching) return;
-    try {
-        const rect = scratchCanvas.getBoundingClientRect();
-        const scaleX = scratchCanvas.width / rect.width;
-        const scaleY = scratchCanvas.height / rect.height;
-        const x = (event.clientX - rect.left) * scaleX;
-        const y = (event.clientY - rect.top) * scaleY;
-
-        scratchCtx.globalCompositeOperation = 'destination-out';
-        scratchCtx.beginPath();
-        scratchCtx.arc(x, y, brushRadius, 0, Math.PI * 2);
-        scratchCtx.fill();
-        if (lastX !== null && lastY !== null) {
-            scratchCtx.beginPath();
-            scratchCtx.moveTo(lastX, lastY);
-            scratchCtx.lineTo(x, y);
-            scratchCtx.lineWidth = brushRadius * 2;
-            scratchCtx.strokeStyle = 'rgba(0, 0, 0, 1)';
-            scratchCtx.stroke();
-        }
-        lastX = x;
-        lastY = y;
-
-        const scratchedArea = Math.PI * brushRadius * brushRadius;
-        scratchedPixels += scratchedArea;
-        console.log(`Scratch at x: ${x.toFixed(2)}, y: ${y.toFixed(2)}, lastX: ${lastX?.toFixed(2) || 'null'}, lastY: ${lastY?.toFixed(2) || 'null'}, scratchedPixels: ${scratchedPixels.toFixed(2)}, threshold: ${intervalThreshold}`);
-        checkReveal();
-    } catch (err) {
-        console.error('Error in scratch function:', err);
-    }
+@keyframes cardSparkle {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1.5); }
 }
 
-function spawnHearts(count, canvasRect) {
-    try {
-        const hearts = ['❤️'];
-        const card = document.querySelector('.card');
-        if (!card) {
-            console.error('Card element not found');
-            return;
-        }
-        const cardRect = card.getBoundingClientRect();
-        const canvasTopRelativeToCard = canvasRect.top - cardRect.top;
-        const spawnY = canvasTopRelativeToCard + canvasRect.height;
-        const spawnX = 300;
-        console.log(`Canvas rect: top=${canvasRect.top}, height=${canvasRect.height}, card top=${cardRect.top}, spawnX=${spawnX}, spawnY=${spawnY}`);
-        for (let i = 0; i < count; i++) {
-            const heart = document.createElement('span');
-            heart.className = 'heart-emoji';
-            heart.textContent = hearts[0];
-            const riseDuration = 0.6 + Math.random() * 0.8;
-            const fallDuration = 2 + Math.random() * 1;
-            const totalDuration = riseDuration + fallDuration;
-            const xSpreadPeak = (Math.random() - 0.5) * 500;
-            const yPeak = -400 + Math.random() * 300;
-            const isLeftLobe = Math.random() < 0.5;
-            const xSpreadFall = isLeftLobe ? 20 : -20;
-            const yFall = 300 + Math.random() * 150;
-            heart.style.setProperty('--duration', `${totalDuration}s`);
-            heart.style.setProperty('--x-spread-peak', `${xSpreadPeak}px`);
-            heart.style.setProperty('--y-peak', `${yPeak}px`);
-            heart.style.setProperty('--x-spread-fall', `${xSpreadFall}px`);
-            heart.style.setProperty('--y-fall', `${yFall}px`);
-            heart.style.left = `${spawnX}px`;
-            heart.style.top = `${spawnY}px`;
-            card.appendChild(heart);
-            setTimeout(() => {
-                heart.remove();
-            }, totalDuration * 1000);
-            console.log(`Spawned heart ${i + 1}/${count}: x=${spawnX}, y=${spawnY}, rise=${riseDuration}s, fall=${fallDuration}s, peak=(${xSpreadPeak}, ${yPeak}), fall=(${xSpreadFall}, ${yFall}), lobe=${isLeftLobe ? 'left' : 'right'}`);
-        }
-    } catch (err) {
-        console.error('Error in spawnHearts:', err);
-    }
+.header {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 320px;
+    height: 50px;
+    font-family: 'Comic Sans MS', cursive;
+    font-size: 34px;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    line-height: 50px;
+    z-index: 2;
 }
 
-function checkReveal() {
-    try {
-        console.log(`Checking reveal: scratchedPixels=${scratchedPixels}, intervalThreshold=${intervalThreshold}, lastBurstAt=${lastBurstAt}`);
-        const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
-        if (intervalsPassed > lastBurstAt) {
-            lastBurstAt = intervalsPassed;
-            console.log(`Triggering heart burst at interval: ${intervalsPassed}`);
-            const rect = scratchCanvas.getBoundingClientRect();
-            spawnHearts(50, rect);
-            setTimeout(() => {
-                spawnHearts(40, rect);
-            }, 100);
-        }
-    } catch (err) {
-        console.error('Error in checkReveal:', err);
-    }
+.floral-cluster {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 400px;
+    height: 260px;
+    background: none !important;
+    display: block;
+    z-index: 2;
+    image-rendering: pixelated;
 }
 
-window.addEventListener('load', () => {
-    console.log('Page loaded, testing heart spawn');
-    try {
-        const rect = scratchCanvas.getBoundingClientRect();
-        spawnHearts(1, rect);
-    } catch (err) {
-        console.error('Error in test heart spawn:', err);
+.canvas-container {
+    position: absolute;
+    width: 500px;
+    height: 150px;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: url('assets/bk-bg.jpg') no-repeat;
+    background-size: 600px 450px;
+    background-position: -50px -300px;
+    border-radius: 5px;
+    z-index: 0;
+    overflow: visible;
+}
+
+.heart-emoji {
+    position: absolute;
+    font-size: 30px;
+    color: red;
+    pointer-events: none;
+    z-index: 10;
+    text-shadow: 0 0 8px rgba(255, 0, 0, 1);
+    animation: heartsRiseFall var(--duration) forwards;
+    animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes heartsRiseFall {
+    0% { opacity: 1; transform: translate(0, 0); }
+    25% { opacity: 1; transform: translate(var(--x-spread-peak), var(--y-peak)); animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19); }
+    95% { opacity: 1; transform: translate(var(--x-spread-fall), var(--y-fall)); }
+    100% { opacity: 0; transform: translate(var(--x-spread-fall), var(--y-fall)); }
+}
+
+@media (max-width: 620px) {
+    .card {
+        width: 90vw;
+        height: 67.5vw;
+        max-width: 600px;
+        max-height: 450px;
     }
-});
+    .card::before {
+        background-size: 90vw 67.5vw;
+    }
+    .canvas-container {
+        width: 83.33vw;
+        height: 25vw;
+        background-size: 90vw 67.5vw;
+        background-position: -7.5vw -45vw;
+    }
+    .floral-cluster {
+        width: 66.67vw;
+        height: 43.33vw;
+    }
+    .header {
+        width: 53.33vw;
+        height: 8.33vw;
+        font-size: 5.67vw;
+        line-height: 8.33vw;
+    }
+    .heart-emoji {
+        font-size: 5vw;
+        text-shadow: 0 0 1.33vw rgba(255, 0, 0, 1);
+    }
+    .card-sparkle {
+        font-size: 0.67vw;
+        text-shadow: 0 0 0.67vw rgba(255, 255, 255, 0.9);
+    }
+}

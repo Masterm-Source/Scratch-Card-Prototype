@@ -1,22 +1,18 @@
-// Get both canvases
 const messageCanvas = document.getElementById('messageCanvas');
 const scratchCanvas = document.getElementById('scratchCanvas');
 const messageCtx = messageCanvas.getContext('2d');
 const scratchCtx = scratchCanvas.getContext('2d');
 
-// Set canvas dimensions
 messageCanvas.width = 500;
 messageCanvas.height = 150;
 scratchCanvas.width = 500;
 scratchCanvas.height = 150;
 
-// Preload sound
 let sound = null;
 let isAudioInitialized = false;
 let lastSoundPlayTime = 0;
 const soundDebounceMs = 100;
 
-// Initialize audio
 function initializeAudio() {
     if (!isAudioInitialized) {
         sound = new Audio('assets/sound7.mp3');
@@ -37,7 +33,6 @@ function initializeAudio() {
     }
 }
 
-// Draw message
 function drawMessage() {
     try {
         messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
@@ -76,7 +71,6 @@ function drawMessage() {
     }
 }
 
-// Draw scratch layer
 function drawScratchLayer() {
     try {
         const scratchLayer = new Image();
@@ -112,10 +106,9 @@ function drawScratchLayer() {
     }
 }
 
-// Initialize card sparkles
 function initializeCardSparkles() {
     const sparkleContainer = document.querySelector('.card-sparkle-container');
-    const sparkleCount = 20;
+    const sparkleCount = 30;
     for (let i = 0; i < sparkleCount; i++) {
         const sparkle = document.createElement('span');
         sparkle.className = 'card-sparkle';
@@ -123,22 +116,19 @@ function initializeCardSparkles() {
         sparkle.style.left = `${Math.random() * 100}%`;
         sparkle.style.top = `${Math.random() * 100}%`;
         sparkle.style.setProperty('--delay', Math.random());
-        // Add prismatic hint to 10% of sparkles
-        if (Math.random() < 0.1) {
-            sparkle.style.setProperty('--color', 'rgba(200,200,255,0.8)');
+        if (Math.random() < 0.2) {
+            sparkle.style.setProperty('--color', 'rgba(200,200,255,0.9)'); // Prismatic
         }
         sparkleContainer.appendChild(sparkle);
     }
     console.log('Initialized', sparkleCount, 'card sparkles');
 }
 
-// Initialize canvases and sparkles
 console.log('Initializing canvases');
 drawMessage();
 drawScratchLayer();
 initializeCardSparkles();
 
-// Scratching logic
 let isScratching = false;
 let scratchedPixels = 0;
 const brushRadius = 15;
@@ -149,7 +139,6 @@ let isSoundPlaying = false;
 let lastX = null;
 let lastY = null;
 
-// Play sound
 function playSound() {
     if (isAudioInitialized && sound && !isSoundPlaying) {
         const now = Date.now();
@@ -169,7 +158,6 @@ function playSound() {
     }
 }
 
-// Stop sound on leave
 function stopSoundOnLeave() {
     if (isScratching) {
         isScratching = false;
@@ -179,7 +167,6 @@ function stopSoundOnLeave() {
     }
 }
 
-// Event listeners
 scratchCanvas.addEventListener('mousedown', (e) => {
     console.log('Mousedown event');
     initializeAudio();
@@ -242,7 +229,6 @@ function scratch(event) {
     }
 }
 
-// Spawn hearts
 function spawnHearts(count, canvasRect) {
     try {
         const hearts = ['❤️'];
@@ -253,21 +239,21 @@ function spawnHearts(count, canvasRect) {
         }
         const cardRect = card.getBoundingClientRect();
         const canvasTopRelativeToCard = canvasRect.top - cardRect.top;
-        const spawnY = canvasTopRelativeToCard + canvasRect.height; // ~300px
-        const spawnX = 300; // Card center
+        const spawnY = canvasTopRelativeToCard + canvasRect.height;
+        const spawnX = 300;
         console.log(`Canvas rect: top=${canvasRect.top}, height=${canvasRect.height}, card top=${cardRect.top}, spawnX=${spawnX}, spawnY=${spawnY}`);
         for (let i = 0; i < count; i++) {
             const heart = document.createElement('span');
             heart.className = 'heart-emoji';
             heart.textContent = hearts[0];
-            const riseDuration = 0.6 + Math.random() * 0.8; // 0.6-1.4s
-            const fallDuration = 2 + Math.random() * 1; // 2-3s
+            const riseDuration = 0.6 + Math.random() * 0.8;
+            const fallDuration = 2 + Math.random() * 1;
             const totalDuration = riseDuration + fallDuration;
-            const xSpreadPeak = (Math.random() - 0.5) * 500; // -250 to 250px
-            const yPeak = -400 + Math.random() * 300; // -400 to -100px
+            const xSpreadPeak = (Math.random() - 0.5) * 500;
+            const yPeak = -400 + Math.random() * 300;
             const isLeftLobe = Math.random() < 0.5;
             const xSpreadFall = isLeftLobe ? 20 : -20;
-            const yFall = 300 + Math.random() * 150; // 300-450px
+            const yFall = 300 + Math.random() * 150;
             heart.style.setProperty('--duration', `${totalDuration}s`);
             heart.style.setProperty('--x-spread-peak', `${xSpreadPeak}px`);
             heart.style.setProperty('--y-peak', `${yPeak}px`);
@@ -286,7 +272,6 @@ function spawnHearts(count, canvasRect) {
     }
 }
 
-// Update shimmer opacity
 function updateShimmerOpacity() {
     const opacity = Math.max(0, 1 - (scratchedPixels / totalPixels));
     const chevrons = document.querySelectorAll('.chevron');
@@ -299,7 +284,6 @@ function updateShimmerOpacity() {
     }
 }
 
-// Check reveal
 function checkReveal() {
     try {
         console.log(`Checking reveal: scratchedPixels=${scratchedPixels}, intervalThreshold=${intervalThreshold}, lastBurstAt=${lastBurstAt}`);
@@ -309,9 +293,9 @@ function checkReveal() {
             lastBurstAt = intervalsPassed;
             console.log(`Triggering heart burst at interval: ${intervalsPassed}`);
             const rect = scratchCanvas.getBoundingClientRect();
-            spawnHearts(50, rect); // First burst
+            spawnHearts(50, rect);
             setTimeout(() => {
-                spawnHearts(40, rect); // Second burst
+                spawnHearts(40, rect);
             }, 100);
         }
     } catch (err) {
@@ -319,7 +303,6 @@ function checkReveal() {
     }
 }
 
-// Test heart spawn
 window.addEventListener('load', () => {
     console.log('Page loaded, testing heart spawn');
     try {

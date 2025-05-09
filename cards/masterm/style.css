@@ -32,7 +32,7 @@ body {
     background: radial-gradient(circle, rgba(255,255,255,0.5) 0%, transparent 50%);
     background-size: 600px 450px;
     opacity: 0;
-    animation: shimmer 2.5s infinite;
+    animation: shimmer 2.5s infinite linear;
     z-index: 0;
     clip-path: inset(0 0 0 0 round 15px);
     overflow: hidden;
@@ -40,9 +40,9 @@ body {
 }
 
 @keyframes shimmer {
-    0% { opacity: 0; transform: translateX(-300px); }
+    0% { opacity: 0; transform: translateX(-600px); }
     50% { opacity: 0.8; transform: translateX(0); }
-    100% { opacity: 0; transform: translateX(300px); }
+    100% { opacity: 0; transform: translateX(600px); }
 }
 
 .card-sparkle-container {

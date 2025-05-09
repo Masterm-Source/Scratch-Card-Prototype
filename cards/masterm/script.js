@@ -112,10 +112,27 @@ function drawScratchLayer() {
     }
 }
 
-// Initialize canvases
+// Initialize card sparkles
+function initializeCardSparkles() {
+    const sparkleContainer = document.querySelector('.card-sparkle-container');
+    const sparkleCount = 10;
+    for (let i = 0; i < sparkleCount; i++) {
+        const sparkle = document.createElement('span');
+        sparkle.className = 'card-sparkle';
+        sparkle.textContent = '✦';
+        sparkle.style.left = `${Math.random() * 100}%`;
+        sparkle.style.top = `${Math.random() * 100}%`;
+        sparkle.style.setProperty('--delay', Math.random());
+        sparkleContainer.appendChild(sparkle);
+    }
+    console.log('Initialized', sparkleCount, 'card sparkles');
+}
+
+// Initialize canvases and sparkles
 console.log('Initializing canvases');
 drawMessage();
 drawScratchLayer();
+initializeCardSparkles();
 
 // Scratching logic
 let isScratching = false;

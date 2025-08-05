@@ -107,25 +107,35 @@ class AdvancedCardGenerator {
         return parts[parts.length - 1];
     }
 
-    /**
-     * FIXED: Check if an asset is from the web app (more reliable detection)
+   /**
+     * ENHANCED: Check if an asset is from the web app's asset collection
+     * Now properly identifies full URLs vs filenames
      */
     isWebAppAsset(assetPath) {
-        if (!assetPath) return false;
+        // If it's a full URL, it's NOT a web app asset needing path prepending
+        if (assetPath.startsWith('http://') || assetPath.startsWith('https://')) {
+            return false;
+        }
         
-        // Check if it contains our asset paths
+        // If it starts with a slash, it's an absolute path - don't prepend
+        if (assetPath.startsWith('/')) {
+            return false;
+        }
+        
+        // Web app assets are just filenames like "12345.jpeg", "symbol123.png", etc.
+        const fileNamePattern = /^[0-9a-zA-Z]+\.(jpeg|jpg|png|gif|mp3)$/;
+        
+        // If it's just a filename without path, it's a web app asset
+        if (fileNamePattern.test(assetPath)) {
+            return true;
+        }
+        
+        // If it contains the assets path structure but not a full URL, it's also a web app asset
         if (assetPath.includes('/assets/backgrounds/') || 
             assetPath.includes('/assets/symbols/') || 
             assetPath.includes('/assets/scratchTextures/') ||
             assetPath.includes('/assets/audio/')) {
             return true;
-        }
-        
-        // Check if it's just a filename with web app extensions
-        const filename = this.extractFilename(assetPath);
-        if (filename) {
-            const webAppPattern = /^[0-9a-zA-Z]+\.(jpeg|jpg|png|gif|mp3)$/;
-            return webAppPattern.test(filename);
         }
         
         return false;
@@ -250,145 +260,182 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * COMPLETELY FIXED: Generate a single element with proper asset handling
+     * ENHANCED: Generate a single element with FIXED scratch texture handling
      */
-    generateSingleElement(element, index, cardData) {
-        const {
-            id = `element-${index}`,
-            type = 'text',
-            content = '',
-            innerHTML = '',
-            position = {},
-            style = {}
-        } = element;
+  generateSingleElement(element, index, cardData) {
+    console.log(`=== GENERATING ELEMENT ${index} ===`);
+    console.log('Element type:', element.type);
+    console.log('Element data:', element);
+    
+    const {
+        id = `element-${index}`,
+        type = 'text',
+        content = '',
+        innerHTML = '',
+        position = {},
+        style = {}
+    } = element;
 
-        // Build inline styles from position and style objects
-        let inlineStyles = [];
+    // Build inline styles from position and style objects
+    let inlineStyles = [];
 
-        // Position styles
-        if (position.left) inlineStyles.push(`left: ${position.left}`);
-        if (position.top) inlineStyles.push(`top: ${position.top}`);
-        if (position.width) inlineStyles.push(`width: ${position.width}`);
-        if (position.height) inlineStyles.push(`height: ${position.height}`);
+    // Position styles
+    if (position.left) inlineStyles.push(`left: ${position.left}`);
+    if (position.top) inlineStyles.push(`top: ${position.top}`);
+    if (position.width) inlineStyles.push(`width: ${position.width}`);
+    if (position.height) inlineStyles.push(`height: ${position.height}`);
 
-        // Element styles
-        Object.keys(style).forEach(prop => {
-            if (style[prop] && style[prop] !== 'initial' && style[prop] !== '') {
-                // Convert camelCase to kebab-case for CSS
-                const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
-                inlineStyles.push(`${cssProp}: ${style[prop]}`);
-            }
-        });
-
-        // Ensure position absolute for all elements
-        if (!inlineStyles.some(s => s.startsWith('position:'))) {
-            inlineStyles.push('position: absolute');
+    // Element styles
+    Object.keys(style).forEach(prop => {
+        if (style[prop] && style[prop] !== 'initial' && style[prop] !== '') {
+            // Convert camelCase to kebab-case for CSS
+            const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
+            inlineStyles.push(`${cssProp}: ${style[prop]}`);
         }
+    });
 
-        const styleAttr = inlineStyles.length > 0 ? `style="${inlineStyles.join('; ')}"` : '';
-
-        // Generate element based on type
-        switch (type) {
-            case 'sender':
-            case 'sender-name':
-                return `<div class="card-element sender-name" id="${id}" ${styleAttr}>
-                    ${innerHTML || content || 'From Anonymous'}
-                </div>`;
-
-            case 'scratch':
-            case 'scratch-area':
-                const hiddenMsg = cardData.hiddenMessage || 'Surprise!';
-                const scratchTextureStyle = this.getScratchTextureStyleInline(cardData);
-                
-                // FIXED: Better structure for scratch area with texture
-                let scratchAreaStyles = inlineStyles.slice(); // Copy existing styles
-                
-                // Add scratch texture styles if they exist
-                if (scratchTextureStyle) {
-                    const textureStyles = scratchTextureStyle.split('; ');
-                    scratchAreaStyles = scratchAreaStyles.concat(textureStyles);
-                }
-                
-                const fullStyle = scratchAreaStyles.length > 0 
-                    ? `style="${scratchAreaStyles.join('; ')}"`
-                    : '';
-                
-                return `<div class="card-element scratch-area" id="${id}" ${fullStyle}
-                         data-hidden-message="${hiddenMsg}">
-                    <div class="hidden-message">${hiddenMsg}</div>
-                    <canvas class="scratch-canvas" width="${this.parsePixels(position.width) || 350}" height="${this.parsePixels(position.height) || 150}"></canvas>
-                    <div class="scratch-overlay">
-                        <p style="position: relative; z-index: 3; color: #666; font-weight: 500;">${content || 'Scratch here to reveal your message!'}</p>
-                    </div>
-                </div>`;
-
-            case 'symbol':
-            case 'card-symbol':
-                let symbolContent = innerHTML || content;
-                
-                // FIXED: Properly handle symbol assets from web app
-                if (symbolContent.includes('<img')) {
-                    // Already has image tag, keep as is
-                } else if (symbolContent && (symbolContent.includes('data:image') || this.isWebAppAsset(symbolContent))) {
-                    // Handle base64 or web app asset
-                    let imageSrc;
-                    if (this.isWebAppAsset(symbolContent) && !symbolContent.startsWith('data:')) {
-                        const filename = this.extractFilename(symbolContent);
-                        imageSrc = `${this.baseUrl}/assets/symbols/${filename}`;
-                    } else {
-                        imageSrc = symbolContent;
-                    }
-                    symbolContent = `<img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
-                } else {
-                    // It's text/emoji content
-                    symbolContent = symbolContent || '❤️';
-                }
-                
-                return `<div class="card-element card-symbol" id="${id}" ${styleAttr}>
-                    ${symbolContent}
-                </div>`;
-
-            case 'text':
-            case 'custom-text':
-            default:
-                return `<div class="card-element custom-element" id="${id}" ${styleAttr}>
-                    ${innerHTML || content || 'Custom Element'}
-                </div>`;
-        }
+    // Ensure position absolute for all elements
+    if (!inlineStyles.some(s => s.startsWith('position:'))) {
+        inlineStyles.push('position: absolute');
     }
+
+    console.log('Inline styles built:', inlineStyles);
+
+    // Generate element based on type
+    switch (type) {
+        case 'sender':
+        case 'sender-name':
+            console.log('✅ Generating sender element');
+            const styleAttr = inlineStyles.length > 0 ? `style="${inlineStyles.join('; ')}"` : '';
+            return `<div class="card-element sender-name" id="${id}" ${styleAttr}>
+                ${innerHTML || content || 'From Anonymous'}
+            </div>`;
+
+        case 'scratch':
+        case 'scratch-area':
+            console.log('🎯 GENERATING SCRATCH ELEMENT - DETAILED DEBUG');
+            console.log('Element style object:', style);
+            console.log('Element style.backgroundImage:', style.backgroundImage);
+            
+            const hiddenMsg = cardData.hiddenMessage || 'Surprise!';
+            console.log('Hidden message:', hiddenMsg);
+            
+            // Get scratch texture from cardData
+            const scratchTextureStyle = this.getScratchTextureStyleInline(cardData);
+            console.log('Scratch texture style from cardData:', scratchTextureStyle);
+            
+            // Get element's own background styling
+            let elementBackgroundStyle = '';
+            if (style.backgroundImage) {
+                // Parse the backgroundImage to extract just the URL
+                let bgImage = style.backgroundImage;
+                if (bgImage.includes('url(') && bgImage.includes(')')) {
+                    elementBackgroundStyle = `background-image: ${bgImage}; background-size: cover; background-position: center`;
+                } else if (!bgImage.startsWith('url(')) {
+                    elementBackgroundStyle = `background-image: url("${bgImage}"); background-size: cover; background-position: center`;
+                }
+            }
+            console.log('Element background style:', elementBackgroundStyle);
+            
+            // Choose which background to use
+            const finalTextureStyle = elementBackgroundStyle || scratchTextureStyle;
+            console.log('Final texture style chosen:', finalTextureStyle);
+            
+            // Build complete style array
+            const allStyles = [...inlineStyles];
+            if (finalTextureStyle) {
+                // Split the finalTextureStyle into individual properties to avoid duplicates
+                const bgProperties = finalTextureStyle.split(';').map(prop => prop.trim()).filter(prop => prop);
+                allStyles.push(...bgProperties);
+            }
+            
+            console.log('All styles combined:', allStyles);
+            
+            const fullStyle = allStyles.length > 0 ? `style="${allStyles.join('; ')}"` : '';
+            console.log('Final style attribute:', fullStyle);
+            
+            const scratchHTML = `<div class="card-element scratch-area" id="${id}" ${fullStyle}
+                     data-hidden-message="${hiddenMsg}">
+                <div class="hidden-message">${hiddenMsg}</div>
+                <canvas class="scratch-canvas" width="${this.parsePixels(position.width) || 350}" height="${this.parsePixels(position.height) || 150}"></canvas>
+                <p style="position: relative; z-index: 3;">${content || 'Scratch here to reveal your message!'}</p>
+            </div>`;
+            
+            console.log('Generated scratch HTML length:', scratchHTML.length);
+            console.log('Generated scratch HTML preview:', scratchHTML.substring(0, 200) + '...');
+            console.log('=== END SCRATCH ELEMENT DEBUG ===');
+            
+            return scratchHTML;
+
+        case 'symbol':
+        case 'card-symbol':
+            console.log('✅ Generating symbol element');
+            let symbolContent = innerHTML || content;
+            
+            // Handle symbol assets from web app
+            if (symbolContent.includes('<img')) {
+                // Already has image tag, keep as is
+            } else if (symbolContent && (symbolContent.includes('data:image') || this.isWebAppAsset(symbolContent))) {
+                // Handle base64 or web app asset
+                const imageSrc = this.isWebAppAsset(symbolContent) && !symbolContent.startsWith('data:') 
+                    ? `${this.baseUrl}/assets/symbols/${symbolContent}`
+                    : symbolContent;
+                symbolContent = `<img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
+            } else {
+                // It's text/emoji content
+                symbolContent = symbolContent || '❤️';
+            }
+            
+            const symbolStyleAttr = inlineStyles.length > 0 ? `style="${inlineStyles.join('; ')}"` : '';
+            return `<div class="card-element card-symbol" id="${id}" ${symbolStyleAttr}>
+                ${symbolContent}
+            </div>`;
+
+        case 'text':
+        case 'custom-text':
+        default:
+            console.log('✅ Generating text/custom element');
+            const textStyleAttr = inlineStyles.length > 0 ? `style="${inlineStyles.join('; ')}"` : '';
+            return `<div class="card-element custom-element" id="${id}" ${textStyleAttr}>
+                ${innerHTML || content || 'Custom Element'}
+            </div>`;
+    }
+}
+   /**
+     * COMPLETELY FIXED: Get scratch texture styling with proper asset handling
+     * This function now correctly handles all URL formats without double-prepending
+     */
+    // ALSO ADD THIS: Enhanced getScratchTextureStyleInline with debugging
+getScratchTextureStyleInline(cardData) {
+    console.log("=== GET SCRATCH TEXTURE STYLE DEBUG ===");
+    console.log("Input cardData.scratchTexture:", cardData.scratchTexture);
+    console.log("Input cardData.scratchTextureBase64:", cardData.scratchTextureBase64);
+    
+    const { scratchTextureBase64, scratchTexture } = cardData;
+    
+    let result = '';
+    
+    if (scratchTextureBase64) {
+        result = `background-image: url('${scratchTextureBase64}'); background-size: cover; background-position: center`;
+        console.log("✅ Using base64 texture");
+    } else if (scratchTexture && !scratchTexture.includes('data:image/svg+xml')) {
+        // Check if it's a web app asset
+        const textureUrl = this.isWebAppAsset(scratchTexture)
+            ? `${this.baseUrl}/assets/scratchTextures/${scratchTexture}`
+            : scratchTexture;
+        result = `background-image: url('${textureUrl}'); background-size: cover; background-position: center`;
+        console.log("✅ Using regular texture, final URL:", textureUrl);
+    } else {
+        console.log("❌ No valid scratch texture found");
+    }
+    
+    console.log("Final scratch texture style:", result);
+    console.log("=====================================");
+    
+    return result;
+}
 
     /**
-     * COMPLETELY FIXED: Get scratch texture styling with proper asset handling
-     */
-    getScratchTextureStyleInline(cardData) {
-        const { scratchTextureBase64, scratchTexture } = cardData;
-        
-        console.log('🎨 Processing scratch texture:', { scratchTexture, scratchTextureBase64 });
-        
-        if (scratchTextureBase64) {
-            console.log('✅ Using base64 scratch texture');
-            return `background-image: url('${scratchTextureBase64}'); background-size: cover; background-position: center`;
-        } else if (scratchTexture && !scratchTexture.includes('data:image/svg+xml')) {
-            // FIXED: Proper URL handling for scratch textures
-            let textureUrl;
-            
-            if (this.isWebAppAsset(scratchTexture)) {
-                const filename = this.extractFilename(scratchTexture);
-                textureUrl = `${this.baseUrl}/assets/scratchTextures/${filename}`;
-                console.log(`🔄 Converted scratch texture: ${scratchTexture} → ${textureUrl}`);
-            } else {
-                textureUrl = scratchTexture;
-                console.log(`🌐 Using external scratch texture: ${textureUrl}`);
-            }
-            
-            console.log('✅ Using image scratch texture:', textureUrl);
-            return `background-image: url('${textureUrl}'); background-size: cover; background-position: center`;
-        }
-        
-        console.log('⚠️ No scratch texture found, using default');
-        return '';
-    }
-
     /**
      * Parse pixel values from CSS strings
      */

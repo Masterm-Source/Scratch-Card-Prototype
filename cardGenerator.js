@@ -1,11 +1,9 @@
 /**
- * COMPLETELY FIXED Advanced Card Generator Module
- * NOW PROPERLY HANDLES ALL DYNAMIC ASSETS FROM WEB APP
- * - Gradient backgrounds (bg-obsidian-*)
- * - Image backgrounds (JPEG files)
- * - Image symbols (PNG files) 
- * - Image scratch textures (JPEG files)
- * - Audio files (MP3 files)
+ * FIXED Advanced Card Generator Module
+ * SOLVED: Asset path resolution issues for backgrounds and scratch textures
+ * - Fixed URL parsing and asset detection
+ * - Prioritizes web app selections over generator logic
+ * - Handles both full URLs and filenames correctly
  */
 
 class AdvancedCardGenerator {
@@ -94,57 +92,116 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * FIXED: Get CSS classes for the card element - handles both gradients and images
+     * FIXED: Extract filename from full URL or return as-is if already a filename
+     */
+    extractFilename(assetPath) {
+        if (!assetPath) return null;
+        
+        // If it's already just a filename (no slashes), return it
+        if (!assetPath.includes('/')) {
+            return assetPath;
+        }
+        
+        // Extract filename from full URL
+        const parts = assetPath.split('/');
+        return parts[parts.length - 1];
+    }
+
+    /**
+     * FIXED: Check if an asset is from the web app (more reliable detection)
+     */
+    isWebAppAsset(assetPath) {
+        if (!assetPath) return false;
+        
+        // Check if it contains our asset paths
+        if (assetPath.includes('/assets/backgrounds/') || 
+            assetPath.includes('/assets/symbols/') || 
+            assetPath.includes('/assets/scratchTextures/') ||
+            assetPath.includes('/assets/audio/')) {
+            return true;
+        }
+        
+        // Check if it's just a filename with web app extensions
+        const filename = this.extractFilename(assetPath);
+        if (filename) {
+            const webAppPattern = /^[0-9a-zA-Z]+\.(jpeg|jpg|png|gif|mp3)$/;
+            return webAppPattern.test(filename);
+        }
+        
+        return false;
+    }
+
+    /**
+     * FIXED: Get CSS classes for the card element - RESPECTS web app selections
      */
     getCardClasses(cardData) {
         const { backgroundImage, cardStyle = {} } = cardData;
         
-        // Priority: cardStyle.className > backgroundImage gradients > default
-        if (cardStyle.className) {
-            // Extract just the background class from full className
+        // FIXED: Only use gradient classes if NO image background is selected
+        if (backgroundImage && backgroundImage.startsWith('bg-obsidian-')) {
+            return backgroundImage;
+        }
+        
+        // If cardStyle has className with gradient AND no image background
+        if (cardStyle.className && !backgroundImage) {
             const classes = cardStyle.className.split(' ');
             const bgClass = classes.find(cls => cls.startsWith('bg-obsidian-'));
             return bgClass || '';
         }
         
-        // Check if backgroundImage is a gradient class
-        if (backgroundImage && backgroundImage.startsWith('bg-obsidian-')) {
-            return backgroundImage;
-        }
-        
+        // No gradient class if image background exists
         return '';
     }
 
     /**
-     * COMPLETELY FIXED: Generate inline styles for the card element
-     * Properly handles both image assets and gradients from web app
+     * COMPLETELY FIXED: Generate inline styles - PRIORITIZES web app selections
      */
     generateCardInlineStyles(cardData) {
         const { cardStyle = {}, backgroundImage, backgroundImageBase64 } = cardData;
         let styles = [];
 
-        // Priority order: cardStyle.backgroundImage > backgroundImageBase64 > regular backgroundImage
-        
-        if (cardStyle.backgroundImage && cardStyle.backgroundImage !== '') {
-            // Web app stores full CSS value like "url(...)"
-            styles.push(`background-image: ${cardStyle.backgroundImage}`);
-            if (!cardStyle.backgroundSize) styles.push('background-size: cover');
-            if (!cardStyle.backgroundPosition) styles.push('background-position: center');
-        } else if (backgroundImageBase64) {
-            // Base64 uploaded image
+        console.log('🎨 Processing background:', { backgroundImage, backgroundImageBase64, cardStyle });
+
+        // FIXED PRIORITY ORDER: 
+        // 1. backgroundImageBase64 (uploaded files)
+        // 2. backgroundImage (if not gradient)
+        // 3. cardStyle.backgroundImage
+        // 4. No background (let gradient class handle it)
+
+        if (backgroundImageBase64) {
+            // Priority 1: Base64 uploaded image
             styles.push(`background-image: url('${backgroundImageBase64}')`);
             styles.push('background-size: cover');
             styles.push('background-position: center');
+            console.log('✅ Using base64 background');
         } else if (backgroundImage && !backgroundImage.startsWith('bg-obsidian-')) {
-            // FIXED: Check if it's a web app asset (JPEG/PNG files)
+            // Priority 2: Selected image asset (not gradient)
+            let imageUrl;
+            
             if (this.isWebAppAsset(backgroundImage)) {
-                styles.push(`background-image: url('${this.baseUrl}/assets/backgrounds/${backgroundImage}')`);
+                // Web app asset - reconstruct proper URL
+                const filename = this.extractFilename(backgroundImage);
+                imageUrl = `${this.baseUrl}/assets/backgrounds/${filename}`;
+                console.log(`🔄 Converted web app asset: ${backgroundImage} → ${imageUrl}`);
             } else {
-                // External URL or full path
-                styles.push(`background-image: url('${backgroundImage}')`);
+                // External URL or absolute path
+                imageUrl = backgroundImage;
+                console.log(`🌐 Using external URL: ${imageUrl}`);
             }
+            
+            styles.push(`background-image: url('${imageUrl}')`);
             styles.push('background-size: cover');
             styles.push('background-position: center');
+            console.log('✅ Using image background:', imageUrl);
+        } else if (cardStyle.backgroundImage && cardStyle.backgroundImage !== '') {
+            // Priority 3: cardStyle background
+            styles.push(`background-image: ${cardStyle.backgroundImage}`);
+            if (!cardStyle.backgroundSize) styles.push('background-size: cover');
+            if (!cardStyle.backgroundPosition) styles.push('background-position: center');
+            console.log('✅ Using cardStyle background');
+        } else {
+            // Priority 4: No background (gradient class will handle)
+            console.log('✅ No background image - using gradient class');
         }
 
         // Apply other cardStyle properties
@@ -159,30 +216,9 @@ class AdvancedCardGenerator {
         if (cardStyle.border) styles.push(`border: ${cardStyle.border}`);
         if (cardStyle.borderRadius) styles.push(`border-radius: ${cardStyle.borderRadius}`);
 
-        return styles.length > 0 ? `style="${styles.join('; ')}"` : '';
-    }
-
-    /**
-     * NEW: Check if an asset is from the web app's asset collection
-     */
-    isWebAppAsset(assetPath) {
-        // Web app assets are just filenames like "12345.jpeg", "symbol123.png", etc.
-        const fileNamePattern = /^[0-9a-zA-Z]+\.(jpeg|jpg|png|gif|mp3)$/;
-        
-        // If it's just a filename without path, it's a web app asset
-        if (fileNamePattern.test(assetPath)) {
-            return true;
-        }
-        
-        // If it contains the assets path structure, it's also a web app asset
-        if (assetPath.includes('/assets/backgrounds/') || 
-            assetPath.includes('/assets/symbols/') || 
-            assetPath.includes('/assets/scratchTextures/') ||
-            assetPath.includes('/assets/audio/')) {
-            return true;
-        }
-        
-        return false;
+        const result = styles.length > 0 ? `style="${styles.join('; ')}"` : '';
+        console.log('🎨 Generated styles:', result);
+        return result;
     }
 
     /**
@@ -263,15 +299,27 @@ class AdvancedCardGenerator {
             case 'scratch-area':
                 const hiddenMsg = cardData.hiddenMessage || 'Surprise!';
                 const scratchTextureStyle = this.getScratchTextureStyleInline(cardData);
-                const fullStyle = inlineStyles.length > 0 || scratchTextureStyle 
-                    ? `style="${inlineStyles.join('; ')}${inlineStyles.length > 0 && scratchTextureStyle ? '; ' : ''}${scratchTextureStyle}"`
+                
+                // FIXED: Better structure for scratch area with texture
+                let scratchAreaStyles = inlineStyles.slice(); // Copy existing styles
+                
+                // Add scratch texture styles if they exist
+                if (scratchTextureStyle) {
+                    const textureStyles = scratchTextureStyle.split('; ');
+                    scratchAreaStyles = scratchAreaStyles.concat(textureStyles);
+                }
+                
+                const fullStyle = scratchAreaStyles.length > 0 
+                    ? `style="${scratchAreaStyles.join('; ')}"`
                     : '';
                 
                 return `<div class="card-element scratch-area" id="${id}" ${fullStyle}
                          data-hidden-message="${hiddenMsg}">
                     <div class="hidden-message">${hiddenMsg}</div>
                     <canvas class="scratch-canvas" width="${this.parsePixels(position.width) || 350}" height="${this.parsePixels(position.height) || 150}"></canvas>
-                    <p style="position: relative; z-index: 3;">${content || 'Scratch here to reveal your message!'}</p>
+                    <div class="scratch-overlay">
+                        <p style="position: relative; z-index: 3; color: #666; font-weight: 500;">${content || 'Scratch here to reveal your message!'}</p>
+                    </div>
                 </div>`;
 
             case 'symbol':
@@ -283,9 +331,13 @@ class AdvancedCardGenerator {
                     // Already has image tag, keep as is
                 } else if (symbolContent && (symbolContent.includes('data:image') || this.isWebAppAsset(symbolContent))) {
                     // Handle base64 or web app asset
-                    const imageSrc = this.isWebAppAsset(symbolContent) && !symbolContent.startsWith('data:') 
-                        ? `${this.baseUrl}/assets/symbols/${symbolContent}`
-                        : symbolContent;
+                    let imageSrc;
+                    if (this.isWebAppAsset(symbolContent) && !symbolContent.startsWith('data:')) {
+                        const filename = this.extractFilename(symbolContent);
+                        imageSrc = `${this.baseUrl}/assets/symbols/${filename}`;
+                    } else {
+                        imageSrc = symbolContent;
+                    }
                     symbolContent = `<img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
                 } else {
                     // It's text/emoji content
@@ -311,16 +363,29 @@ class AdvancedCardGenerator {
     getScratchTextureStyleInline(cardData) {
         const { scratchTextureBase64, scratchTexture } = cardData;
         
+        console.log('🎨 Processing scratch texture:', { scratchTexture, scratchTextureBase64 });
+        
         if (scratchTextureBase64) {
+            console.log('✅ Using base64 scratch texture');
             return `background-image: url('${scratchTextureBase64}'); background-size: cover; background-position: center`;
         } else if (scratchTexture && !scratchTexture.includes('data:image/svg+xml')) {
-            // FIXED: Check if it's a web app asset
-            const textureUrl = this.isWebAppAsset(scratchTexture)
-                ? `${this.baseUrl}/assets/scratchTextures/${scratchTexture}`
-                : scratchTexture;
+            // FIXED: Proper URL handling for scratch textures
+            let textureUrl;
+            
+            if (this.isWebAppAsset(scratchTexture)) {
+                const filename = this.extractFilename(scratchTexture);
+                textureUrl = `${this.baseUrl}/assets/scratchTextures/${filename}`;
+                console.log(`🔄 Converted scratch texture: ${scratchTexture} → ${textureUrl}`);
+            } else {
+                textureUrl = scratchTexture;
+                console.log(`🌐 Using external scratch texture: ${textureUrl}`);
+            }
+            
+            console.log('✅ Using image scratch texture:', textureUrl);
             return `background-image: url('${textureUrl}'); background-size: cover; background-position: center`;
         }
         
+        console.log('⚠️ No scratch texture found, using default');
         return '';
     }
 
@@ -359,9 +424,13 @@ class AdvancedCardGenerator {
         if (symbolBase64) {
             symbolContent = `<img src="${symbolBase64}" alt="Symbol" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
         } else if (symbol && (symbol.includes('data:image') || this.isWebAppAsset(symbol))) {
-            const symbolUrl = this.isWebAppAsset(symbol) && !symbol.startsWith('data:')
-                ? `${this.baseUrl}/assets/symbols/${symbol}`
-                : symbol;
+            let symbolUrl;
+            if (this.isWebAppAsset(symbol) && !symbol.startsWith('data:')) {
+                const filename = this.extractFilename(symbol);
+                symbolUrl = `${this.baseUrl}/assets/symbols/${filename}`;
+            } else {
+                symbolUrl = symbol;
+            }
             symbolContent = `<img src="${symbolUrl}" alt="Symbol" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
         } else {
             symbolContent = symbol || '❤️';
@@ -565,7 +634,7 @@ class AdvancedCardGenerator {
 
         .sender-name {
             color: white;
-            font-weight, 600;
+            font-weight: 600;
             font-size: 18px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
             padding: 12px 16px;
@@ -590,15 +659,17 @@ class AdvancedCardGenerator {
             cursor: crosshair;
             transition: all 0.3s ease;
             position: relative;
+            /* Ensure background texture shows through */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         .scratch-area:hover {
-            background: rgba(192, 192, 192, 1);
             transform: scale(1.02);
         }
 
         .scratch-area.scratching {
-            background: rgba(150, 150, 150, 0.8);
             border-color: #667eea;
         }
 
@@ -773,9 +844,13 @@ class AdvancedCardGenerator {
             return `<source src="${soundEffectBase64}" type="audio/mpeg">`;
         } else if (soundEffect && soundEffect !== '#beep') {
             // FIXED: Check if it's a web app asset
-            const audioUrl = this.isWebAppAsset(soundEffect)
-                ? `${this.baseUrl}/assets/audio/${soundEffect}`
-                : soundEffect;
+            let audioUrl;
+            if (this.isWebAppAsset(soundEffect)) {
+                const filename = this.extractFilename(soundEffect);
+                audioUrl = `${this.baseUrl}/assets/audio/${filename}`;
+            } else {
+                audioUrl = soundEffect;
+            }
             return `<source src="${audioUrl}" type="audio/mpeg">`;
         }
         
@@ -1012,10 +1087,84 @@ class AdvancedCardGenerator {
         function drawScratchSurface(ctx, canvas) {
             if (!ctx) return;
             
+            // Get the scratch area element to check for background texture
+            const scratchArea = canvas.closest('.scratch-area');
+            const hasBackgroundTexture = scratchArea && 
+                scratchArea.style.backgroundImage && 
+                scratchArea.style.backgroundImage !== 'none' && 
+                scratchArea.style.backgroundImage !== '';
+            
+            console.log('🎨 Drawing scratch surface. Has texture:', hasBackgroundTexture);
+            
+            if (hasBackgroundTexture) {
+                // Extract the URL from background-image style
+                const bgImage = scratchArea.style.backgroundImage;
+                const imageUrl = bgImage.match(/url\\(["\']?([^"\'\\)]+)["\']?\\)/);
+                
+                if (imageUrl && imageUrl[1]) {
+                    console.log('🖼️ Loading texture image:', imageUrl[1]);
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    
+                    img.onload = function() {
+                        console.log('✅ Texture image loaded, creating scratch surface');
+                        
+                        // Create pattern from the texture image
+                        try {
+                            const pattern = ctx.createPattern(img, 'repeat');
+                            if (pattern) {
+                                ctx.fillStyle = pattern;
+                                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            } else {
+                                // Fallback: draw the image directly
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            }
+                            
+                            // Add semi-transparent overlay to make it look scratchable
+                            ctx.fillStyle = 'rgba(200, 200, 200, 0.7)';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Add texture dots
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                            for (let i = 0; i < 50; i++) {
+                                ctx.beginPath();
+                                ctx.arc(
+                                    Math.random() * canvas.width,
+                                    Math.random() * canvas.height,
+                                    Math.random() * 2 + 1,
+                                    0,
+                                    Math.PI * 2
+                                );
+                                ctx.fill();
+                            }
+                            
+                            console.log('✅ Textured scratch surface created');
+                        } catch (e) {
+                            console.error('❌ Error creating pattern:', e);
+                            drawDefaultScratchSurface(ctx, canvas);
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        console.error('❌ Failed to load texture image, using default');
+                        drawDefaultScratchSurface(ctx, canvas);
+                    };
+                    
+                    img.src = imageUrl[1];
+                    return; // Exit early, image will load async
+                }
+            }
+            
+            console.log('🎨 Using default scratch surface');
+            drawDefaultScratchSurface(ctx, canvas);
+        }
+        
+        function drawDefaultScratchSurface(ctx, canvas) {
+            // Default silver scratch surface
             ctx.fillStyle = '#c0c0c0';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Add texture
+            // Add metallic texture
             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
             for (let i = 0; i < 100; i++) {
                 ctx.beginPath();
@@ -1023,6 +1172,20 @@ class AdvancedCardGenerator {
                     Math.random() * canvas.width,
                     Math.random() * canvas.height,
                     Math.random() * 3 + 1,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Add darker spots for depth
+            ctx.fillStyle = 'rgba(150, 150, 150, 0.2)';
+            for (let i = 0; i < 30; i++) {
+                ctx.beginPath();
+                ctx.arc(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    Math.random() * 4 + 2,
                     0,
                     Math.PI * 2
                 );

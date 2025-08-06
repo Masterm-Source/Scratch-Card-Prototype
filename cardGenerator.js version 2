@@ -1,18 +1,11 @@
 /**
- * COMPLETELY FIXED Advanced Card Generator Module
- * NOW PROPERLY HANDLES ALL DYNAMIC ASSETS FROM WEB APP
- * - Gradient backgrounds (bg-obsidian-*)
- * - Image backgrounds (JPEG files)
- * - Image symbols (PNG files) 
- * - Image scratch textures (JPEG files)
- * - Audio files (MP3 files)
- * 
- * FIXED ISSUES:
- * ✅ Clean scratch implementation like joe's card
- * ✅ Removed all grey semi-transparent overlays
- * ✅ Perfect dual-canvas scratch system
- * ✅ No premature complete reveal
- * ✅ Clean transparent elements
+ * PROFESSIONAL DUAL CANVAS SCRATCH CARD GENERATOR
+ * USES EXACT SAME LOGIC AS JOE'S SCRIPT - PIXEL PERFECT SCRATCHING
+ * - Two separate canvases: message canvas (bottom) + scratch canvas (top)
+ * - Real image loading for scratch textures (no CSS bullshit)
+ * - Professional pixel-by-pixel scratching only
+ * - Fireworks effects during scratching
+ * - Pure canvas-to-canvas revealing
  */
 
 class AdvancedCardGenerator {
@@ -21,7 +14,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * Generate a complete HTML scratch card that EXACTLY matches the web app interface
+     * Generate a complete HTML scratch card with DUAL CANVAS SYSTEM
      */
     async generateCard(cardData) {
         const {
@@ -46,7 +39,7 @@ class AdvancedCardGenerator {
             template = 'classic'
         } = cardData;
 
-        // Generate the complete HTML document with EXACT web app styling
+        // Generate the complete HTML document with DUAL CANVAS SYSTEM
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -55,8 +48,9 @@ class AdvancedCardGenerator {
     <title>🎯 Scratch Card from ${senderName} - Masterm Cards</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        ${this.generateCleanCSS(cardData)}
+        ${this.generateWebAppCSS(cardData)}
     </style>
 </head>
 <body>
@@ -92,7 +86,7 @@ class AdvancedCardGenerator {
     </div>
 
     <script>
-        ${this.generateCleanJavaScript(cardData)}
+        ${this.generateDualCanvasJavaScript(cardData)}
     </script>
 </body>
 </html>`;
@@ -101,7 +95,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * FIXED: Get CSS classes for the card element - handles both gradients and images
+     * Get CSS classes for the card element - handles both gradients and images
      */
     getCardClasses(cardData) {
         const { backgroundImage, cardStyle = {} } = cardData;
@@ -123,8 +117,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * COMPLETELY FIXED: Generate inline styles for the card element
-     * Properly handles both image assets and gradients from web app
+     * Generate inline styles for the card element
      */
     generateCardInlineStyles(cardData) {
         const { cardStyle = {}, backgroundImage, backgroundImageBase64 } = cardData;
@@ -133,21 +126,17 @@ class AdvancedCardGenerator {
         // Priority order: cardStyle.backgroundImage > backgroundImageBase64 > regular backgroundImage
         
         if (cardStyle.backgroundImage && cardStyle.backgroundImage !== '') {
-            // Web app stores full CSS value like "url(...)"
             styles.push(`background-image: ${cardStyle.backgroundImage}`);
             if (!cardStyle.backgroundSize) styles.push('background-size: cover');
             if (!cardStyle.backgroundPosition) styles.push('background-position: center');
         } else if (backgroundImageBase64) {
-            // Base64 uploaded image
             styles.push(`background-image: url('${backgroundImageBase64}')`);
             styles.push('background-size: cover');
             styles.push('background-position: center');
         } else if (backgroundImage && !backgroundImage.startsWith('bg-obsidian-')) {
-            // FIXED: Check if it's a web app asset (JPEG/PNG files)
             if (this.isWebAppAsset(backgroundImage)) {
                 styles.push(`background-image: url('${this.baseUrl}/assets/backgrounds/${backgroundImage}')`);
             } else {
-                // External URL or full path
                 styles.push(`background-image: url('${backgroundImage}')`);
             }
             styles.push('background-size: cover');
@@ -170,18 +159,15 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * NEW: Check if an asset is from the web app's asset collection
+     * Check if an asset is from the web app's asset collection
      */
     isWebAppAsset(assetPath) {
-        // Web app assets are just filenames like "12345.jpeg", "symbol123.png", etc.
         const fileNamePattern = /^[0-9a-zA-Z]+\.(jpeg|jpg|png|gif|mp3)$/;
         
-        // If it's just a filename without path, it's a web app asset
         if (fileNamePattern.test(assetPath)) {
             return true;
         }
         
-        // If it contains the assets path structure, it's also a web app asset
         if (assetPath.includes('/assets/backgrounds/') || 
             assetPath.includes('/assets/symbols/') || 
             assetPath.includes('/assets/scratchTextures/') ||
@@ -193,7 +179,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * FIXED: Generate card elements dynamically from cardData.elements array
+     * Generate card elements with DUAL CANVAS SYSTEM for scratch areas
      */
     generateDynamicCardElements(cardData) {
         const { 
@@ -221,7 +207,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * COMPLETELY FIXED: Generate a single element with CLEAN transparent styling
+     * Generate a single element with DUAL CANVAS for scratch areas
      */
     generateSingleElement(element, index, cardData) {
         const {
@@ -245,7 +231,6 @@ class AdvancedCardGenerator {
         // Element styles
         Object.keys(style).forEach(prop => {
             if (style[prop] && style[prop] !== 'initial' && style[prop] !== '') {
-                // Convert camelCase to kebab-case for CSS
                 const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
                 inlineStyles.push(`${cssProp}: ${style[prop]}`);
             }
@@ -255,10 +240,6 @@ class AdvancedCardGenerator {
         if (!inlineStyles.some(s => s.startsWith('position:'))) {
             inlineStyles.push('position: absolute');
         }
-
-        // ✅ FORCE CLEAN TRANSPARENT BACKGROUND FOR ALL ELEMENTS
-        inlineStyles.push('background: transparent !important');
-        inlineStyles.push('background-color: transparent !important');
 
         const styleAttr = inlineStyles.length > 0 ? `style="${inlineStyles.join('; ')}"` : '';
 
@@ -273,23 +254,26 @@ class AdvancedCardGenerator {
             case 'scratch':
             case 'scratch-area':
                 const hiddenMsg = cardData.hiddenMessage || 'Surprise!';
-                return this.generateCleanScratchArea(id, position, hiddenMsg, cardData);
+                const canvasWidth = this.parsePixels(position.width) || 350;
+                const canvasHeight = this.parsePixels(position.height) || 150;
+                
+                return `<div class="card-element scratch-container" id="${id}" ${styleAttr}>
+                    <canvas id="messageCanvas" width="${canvasWidth}" height="${canvasHeight}"></canvas>
+                    <canvas id="scratchCanvas" width="${canvasWidth}" height="${canvasHeight}"></canvas>
+                </div>`;
 
             case 'symbol':
             case 'card-symbol':
                 let symbolContent = innerHTML || content;
                 
-                // FIXED: Properly handle symbol assets from web app
                 if (symbolContent.includes('<img')) {
                     // Already has image tag, keep as is
                 } else if (symbolContent && (symbolContent.includes('data:image') || this.isWebAppAsset(symbolContent))) {
-                    // Handle base64 or web app asset
                     const imageSrc = this.isWebAppAsset(symbolContent) && !symbolContent.startsWith('data:') 
                         ? `${this.baseUrl}/assets/symbols/${symbolContent}`
                         : symbolContent;
                     symbolContent = `<img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
                 } else {
-                    // It's text/emoji content
                     symbolContent = symbolContent || '❤️';
                 }
                 
@@ -307,66 +291,6 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * ✅ NEW: Generate CLEAN dual-canvas scratch area like joe's perfect implementation
-     */
-    generateCleanScratchArea(id, position, hiddenMessage, cardData) {
-        const width = this.parsePixels(position.width) || 350;
-        const height = this.parsePixels(position.height) || 150;
-        const scratchTextureStyle = this.getScratchTextureDataUrl(cardData);
-        
-        return `<div class="card-element scratch-container" id="${id}" style="
-            position: absolute;
-            left: ${position.left || '76px'};
-            top: ${position.top || '150px'};
-            width: ${width}px;
-            height: ${height}px;
-            background: transparent !important;
-            background-color: transparent !important;
-        ">
-            <canvas id="messageCanvas-${id}" width="${width}" height="${height}" style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 1;
-            "></canvas>
-            <canvas id="scratchCanvas-${id}" width="${width}" height="${height}" style="
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 2;
-                cursor: crosshair;
-            "></canvas>
-            <script>
-                // Initialize dual canvas system for ${id}
-                initializeDualCanvasScratch('${id}', '${hiddenMessage}', '${scratchTextureStyle}');
-            </script>
-        </div>`;
-    }
-
-    /**
-     * Get scratch texture as data URL or return default
-     */
-    getScratchTextureDataUrl(cardData) {
-        const { scratchTextureBase64, scratchTexture } = cardData;
-        
-        if (scratchTextureBase64) {
-            return scratchTextureBase64;
-        } else if (scratchTexture && !scratchTexture.includes('data:image/svg+xml')) {
-            const textureUrl = this.isWebAppAsset(scratchTexture)
-                ? `${this.baseUrl}/assets/scratchTextures/${scratchTexture}`
-                : scratchTexture;
-            return textureUrl;
-        }
-        
-        // Return default scratch texture
-        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
-    }
-
-    /**
      * Parse pixel values from CSS strings
      */
     parsePixels(value) {
@@ -379,7 +303,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * FIXED: Fallback elements with CLEAN transparent styling
+     * Fallback elements with DUAL CANVAS system
      */
     generateFallbackElements(cardData) {
         const { 
@@ -394,7 +318,7 @@ class AdvancedCardGenerator {
             return '<!-- Blank template - no fallback elements -->';
         }
 
-        // Classic template fallback with CLEAN styling
+        // Classic template fallback with DUAL CANVAS
         let symbolContent = '';
         if (symbolBase64) {
             symbolContent = `<img src="${symbolBase64}" alt="Symbol" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
@@ -409,26 +333,33 @@ class AdvancedCardGenerator {
 
         return `
             <div class="card-element sender-name" id="senderName" 
-                 style="position: absolute; top: 20px; left: 20px; background: transparent !important; background-color: transparent !important;">
+                 style="position: absolute; top: 20px; left: 20px;">
                 From ${senderName || 'Anonymous'}
             </div>
             
-            ${this.generateCleanScratchArea('scratchArea', {left: '76px', top: '45%', width: 350, height: 150}, hiddenMessage || 'Surprise!', cardData)}
+            <div class="card-element scratch-container" id="scratchContainer" 
+                 style="position: absolute; top: 45%; left: 16%; width: 350px; height: 150px;">
+                <canvas id="messageCanvas" width="350" height="150"></canvas>
+                <canvas id="scratchCanvas" width="350" height="150"></canvas>
+            </div>
             
             <div class="card-element card-symbol" id="cardSymbol" 
-                 style="position: absolute; top: 20px; right: 20px; width: 80px; height: 80px; background: transparent !important; background-color: transparent !important;">
+                 style="position: absolute; top: 20px; right: 20px; width: 80px; height: 80px;">
                 ${symbolContent}
             </div>
         `;
     }
 
     /**
-     * ✅ COMPLETELY CLEAN CSS - NO GREY OVERLAYS, NO BACKGROUNDS
+     * Generate CSS with DUAL CANVAS styling
      */
-    generateCleanCSS(cardData) {
+    generateWebAppCSS(cardData) {
         const { 
+            backgroundImage, 
+            backgroundImageBase64, 
             glowColor = '#667eea', 
-            glowEffect = 30
+            glowEffect = 30,
+            cardStyle = {}
         } = cardData;
         
         return `
@@ -518,7 +449,7 @@ class AdvancedCardGenerator {
             width: 100%;
         }
 
-        /* CARD PREVIEW BASE STYLES - CLEAN */
+        /* CARD PREVIEW BASE STYLES */
         .card-preview {
             width: 100%;
             max-width: 600px;
@@ -533,7 +464,6 @@ class AdvancedCardGenerator {
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             
-            /* Enhanced glow effect with custom color */
             box-shadow: 
                 0 0 ${glowEffect}px ${this.hexToRgba(glowColor, 0.9)},
                 0 0 ${glowEffect * 2}px ${this.hexToRgba(glowColor, 0.6)},
@@ -554,7 +484,7 @@ class AdvancedCardGenerator {
                 0 20px 50px rgba(0, 0, 0, 0.7);
         }
 
-        /* GRADIENT BACKGROUND CLASSES - EXACTLY FROM WEB APP */
+        /* GRADIENT BACKGROUND CLASSES */
         .bg-obsidian-rose {
             background: linear-gradient(45deg, rgba(255, 154, 158, 0.3) 0%, rgba(254, 207, 239, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
         }
@@ -579,35 +509,48 @@ class AdvancedCardGenerator {
             background: linear-gradient(45deg, rgba(132, 250, 176, 0.3) 0%, rgba(143, 211, 244, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
         }
 
-        /* ✅ COMPLETELY CLEAN CARD ELEMENTS - NO GREY OVERLAYS */
+        /* CARD ELEMENTS */
         .card-element {
             position: absolute;
-            cursor: move;
             user-select: none;
             transition: all 0.3s ease;
-            /* ✅ FORCE TRANSPARENT - NO BACKGROUNDS EVER */
-            background: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            backdrop-filter: none !important;
-            padding: 0 !important;
         }
 
-        .card-element:hover {
-            transform: scale(1.05);
-            filter: brightness(1.2);
-        }
-
-        /* ✅ CLEAN SENDER NAME - NO GREY OVERLAY */
         .sender-name {
             color: white;
             font-weight: 600;
             font-size: 18px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            /* ✅ REMOVED ALL BACKGROUND STYLING */
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* ✅ CLEAN CARD SYMBOL - NO GREY FRAME */
+        /* DUAL CANVAS SYSTEM - EXACT SAME AS JOE'S SCRIPT */
+        .scratch-container {
+            position: relative;
+            cursor: crosshair;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #messageCanvas, #scratchCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 12px;
+        }
+
+        #messageCanvas {
+            z-index: 1; /* Bottom layer - shows hidden message */
+        }
+
+        #scratchCanvas {
+            z-index: 2; /* Top layer - scratch surface */
+        }
+
         .card-symbol {
             font-size: 48px;
             opacity: 0.9;
@@ -617,7 +560,9 @@ class AdvancedCardGenerator {
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            /* ✅ REMOVED ALL BACKGROUND STYLING */
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            backdrop-filter: blur(5px);
         }
 
         .card-symbol:hover {
@@ -633,80 +578,13 @@ class AdvancedCardGenerator {
             filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
         }
 
-        /* ✅ CLEAN CUSTOM ELEMENTS - NO GREY FRAMES */
         .custom-element {
             color: white;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            /* ✅ REMOVED ALL BACKGROUND STYLING */
-        }
-
-        /* ✅ CLEAN SCRATCH CONTAINER - NO OVERLAYS */
-        .scratch-container {
-            /* ✅ COMPLETELY TRANSPARENT CONTAINER */
-            background: transparent !important;
-            background-color: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-        }
-
-        /* PARTICLE EFFECTS */
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            z-index: 1000;
-        }
-
-        .heart-particle {
-            font-size: 20px;
-            color: #e53e3e;
-            animation: heartFloat 3s ease-out forwards;
-        }
-
-        @keyframes heartFloat {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(0.5);
-            }
-            50% {
-                opacity: 0.8;
-                transform: translateY(-100px) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-200px) scale(0.3);
-            }
-        }
-
-        .sparkle-particle {
-            font-size: 16px;
-            color: gold;
-            animation: sparkleFloat 2s ease-out forwards;
-        }
-
-        @keyframes sparkleFloat {
-            0% {
-                opacity: 1;
-                transform: translateY(0) rotate(0deg) scale(0.5);
-            }
-            50% {
-                opacity: 0.9;
-                transform: translateY(-80px) rotate(180deg) scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-150px) rotate(360deg) scale(0.2);
-            }
-        }
-
-        /* SMOKE EFFECT */
-        .smoke-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 3;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            backdrop-filter: blur(5px);
         }
 
         /* FLOATING ANIMATION */
@@ -735,6 +613,7 @@ class AdvancedCardGenerator {
             
             .sender-name {
                 font-size: 16px;
+                padding: 10px 14px;
             }
             
             .card-symbol {
@@ -745,7 +624,7 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * FIXED: Generate audio sources with proper asset handling
+     * Generate audio sources
      */
     generateAudioSources(cardData) {
         const { soundEffect, soundEffectBase64 } = cardData;
@@ -753,7 +632,6 @@ class AdvancedCardGenerator {
         if (soundEffectBase64) {
             return `<source src="${soundEffectBase64}" type="audio/mpeg">`;
         } else if (soundEffect && soundEffect !== '#beep') {
-            // FIXED: Check if it's a web app asset
             const audioUrl = this.isWebAppAsset(soundEffect)
                 ? `${this.baseUrl}/assets/audio/${soundEffect}`
                 : soundEffect;
@@ -764,328 +642,496 @@ class AdvancedCardGenerator {
     }
 
     /**
-     * ✅ CLEAN JavaScript with PERFECT dual-canvas scratch like joe's implementation
+     * Generate JavaScript with EXACT DUAL CANVAS SYSTEM from joe's script
      */
-    generateCleanJavaScript(cardData) {
+    generateDualCanvasJavaScript(cardData) {
         const { 
             hiddenMessage = 'Surprise!', 
             animation = 'hearts',
             glowColor = '#667eea',
             smokeEffect = false,
-            elements = []
+            scratchTexture,
+            scratchTextureBase64
         } = cardData;
 
+        // Get scratch texture URL
+        let scratchTextureUrl = '';
+        if (scratchTextureBase64) {
+            scratchTextureUrl = scratchTextureBase64;
+        } else if (scratchTexture && !scratchTexture.includes('data:image/svg+xml')) {
+            if (this.isWebAppAsset(scratchTexture)) {
+                scratchTextureUrl = `${this.baseUrl}/assets/scratchTextures/${scratchTexture}`;
+            } else {
+                scratchTextureUrl = scratchTexture;
+            }
+        }
+
         return `
-        // ✅ CLEAN CARD CONFIGURATION - Like joe's perfect implementation
-        const cardConfig = {
-            hiddenMessage: ${JSON.stringify(hiddenMessage)},
-            animation: ${JSON.stringify(animation)},
-            glowColor: ${JSON.stringify(glowColor)},
-            smokeEffect: ${smokeEffect},
-            elements: ${JSON.stringify(elements)},
-            brushRadius: 12, // Same as joe's
-            audioInitialized: false
-        };
-
-        // Audio elements
-        let scratchSound = document.getElementById('scratchSound');
-        let currentAudio = null;
-
-        // ✅ PERFECT DUAL CANVAS SCRATCH SYSTEM - EXACTLY LIKE JOE'S
-        function initializeDualCanvasScratch(elementId, hiddenMessage, scratchTexture) {
-            const messageCanvas = document.getElementById('messageCanvas-' + elementId);
-            const scratchCanvas = document.getElementById('scratchCanvas-' + elementId);
-            
-            if (!messageCanvas || !scratchCanvas) return;
-            
+        // DUAL CANVAS SYSTEM - EXACT SAME LOGIC AS JOE'S SCRIPT
+        const messageCanvas = document.getElementById('messageCanvas');
+        const scratchCanvas = document.getElementById('scratchCanvas');
+        
+        if (!messageCanvas || !scratchCanvas) {
+            console.error('Dual canvas system not found');
+        } else {
             const messageCtx = messageCanvas.getContext('2d');
             const scratchCtx = scratchCanvas.getContext('2d');
-            
-            // ✅ DRAW HIDDEN MESSAGE ON BOTTOM CANVAS (like joe's messageCanvas)
+            const scratchSound = document.getElementById('scratchSound');
+
+            // Set canvas dimensions
+            messageCanvas.width = ${this.getCanvasWidth(cardData)};
+            messageCanvas.height = ${this.getCanvasHeight(cardData)};
+            scratchCanvas.width = ${this.getCanvasWidth(cardData)};
+            scratchCanvas.height = ${this.getCanvasHeight(cardData)};
+
+            // Preload sound
+            const sound = new Audio('${this.getAudioUrl(cardData)}');
+            sound.loop = false;
+            sound.volume = 1.0;
+
+            // Draw the message on the message canvas (bottom layer) - EXACT SAME
             function drawMessage() {
                 messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
                 messageCtx.font = '30px Comic Sans MS';
                 messageCtx.fillStyle = '#fff';
                 messageCtx.textAlign = 'center';
                 messageCtx.textBaseline = 'middle';
-                messageCtx.fillText(hiddenMessage, messageCanvas.width / 2, messageCanvas.height / 2);
+                const message = "${hiddenMessage}";
+                messageCtx.fillText(message, messageCanvas.width / 2, messageCanvas.height / 2);
             }
-            
-            // ✅ DRAW SCRATCH LAYER ON TOP CANVAS (like joe's scratchCanvas)
+
+            // Draw the scratch layer on the scratch canvas (top layer) - EXACT SAME
             function drawScratchLayer() {
-                if (scratchTexture && scratchTexture !== 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==') {
-                    const scratchLayer = new Image();
-                    scratchLayer.crossOrigin = 'anonymous';
-                    scratchLayer.src = scratchTexture;
-                    scratchLayer.onload = () => {
-                        scratchCtx.drawImage(scratchLayer, 0, 0, scratchCanvas.width, scratchCanvas.height);
-                        addScratchText();
-                    };
-                    scratchLayer.onerror = () => {
-                        createDefaultScratchSurface();
-                    };
-                } else {
-                    createDefaultScratchSurface();
-                }
+                ${scratchTextureUrl ? `
+                const scratchLayer = new Image();
+                scratchLayer.src = '${scratchTextureUrl}';
+                scratchLayer.onload = () => {
+                    scratchCtx.drawImage(scratchLayer, 0, 0, scratchCanvas.width, scratchCanvas.height);
+                    scratchCtx.strokeStyle = '#000';
+                    scratchCtx.lineWidth = 2;
+                    scratchCtx.setLineDash([5, 5]);
+                    scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+                    scratchCtx.setLineDash([]);
+                    scratchCtx.font = '40px Comic Sans MS';
+                    scratchCtx.fillStyle = '#000';
+                    scratchCtx.textAlign = 'center';
+                    scratchCtx.textBaseline = 'middle';
+                    scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
+                };
+                scratchLayer.onerror = () => {
+                    console.log('Failed to load scratch texture. Using fallback.');
+                    drawFallbackScratchLayer();
+                };
+                ` : `
+                drawFallbackScratchLayer();
+                `}
             }
-            
-            function createDefaultScratchSurface() {
+
+            function drawFallbackScratchLayer() {
                 scratchCtx.fillStyle = '#c0c0c0';
                 scratchCtx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-                addScratchText();
-            }
-            
-            function addScratchText() {
-                // ✅ ADD BORDER LIKE JOE'S
                 scratchCtx.strokeStyle = '#000';
                 scratchCtx.lineWidth = 2;
                 scratchCtx.setLineDash([5, 5]);
                 scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
                 scratchCtx.setLineDash([]);
-                
-                // ✅ ADD TEXT LIKE JOE'S - DRAWN ON CANVAS, NOT HTML
                 scratchCtx.font = '40px Comic Sans MS';
                 scratchCtx.fillStyle = '#000';
                 scratchCtx.textAlign = 'center';
                 scratchCtx.textBaseline = 'middle';
                 scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
             }
-            
-            // Initialize both layers
+
+            // Initialize both layers - EXACT SAME
             drawMessage();
             drawScratchLayer();
-            
-            // ✅ PERFECT SCRATCHING LOGIC - EXACTLY LIKE JOE'S
+
+            // Scratching logic on the scratch canvas - EXACT SAME
             let isScratching = false;
             let scratchedPixels = 0;
-            const brushRadius = cardConfig.brushRadius;
+            const brushRadius = 12;
             const totalPixels = scratchCanvas.width * scratchCanvas.height;
-            const intervalThreshold = totalPixels * 0.05; // 5% intervals like joe's
+            const intervalThreshold = totalPixels * 0.05;
             let lastBurstAt = 0;
             let isSoundPlaying = false;
-            
-            // ✅ AUDIO HANDLING LIKE JOE'S
+
+            // Function to play the sound - EXACT SAME
             function playSound() {
                 if (!isSoundPlaying) {
                     isSoundPlaying = true;
-                    if (scratchSound && scratchSound.src) {
-                        scratchSound.volume = 1.0;
-                        scratchSound.play().catch(() => playBeepSound());
-                    } else {
-                        playBeepSound();
-                    }
+                    sound.volume = 1.0;
+                    sound.play().catch(err => console.log('Sound play error:', err));
                 }
             }
-            
-            function stopSound() {
+
+            // Add an event listener to detect when the sound ends naturally - EXACT SAME
+            sound.addEventListener('ended', () => {
                 isSoundPlaying = false;
-                if (scratchSound) {
-                    scratchSound.pause();
-                    scratchSound.currentTime = 0;
+                console.log('Sound finished playing naturally.');
+                if (isScratching) {
+                    playSound();
+                }
+            });
+
+            // Stop sound if the mouse leaves the canvas - EXACT SAME
+            function stopSoundOnLeave() {
+                if (isScratching) {
+                    isScratching = false;
                 }
             }
-            
-            // ✅ EVENT LISTENERS - EXACTLY LIKE JOE'S
+
+            // Event listeners - EXACT SAME AS JOE'S SCRIPT
             scratchCanvas.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 isScratching = true;
                 playSound();
-                scratch(e);
             });
-            
             scratchCanvas.addEventListener('mouseup', (e) => {
                 e.preventDefault();
                 isScratching = false;
-                stopSound();
             });
-            
-            scratchCanvas.addEventListener('mouseleave', () => {
-                if (isScratching) {
-                    isScratching = false;
-                    stopSound();
-                }
-            });
-            
+            scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
             scratchCanvas.addEventListener('mousemove', scratch);
-            
             scratchCanvas.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 isScratching = true;
                 playSound();
-                scratch(e.touches[0]);
             });
-            
             scratchCanvas.addEventListener('touchend', (e) => {
                 e.preventDefault();
                 isScratching = false;
-                stopSound();
             });
-            
             scratchCanvas.addEventListener('touchmove', (e) => {
                 e.preventDefault();
                 scratch(e.touches[0]);
             });
-            
-            // ✅ PERFECT SCRATCH FUNCTION - EXACTLY LIKE JOE'S
+
+            // Scratch function - EXACT SAME PIXEL-BY-PIXEL LOGIC
             function scratch(event) {
                 if (!isScratching) return;
-                
                 const rect = scratchCanvas.getBoundingClientRect();
                 const scaleX = scratchCanvas.width / rect.width;
                 const scaleY = scratchCanvas.height / rect.height;
                 const x = (event.clientX - rect.left) * scaleX;
                 const y = (event.clientY - rect.top) * scaleY;
-                
-                // ✅ SCRATCH LOGIC - EXACTLY LIKE JOE'S
                 scratchCtx.globalCompositeOperation = 'destination-out';
                 scratchCtx.beginPath();
                 scratchCtx.arc(x, y, brushRadius, 0, Math.PI * 2);
                 scratchCtx.fillStyle = 'rgba(0, 0, 0, 1)';
                 scratchCtx.fill();
-                
-                // ✅ TRACK SCRATCHED AREA - LIKE JOE'S
+
                 const scratchedArea = Math.PI * brushRadius * brushRadius;
                 scratchedPixels += scratchedArea;
-                
-                // ✅ PARTICLE EFFECTS - LIKE JOE'S FIREWORKS
-                checkReveal(x, y);
+                console.log('Scratched pixels:', scratchedPixels, 'Interval threshold:', intervalThreshold);
+                checkReveal();
             }
-            
-            // ✅ PARTICLE EFFECTS SYSTEM - LIKE JOE'S FIREWORKS
-            function checkReveal(x, y) {
+
+            // Fireworks logic - EXACT SAME AS JOE'S SCRIPT
+            function checkReveal() {
                 const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
                 if (intervalsPassed > lastBurstAt) {
                     lastBurstAt = intervalsPassed;
-                    
-                    // Create particles like joe's fireworks
-                    createParticleEffect(x, y);
+                    console.log('Firing ${animation}-themed fireworks at interval:', intervalsPassed);
+                    if (typeof confetti === 'function') {
+                        // Calculate the bottom of the scratch canvas in viewport coordinates
+                        const rect = scratchCanvas.getBoundingClientRect();
+                        const canvasBottomY = (rect.bottom / window.innerHeight);
+                        const canvasCenterX = (rect.left + rect.width / 2) / window.innerWidth;
+
+                        // Animation-based fireworks
+                        ${this.generateFireworksCode(animation)}
+                    } else {
+                        console.log('Confetti library not loaded.');
+                    }
                 }
             }
-            
-            function createParticleEffect(x, y) {
-                if (!window.particleSystem) return;
-                
-                // Convert canvas coordinates to global coordinates
-                const rect = scratchCanvas.getBoundingClientRect();
-                const globalX = rect.left + (x / scratchCanvas.width) * rect.width;
-                const globalY = rect.top + (y / scratchCanvas.height) * rect.height;
-                
-                // Create particle effect
-                window.particleSystem.triggerEffect(globalX, globalY);
+
+            // Check if confetti library loaded - EXACT SAME
+            window.addEventListener('load', () => {
+                if (typeof confetti === 'undefined') {
+                    console.log('Confetti library failed to load.');
+                } else {
+                    console.log('Confetti library loaded successfully.');
+                }
+            });
+
+            console.log('✅ DUAL CANVAS SCRATCH CARD INITIALIZED - PROFESSIONAL MODE');
+            console.log('🎯 Message Canvas (Bottom Layer):', messageCanvas.width + 'x' + messageCanvas.height);
+            console.log('🎨 Scratch Canvas (Top Layer):', scratchCanvas.width + 'x' + scratchCanvas.height);
+            console.log('🔥 Animation Type:', '${animation}');
+            console.log('💨 Smoke Effect:', ${smokeEffect});
+        }
+
+        // ADDITIONAL EFFECTS - Smoke system if enabled
+        ${smokeEffect ? this.generateSmokeSystem(glowColor) : '// Smoke effect disabled'}
+
+        console.log('🎯 PROFESSIONAL DUAL CANVAS CARD LOADED SUCCESSFULLY!');
+        `;
+    }
+
+    /**
+     * Get canvas width from card data
+     */
+    getCanvasWidth(cardData) {
+        const scratchElement = cardData.elements?.find(e => e.type === 'scratch' || e.type === 'scratch-area');
+        if (scratchElement && scratchElement.position?.width) {
+            return this.parsePixels(scratchElement.position.width) || 350;
+        }
+        return 350;
+    }
+
+    /**
+     * Get canvas height from card data
+     */
+    getCanvasHeight(cardData) {
+        const scratchElement = cardData.elements?.find(e => e.type === 'scratch' || e.type === 'scratch-area');
+        if (scratchElement && scratchElement.position?.height) {
+            return this.parsePixels(scratchElement.position.height) || 150;
+        }
+        return 150;
+    }
+
+    /**
+     * Get audio URL for scratch sound
+     */
+    getAudioUrl(cardData) {
+        const { soundEffect, soundEffectBase64 } = cardData;
+        
+        if (soundEffectBase64) {
+            return soundEffectBase64;
+        } else if (soundEffect && soundEffect !== '#beep') {
+            if (this.isWebAppAsset(soundEffect)) {
+                return `${this.baseUrl}/assets/audio/${soundEffect}`;
+            } else {
+                return soundEffect;
             }
         }
         
-        // ✅ PARTICLE SYSTEM - EXACTLY LIKE WEB APP
-        class ParticleSystem {
+        return ''; // Will fallback to Web Audio API beep
+    }
+
+    /**
+     * Generate fireworks code based on animation type
+     */
+    generateFireworksCode(animation) {
+        switch (animation) {
+            case 'hearts':
+                return `
+                // First burst: Pink sparkles
+                confetti({
+                    particleCount: 30,
+                    spread: 40,
+                    origin: { x: canvasCenterX, y: canvasBottomY },
+                    colors: ['#FF69B4', '#FF1493'],
+                    scalar: 1.2,
+                    gravity: 0.8,
+                    ticks: 100,
+                    angle: 90,
+                    startVelocity: 20
+                });
+                // Second burst: Lighter pink accents
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 20,
+                        spread: 60,
+                        origin: { x: canvasCenterX, y: canvasBottomY },
+                        colors: ['#C71585', '#FF69B4'],
+                        scalar: 0.8,
+                        gravity: 1.0,
+                        ticks: 80,
+                        angle: 90,
+                        startVelocity: 25
+                    });
+                }, 100);`;
+            
+            case 'sparkles':
+                return `
+                // Gold sparkle burst
+                confetti({
+                    particleCount: 25,
+                    spread: 50,
+                    origin: { x: canvasCenterX, y: canvasBottomY },
+                    colors: ['#FFD700', '#FFA500', '#FFFF00'],
+                    scalar: 1.0,
+                    gravity: 0.6,
+                    ticks: 120,
+                    angle: 90,
+                    startVelocity: 22
+                });
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 15,
+                        spread: 70,
+                        origin: { x: canvasCenterX, y: canvasBottomY },
+                        colors: ['#FFE55C', '#FFD700'],
+                        scalar: 0.6,
+                        gravity: 0.8,
+                        ticks: 100,
+                        angle: 90,
+                        startVelocity: 18
+                    });
+                }, 150);`;
+            
+            default:
+                return `
+                // Default colorful burst
+                confetti({
+                    particleCount: 30,
+                    spread: 45,
+                    origin: { x: canvasCenterX, y: canvasBottomY },
+                    colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c'],
+                    scalar: 1.1,
+                    gravity: 0.7,
+                    ticks: 110,
+                    angle: 90,
+                    startVelocity: 21
+                });`;
+        }
+    }
+
+    /**
+     * Generate smoke system for enhanced effects
+     */
+    generateSmokeSystem(glowColor) {
+        return `
+        // CANVAS-BASED SMOKE EFFECT SYSTEM
+        class SmokeParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = -(Math.random() * 2 + 1);
+                this.life = 1.0;
+                this.maxLife = Math.random() * 300 + 200;
+                this.age = 0;
+                this.size = Math.random() * 20 + 10;
+                this.maxSize = this.size * (2 + Math.random() * 2);
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+                this.baseColor = this.parseColor(color);
+            }
+            
+            parseColor(color) {
+                const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(color);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 102, g: 126, b: 234 };
+            }
+            
+            update() {
+                this.age++;
+                this.vx += (Math.random() - 0.5) * 0.01;
+                this.vy -= 0.05;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.995;
+                this.vy *= 0.995;
+                
+                if (this.size < this.maxSize) {
+                    this.size += 0.4;
+                }
+                
+                this.rotation += this.rotationSpeed;
+                this.life = Math.max(0, 1 - (this.age / this.maxLife));
+                
+                return this.life > 0;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                let alpha = this.life * 0.6;
+                if (this.y < 50) alpha *= (this.y / 50);
+                
+                let ageRatio = 1 - this.life;
+                let red = Math.floor(this.baseColor.r * (1 - ageRatio * 0.2));
+                let green = Math.floor(this.baseColor.g + ageRatio * 15);
+                let blue = Math.floor(this.baseColor.b + ageRatio * 25);
+                
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                let gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+                gradient.addColorStop(0, \`rgba(\${red}, \${green}, \${blue}, \${alpha})\`);
+                gradient.addColorStop(0.3, \`rgba(\${red}, \${green}, \${blue}, \${alpha * 0.7})\`);
+                gradient.addColorStop(0.7, \`rgba(\${red}, \${green}, \${blue}, \${alpha * 0.3})\`);
+                gradient.addColorStop(1, \`rgba(\${red}, \${green}, \${blue}, 0)\`);
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class SmokeSystem {
             constructor() {
                 this.particles = [];
-                this.container = document.getElementById('particleContainer');
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.setupCanvas();
                 this.isRunning = false;
             }
-
-            createParticle(x, y, type) {
-                const particle = document.createElement('div');
-                particle.className = \`particle \${type}-particle\`;
+            
+            setupCanvas() {
+                this.canvas.style.cssText = \`
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    pointer-events: none;
+                    z-index: 3;
+                \`;
                 
-                switch(type) {
-                    case 'heart':
-                        particle.textContent = '❤️';
-                        break;
-                    case 'sparkle':
-                        particle.textContent = '✨';
-                        break;
-                    default:
-                        particle.textContent = '⭐';
-                }
-                
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                
-                this.container.appendChild(particle);
-                this.particles.push(particle);
-                
-                // Remove after animation
-                setTimeout(() => {
-                    if (particle.parentNode) {
-                        particle.parentNode.removeChild(particle);
-                    }
-                    const index = this.particles.indexOf(particle);
-                    if (index > -1) {
-                        this.particles.splice(index, 1);
-                    }
-                }, 3000);
-            }
-
-            triggerEffect(x, y) {
-                if (Math.random() > 0.7) return; // Don't create too many
-                
-                this.createParticle(x, y, cardConfig.animation);
-            }
-
-            celebrate() {
-                for (let i = 0; i < 20; i++) {
-                    setTimeout(() => {
-                        const x = Math.random() * window.innerWidth;
-                        const y = Math.random() * window.innerHeight;
-                        this.createParticle(x, y, cardConfig.animation);
-                    }, i * 100);
+                const container = document.querySelector('.card-container');
+                if (container) {
+                    const rect = container.getBoundingClientRect();
+                    this.canvas.width = rect.width;
+                    this.canvas.height = rect.height;
+                    container.style.position = 'relative';
+                    container.appendChild(this.canvas);
                 }
             }
-        }
-
-        // ✅ AUDIO FUNCTIONS - LIKE WEB APP
-        function playBeepSound() {
-            try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+            
+            start() {
+                this.isRunning = true;
+                this.animate();
+            }
+            
+            animate() {
+                if (!this.isRunning) return;
                 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                oscillator.frequency.value = 600;
-                oscillator.type = 'sine';
+                // Create new particles
+                if (Math.random() < 0.3) {
+                    const x = Math.random() * this.canvas.width;
+                    const y = this.canvas.height + 50;
+                    this.particles.push(new SmokeParticle(x, y, '${glowColor}'));
+                }
                 
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                // Update and filter particles
+                this.particles = this.particles.filter(particle => particle.update());
                 
-                oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.3);
-            } catch (error) {
-                console.log('Web Audio API not supported:', error);
+                // Draw particles
+                this.particles.forEach(particle => particle.draw(this.ctx));
+                
+                // Limit particles for performance
+                if (this.particles.length > 100) {
+                    this.particles = this.particles.slice(0, 80);
+                }
+                
+                requestAnimationFrame(() => this.animate());
             }
         }
 
-        // ✅ INITIALIZATION - CLEAN AND PERFECT
-        function initializeCard() {
-            console.log('🎯 Initializing Clean Masterm Card...');
-            
-            // Initialize particle system
-            window.particleSystem = new ParticleSystem();
-            
-            // Initialize all scratch areas
-            document.querySelectorAll('.scratch-container').forEach(container => {
-                const elementId = container.id;
-                const hiddenMsg = cardConfig.hiddenMessage;
-                const scratchTexture = ''; // Will be handled by individual initialization
-                
-                // The dual canvas initialization is handled by inline scripts
-            });
-            
-            console.log('✅ Clean Masterm Card initialized successfully!');
-            console.log('🎨 Features: Clean Dual-Canvas Scratch, Perfect Particles, No Grey Overlays');
-        }
-
-        // ✅ START THE CLEAN CARD
-        document.addEventListener('DOMContentLoaded', initializeCard);
-        
-        // Audio initialization on first user interaction
-        document.addEventListener('click', () => {
-            if (!cardConfig.audioInitialized && scratchSound) {
-                scratchSound.load();
-                cardConfig.audioInitialized = true;
-            }
-        }, { once: true });`;  // <-- This closes the generateCleanJavaScript method
+        // Initialize smoke system
+        const smokeSystem = new SmokeSystem();
+        smokeSystem.start();
+        console.log('💨 Smoke effect system initialized');`;
     }
 
     /**
@@ -1097,11 +1143,11 @@ class AdvancedCardGenerator {
             const r = parseInt(result[1], 16);
             const g = parseInt(result[2], 16);
             const b = parseInt(result[3], 16);
-            return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
-        return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+        return `rgba(102, 126, 234, ${alpha})`;
     }
 }
 
-// Export the clean generator
+// Export the professional dual canvas generator
 module.exports = new AdvancedCardGenerator();

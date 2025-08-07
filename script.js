@@ -880,24 +880,58 @@ function selectTemplate(templateType) {
     // Blank template: completely empty but ready for dynamic element creation
     cardPreview.innerHTML = '';
     cardPreview.dataset.template = 'blank';
+    
+    // FIXED: Create scratch area with proper texture application capability
+    const scratchArea = document.createElement('div');
+    scratchArea.className = 'card-element scratch-area';
+    scratchArea.id = 'scratchArea';
+    scratchArea.style.cssText = `
+      position: absolute; 
+      top: 150px; 
+      left: 76px; 
+      width: 350px; 
+      height: 150px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 8px; 
+      background: transparent; 
+      background-color: transparent;
+      overflow: hidden;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    `;
+    
+    scratchArea.innerHTML = '<p style="margin: 0; padding: 10px; text-align: center; word-wrap: break-word;">Scratch here to reveal your message!</p>';
+    
+    // Add resize handles
+    ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+      const handle = document.createElement('div');
+      handle.className = `resize-handle ${pos}`;
+      scratchArea.appendChild(handle);
+    });
+    
+    cardPreview.appendChild(scratchArea);
+    makeElementInteractive(scratchArea);
+    
   } else {
-    // ✅ CLASSIC TEMPLATE WITH ABSOLUTELY TRANSPARENT ELEMENTS
+    // Classic template with absolutely transparent elements
     cardPreview.innerHTML = `
-      <div class="card-element sender-name" id="senderName" style="background: transparent; background-color: transparent;">
+      <div class="card-element sender-name" id="senderName" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
         From Sarah
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
         <div class="resize-handle se"></div>
       </div>
-      <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent;">
-        <p>Scratch here to reveal your message!</p>
+      <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
+        <p style="margin: 0; padding: 10px; text-align: center; word-wrap: break-word;">Scratch here to reveal your message!</p>
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
         <div class="resize-handle se"></div>
       </div>
-      <div class="card-element card-symbol" id="cardSymbol" style="background: transparent; background-color: transparent;">
+      <div class="card-element card-symbol" id="cardSymbol" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
         ❤️
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
@@ -908,6 +942,47 @@ function selectTemplate(templateType) {
     cardPreview.dataset.template = 'classic';
   }
   initializeCardElements();
+}
+
+// NEW FUNCTION: Handle text wrapping within element boundaries
+function wrapTextToFitElement(text, element) {
+  if (!text || !element) return text;
+  
+  // Get element dimensions
+  const elementWidth = element.offsetWidth || parseInt(element.style.width) || 200;
+  const elementHeight = element.offsetHeight || parseInt(element.style.height) || 50;
+  
+  // Create a temporary canvas to measure text width
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Get computed font style
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = computedStyle.fontSize || '16px';
+  const fontFamily = computedStyle.fontFamily || 'Arial';
+  ctx.font = `${fontSize} ${fontFamily}`;
+  
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0];
+  
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine + ' ' + word;
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    
+    if (testWidth > elementWidth - 20) { // 20px padding
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  lines.push(currentLine);
+  
+  // Join lines with <br> tags for proper HTML line breaks
+  return lines.join('<br>');
 }
 // Make card elements interactive
 function initializeCardElements() {

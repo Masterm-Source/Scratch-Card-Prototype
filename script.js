@@ -2741,15 +2741,16 @@ function setupLoadMore() {
 // Live preview update - IMPROVED
 function updatePreview() {
   const senderName = senderNameInput?.textContent?.replace('From ', '') || 'Your Name';
-  const hiddenMessage = hiddenMessageInput?.value || 'Your secret message will appear here...';
+  
+  // FIXED: Don't auto-fill with placeholder text
+  const hiddenMessage = hiddenMessageInput?.value || '';
 
   if (senderNameInput) {
     senderNameInput.textContent = `From ${senderName}`;
   }
   
-  if (hiddenMessageInput) {
-    hiddenMessageInput.value = hiddenMessage;
-  }
+  // FIXED: Only set value if it's actually empty and we want to show placeholder
+  // But don't force the placeholder back in
   
   // Apply selected background
   if (selectedAssets.background) {
@@ -2769,7 +2770,6 @@ function updatePreview() {
   if (cardSymbol && selectedAssets.symbol) {
     const handles = cardSymbol.querySelectorAll('.resize-handle');
     if (selectedAssets.symbol.includes('data:image/svg+xml') && selectedAssets.symbol.includes('<text')) {
-      // It's an emoji SVG, extract the emoji
       const emojiMatch = selectedAssets.symbol.match(/>([^<]+)<\/text>/);
       cardSymbol.innerHTML = emojiMatch ? emojiMatch[1] : '';
     } else if (selectedAssets.symbol.includes('data:image') || selectedAssets.symbol.includes('.png') || selectedAssets.symbol.includes('.jpg') || selectedAssets.symbol.includes('.jpeg')) {
@@ -2777,7 +2777,6 @@ function updatePreview() {
     } else {
       cardSymbol.textContent = selectedAssets.symbol;
     }
-    // Re-add resize handles
     handles.forEach(handle => cardSymbol.appendChild(handle));
   }
   
@@ -2789,7 +2788,6 @@ function updatePreview() {
     scratchArea.style.backgroundPosition = 'center';
   }
 }
-
 // File upload functions - UPDATED
 function uploadCustomBackground() {
   backgroundUpload?.click();
@@ -3279,5 +3277,93 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
+// 1. Debug what data is actually being captured
+function debugActualCardData() {
+    console.log("=== DEBUGGING ACTUAL CARD GENERATION DATA ===");
+    
+    const scratchArea = document.getElementById('scratchArea');
+    
+    if (scratchArea) {
+        console.log("✅ Scratch area found in DOM");
+        console.log("Scratch area element:", scratchArea);
+        console.log("Scratch area computed style:", window.getComputedStyle(scratchArea).backgroundImage);
+        console.log("Scratch area inline style:", scratchArea.style.backgroundImage);
+        console.log("Scratch area dataset:", scratchArea.dataset);
+        
+        // Check the EXACT data that would be sent
+        const mockCardData = {
+            scratchTexture: selectedAssets.scratchTexture,
+            scratchTextureBase64: uploadedFiles.scratchTexture,
+            elements: Array.from(document.querySelectorAll('.card-element')).map(el => ({
+                id: el.id,
+                type: el.classList.contains('scratch-area') ? 'scratch' : 'other',
+                style: {
+                    backgroundImage: el.style.backgroundImage || window.getComputedStyle(el).backgroundImage,
+                    backgroundSize: el.style.backgroundSize || window.getComputedStyle(el).backgroundSize,
+                    backgroundPosition: el.style.backgroundPosition || window.getComputedStyle(el).backgroundPosition
+                }
+            }))
+        };
+        
+        console.log("Mock card data that would be sent:", mockCardData);
+        
+        const scratchElement = mockCardData.elements.find(el => el.type === 'scratch');
+        console.log("Scratch element data:", scratchElement);
+        
+    } else {
+        console.log("❌ No scratch area found in DOM");
+    }
+    
+    console.log("selectedAssets:", selectedAssets);
+    console.log("uploadedFiles:", uploadedFiles);
+    console.log("==========================================");
+}
 
+// 2. Intercept the actual network request
+function interceptGenerateCard() {
+    const originalFetch = window.fetch;
+    
+    window.fetch = function(...args) {
+        const [url, options] = args;
+        
+        if (url.includes('/api/cards') && options && options.method === 'POST') {
+            console.log("=== INTERCEPTED CARD GENERATION REQUEST ===");
+            console.log("URL:", url);
+            
+            try {
+                const cardData = JSON.parse(options.body);
+                console.log("🎯 SCRATCH TEXTURE IN REQUEST:");
+                console.log("- scratchTexture:", cardData.scratchTexture);
+                console.log("- scratchTextureBase64:", cardData.scratchTextureBase64);
+                console.log("- scratch elements:", cardData.elements?.filter(el => el.type === 'scratch'));
+            } catch (e) {
+                console.log("Could not parse request body as JSON");
+            }
+            
+            console.log("==============================================");
+        }
+        
+        return originalFetch.apply(this, args);
+    };
+    
+    console.log("✅ Network request interceptor activated");
+}
 
+// 3. Run full investigation
+function runFullInvestigation() {
+    console.log("🔍 STARTING WEB APP INVESTIGATION");
+    debugActualCardData();
+    interceptGenerateCard();
+    console.log("✅ Ready! Now select a scratch texture and generate a card.");
+}
+
+// Make functions available globally
+window.debugActualCardData = debugActualCardData;
+window.interceptGenerateCard = interceptGenerateCard;
+window.runFullInvestigation = runFullInvestigation;
+
+// Auto-run when script loads
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait a bit for everything to initialize
+    setTimeout(runFullInvestigation, 2000);
+});

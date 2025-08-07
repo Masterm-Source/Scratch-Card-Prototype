@@ -1219,7 +1219,8 @@ function rgbToHex(rgb) {
 
 // Property controls
 function initializePropertyControls() {
-  const elementText = document.getElementById('elementText');
+  const textTypeDropdown = document.getElementById('textTypeDropdown');
+  const textContentInput = document.getElementById('textContentInput');
   const elementSize = document.getElementById('elementSize');
   const elementFont = document.getElementById('elementFont');
   const elementColor = document.getElementById('elementColor');
@@ -1229,9 +1230,95 @@ function initializePropertyControls() {
   const senderNameInput = document.getElementById('senderNameInput');
   const sizeValue = document.getElementById('sizeValue');
   const opacityValue = document.getElementById('opacityValue');
-  
 
-  // Sender Name Input
+  // Text Type Dropdown - NEW FUNCTIONALITY
+  // Text Type Dropdown - ENHANCED WITH VISIBILITY CONTROL
+textTypeDropdown?.addEventListener('change', function() {
+  const selectedType = this.value;
+  const currentElement = getCurrentElementByType(selectedType);
+  
+  // Handle visibility based on selection
+  if (selectedType === 'hiddenMessage') {
+    showHiddenMessageForEditing();
+  } else {
+    hideHiddenMessageFromEditing();
+  }
+  
+  if (currentElement) {
+    selectCardElement(currentElement);
+    updatePropertyPanelForElement(currentElement);
+  } else {
+    // Clear the property panel if element doesn't exist
+    if (textContentInput) textContentInput.value = '';
+  }
+});
+
+  // Text Content Input - ENHANCED FOR BOTH TYPES
+  textContentInput?.addEventListener('input', function() {
+    const selectedType = textTypeDropdown?.value;
+    
+    if (selectedType === 'senderInfo') {
+      updateSenderText(this.value);
+    } else if (selectedType === 'hiddenMessage') {
+      updateHiddenMessageText(this.value);
+    }
+    
+    hasUnsavedChanges = true;
+    clearTimeout(this.historyTimeout);
+    this.historyTimeout = setTimeout(() => saveToHistory(), 500);
+  });
+
+  // Font Size - APPLIES TO SELECTED TEXT TYPE
+  elementSize?.addEventListener('input', function() {
+    const selectedType = textTypeDropdown?.value;
+    const targetElement = getCurrentElementByType(selectedType);
+    
+    if (targetElement) {
+      targetElement.style.fontSize = this.value + 'px';
+      if (sizeValue) sizeValue.textContent = this.value + 'px';
+      clearTimeout(this.historyTimeout);
+      this.historyTimeout = setTimeout(() => saveToHistory(), 300);
+    }
+  });
+
+  // Font Family - APPLIES TO SELECTED TEXT TYPE
+  elementFont?.addEventListener('change', function() {
+    const selectedType = textTypeDropdown?.value;
+    const targetElement = getCurrentElementByType(selectedType);
+    
+    if (targetElement) {
+      targetElement.style.fontFamily = this.value;
+      clearTimeout(this.historyTimeout);
+      this.historyTimeout = setTimeout(() => saveToHistory(), 100);
+    }
+  });
+
+  // Text Color - APPLIES TO SELECTED TEXT TYPE
+  elementColor?.addEventListener('input', function() {
+    const selectedType = textTypeDropdown?.value;
+    const targetElement = getCurrentElementByType(selectedType);
+    
+    if (targetElement) {
+      targetElement.style.color = this.value;
+      clearTimeout(this.historyTimeout);
+      this.historyTimeout = setTimeout(() => saveToHistory(), 300);
+    }
+  });
+
+  // Opacity - APPLIES TO SELECTED TEXT TYPE
+  elementOpacity?.addEventListener('input', function() {
+    const selectedType = textTypeDropdown?.value;
+    const targetElement = getCurrentElementByType(selectedType);
+    
+    if (targetElement) {
+      targetElement.style.opacity = this.value / 100;
+      if (opacityValue) opacityValue.textContent = this.value + '%';
+      clearTimeout(this.historyTimeout);
+      this.historyTimeout = setTimeout(() => saveToHistory(), 300);
+    }
+  });
+
+  // Sender Name Input (keep existing functionality)
   senderNameInput?.addEventListener('input', function() {
     const senderName = this.value.trim();
     updateSenderNameOnCard(senderName);
@@ -1240,77 +1327,22 @@ function initializePropertyControls() {
     this.historyTimeout = setTimeout(() => saveToHistory(), 500);
   });
 
-  // Element Text
-  elementText?.addEventListener('input', function() {
-    if (selectedElement) {
-      if (selectedElement.querySelector('p')) {
-        selectedElement.querySelector('p').textContent = this.value;
-      } else {
-        // Preserve handles when updating text
-        const handles = selectedElement.querySelectorAll('.resize-handle');
-        const textNodes = Array.from(selectedElement.childNodes).filter(node => 
-          node.nodeType === Node.TEXT_NODE || (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('resize-handle'))
-        );
-        
-        selectedElement.innerHTML = this.value;
-        handles.forEach(handle => selectedElement.appendChild(handle));
-      }
-      clearTimeout(this.historyTimeout);
-      this.historyTimeout = setTimeout(() => saveToHistory(), 500);
-    }
-  });
-
-  // Font Size
-  elementSize?.addEventListener('input', function() {
-    if (selectedElement) {
-      selectedElement.style.fontSize = this.value + 'px';
-      if (sizeValue) sizeValue.textContent = this.value + 'px';
-      clearTimeout(this.historyTimeout);
-      this.historyTimeout = setTimeout(() => saveToHistory(), 300);
-    }
-  });
-
-  // Font Style
-  elementFont?.addEventListener('change', function() {
-    if (selectedElement) {
-      selectedElement.style.fontFamily = this.value;
-      clearTimeout(this.historyTimeout);
-      this.historyTimeout = setTimeout(() => saveToHistory(), 100);
-    }
-  });
-
-  // Text Color
-  elementColor?.addEventListener('input', function() {
-    if (selectedElement) {
-      selectedElement.style.color = this.value;
-      clearTimeout(this.historyTimeout);
-      this.historyTimeout = setTimeout(() => saveToHistory(), 300);
-    }
-  });
-
-  // Color Presets
+  // Color Presets - APPLIES TO SELECTED TEXT TYPE
   document.querySelectorAll('.color-preset').forEach(preset => {
     preset.addEventListener('click', function() {
       const color = this.dataset.color;
-      if (selectedElement && elementColor) {
-        selectedElement.style.color = color;
+      const selectedType = textTypeDropdown?.value;
+      const targetElement = getCurrentElementByType(selectedType);
+      
+      if (targetElement && elementColor) {
+        targetElement.style.color = color;
         elementColor.value = color;
         saveToHistory();
       }
     });
   });
 
-  // Opacity
-  elementOpacity?.addEventListener('input', function() {
-    if (selectedElement) {
-      selectedElement.style.opacity = this.value / 100;
-      if (opacityValue) opacityValue.textContent = this.value + '%';
-      clearTimeout(this.historyTimeout);
-      this.historyTimeout = setTimeout(() => saveToHistory(), 300);
-    }
-  });
-
-  // Card Orientation
+  // Card Orientation (keep existing)
   cardOrientation?.addEventListener('change', function() {
     const cardPreview = document.getElementById('cardPreview');
     switch(this.value) {
@@ -1325,11 +1357,286 @@ function initializePropertyControls() {
     }
     saveToHistory();
   });
+
+  // Animation Type (keep existing)
+  animationType?.addEventListener('change', function() {
+    const cardPreview = document.getElementById('cardPreview');
+    cardPreview.classList.remove('floating', 'pulsing');
+    
+    switch(this.value) {
+      case 'hearts':
+        cardPreview.classList.add('pulsing');
+        break;
+      case 'sparkles':
+        cardPreview.classList.add('floating');
+        break;
+    }
+    saveToHistory();
+  });
   // Enhanced Glow Effect Control with Color Selection and Smoke
 const glowEffect = document.getElementById('glowEffect') || document.querySelector('#elementGlow') || document.querySelector('input[type="range"][id*="glow"]');
 const glowValue = document.getElementById('glowValue') || document.querySelector('#glowDisplay');
 const glowColorPicker = document.getElementById('glowColor');
 let currentGlowColor = '#667eea'; // Default blue glow
+
+// NEW: Get current element by text type
+function getCurrentElementByType(type) {
+  if (type === 'senderInfo') {
+    return document.getElementById('senderName');
+  } else if (type === 'hiddenMessage') {
+    // Find hidden message element (could be in scratch area or separate element)
+    const scratchArea = document.getElementById('scratchArea');
+    if (scratchArea) {
+      // Check if there's a hidden message element inside scratch area
+      let hiddenMsg = scratchArea.querySelector('.hidden-message');
+      if (!hiddenMsg) {
+        // Create hidden message element if it doesn't exist
+        hiddenMsg = document.createElement('div');
+        hiddenMsg.className = 'hidden-message';
+        hiddenMsg.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #333; font-weight: bold; z-index: 10; opacity: 0; transition: opacity 0.3s ease;';
+        hiddenMsg.textContent = 'Your hidden message';
+        scratchArea.appendChild(hiddenMsg);
+      }
+      return hiddenMsg;
+    }
+  }
+  return null;
+}
+
+// NEW: Update sender text
+function updateSenderText(text) {
+  let senderElement = document.getElementById('senderName');
+  
+  if (text && text.trim() !== '') {
+    if (!senderElement) {
+      const cardPreview = document.getElementById('cardPreview');
+      senderElement = document.createElement('div');
+      senderElement.className = 'card-element sender-name';
+      senderElement.id = 'senderName';
+      senderElement.style.cssText = 'position: absolute; top: 20px; left: 20px; color: white; font-weight: 600; font-size: 16px; background: transparent;';
+      
+      ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+        const handle = document.createElement('div');
+        handle.className = `resize-handle ${pos}`;
+        senderElement.appendChild(handle);
+      });
+      
+      cardPreview.appendChild(senderElement);
+      makeElementInteractive(senderElement);
+    }
+    
+    const handles = senderElement.querySelectorAll('.resize-handle');
+    senderElement.innerHTML = `From ${text}`;
+    handles.forEach(handle => senderElement.appendChild(handle));
+  } else {
+    if (senderElement) {
+      senderElement.remove();
+    }
+  }
+}
+
+// NEW: Update hidden message text
+// ENHANCED: Update hidden message text with visibility control
+function updateHiddenMessageText(text) {
+  const scratchArea = document.getElementById('scratchArea');
+  if (!scratchArea) return;
+  
+  let hiddenMsg = scratchArea.querySelector('.hidden-message');
+  if (!hiddenMsg) {
+    hiddenMsg = document.createElement('div');
+    hiddenMsg.className = 'hidden-message';
+    hiddenMsg.style.cssText = `
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      color: #333; 
+      font-weight: bold; 
+      z-index: 15; 
+      padding: 10px;
+      text-align: center;
+      word-wrap: break-word;
+      max-width: 90%;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      opacity: 1;
+      transition: all 0.3s ease;
+    `;
+    scratchArea.appendChild(hiddenMsg);
+  }
+  
+  hiddenMsg.textContent = text || 'Your hidden message';
+  
+  // Show scratch area background temporarily when editing
+  if (text && text.trim() !== '') {
+    showHiddenMessageForEditing();
+  } else {
+    hideHiddenMessageFromEditing();
+  }
+}
+
+// NEW: Show hidden message for editing (hide scratch texture temporarily)
+function showHiddenMessageForEditing() {
+  const scratchArea = document.getElementById('scratchArea');
+  const hiddenMsg = scratchArea?.querySelector('.hidden-message');
+  const textTypeDropdown = document.getElementById('textTypeDropdown');
+  
+  if (scratchArea && hiddenMsg && textTypeDropdown?.value === 'hiddenMessage') {
+    // Store original background for restoration
+    if (!scratchArea.dataset.originalBackground) {
+      scratchArea.dataset.originalBackground = scratchArea.style.backgroundImage || '';
+    }
+    
+    // Temporarily remove background and show editing state
+    scratchArea.style.backgroundImage = '';
+    scratchArea.style.background = 'rgba(200, 200, 200, 0.3)';
+    scratchArea.style.border = '2px dashed #667eea';
+    
+    // Make hidden message fully visible
+    hiddenMsg.style.opacity = '1';
+    hiddenMsg.style.background = 'rgba(255, 255, 255, 0.95)';
+    hiddenMsg.style.color = '#333';
+    hiddenMsg.style.zIndex = '20';
+    
+    // Add editing indicator
+    if (!scratchArea.querySelector('.editing-indicator')) {
+      const indicator = document.createElement('div');
+      indicator.className = 'editing-indicator';
+      indicator.style.cssText = `
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #667eea;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        z-index: 25;
+      `;
+      indicator.textContent = 'EDITING';
+      scratchArea.appendChild(indicator);
+    }
+  }
+}
+
+// NEW: Hide hidden message from editing (restore scratch texture)
+function hideHiddenMessageFromEditing() {
+  const scratchArea = document.getElementById('scratchArea');
+  const hiddenMsg = scratchArea?.querySelector('.hidden-message');
+  const indicator = scratchArea?.querySelector('.editing-indicator');
+  
+  if (scratchArea && hiddenMsg) {
+    // Restore original background
+    if (scratchArea.dataset.originalBackground) {
+      scratchArea.style.backgroundImage = scratchArea.dataset.originalBackground;
+    }
+    scratchArea.style.background = '';
+    scratchArea.style.border = '';
+    
+    // Hide message behind scratch area (but keep it in DOM)
+    hiddenMsg.style.opacity = '0';
+    hiddenMsg.style.background = 'transparent';
+    hiddenMsg.style.zIndex = '10';
+    
+    // Remove editing indicator
+    if (indicator) {
+      indicator.remove();
+    }
+  }
+}
+
+// NEW: Get actual hidden message content for card generation
+function getHiddenMessageContent() {
+  const scratchArea = document.getElementById('scratchArea');
+  const hiddenMsg = scratchArea?.querySelector('.hidden-message');
+  
+  if (hiddenMsg && hiddenMsg.textContent.trim() !== 'Your hidden message') {
+    return hiddenMsg.textContent.trim();
+  }
+  
+  // Fallback: check if there's a hidden message input
+  const hiddenMessageInput = document.getElementById('hiddenMessage');
+  if (hiddenMessageInput && hiddenMessageInput.value.trim()) {
+    return hiddenMessageInput.value.trim();
+  }
+  
+  return 'Surprise! You found the hidden message!';
+}
+
+// NEW: Initialize hidden message editing behavior
+function initializeHiddenMessageEditing() {
+  const textTypeDropdown = document.getElementById('textTypeDropdown');
+  const textContentInput = document.getElementById('textContentInput');
+  
+  // Auto-show when user focuses on text input with hidden message selected
+  textContentInput?.addEventListener('focus', function() {
+    if (textTypeDropdown?.value === 'hiddenMessage') {
+      showHiddenMessageForEditing();
+    }
+  });
+  
+  // Auto-hide when user clicks elsewhere (with delay to allow styling)
+  document.addEventListener('click', function(e) {
+    const scratchArea = document.getElementById('scratchArea');
+    const rightSidebar = document.querySelector('.right-sidebar');
+    
+    // Don't hide if clicking on scratch area or right sidebar (styling controls)
+    if (!scratchArea?.contains(e.target) && !rightSidebar?.contains(e.target)) {
+      setTimeout(() => {
+        if (textTypeDropdown?.value !== 'hiddenMessage') {
+          hideHiddenMessageFromEditing();
+        }
+      }, 200);
+    }
+  });
+  
+  // Show when dropdown changes to hidden message
+  textTypeDropdown?.addEventListener('change', function() {
+    if (this.value === 'hiddenMessage') {
+      setTimeout(showHiddenMessageForEditing, 100);
+    } else {
+      hideHiddenMessageFromEditing();
+    }
+  });
+}
+
+// NEW: Update property panel for specific element
+function updatePropertyPanelForElement(element) {
+  const textContentInput = document.getElementById('textContentInput');
+  const elementSize = document.getElementById('elementSize');
+  const elementFont = document.getElementById('elementFont');
+  const elementColor = document.getElementById('elementColor');
+  const elementOpacity = document.getElementById('elementOpacity');
+  
+  if (textContentInput) {
+    if (element.classList.contains('sender-name')) {
+      textContentInput.value = element.textContent.replace('From ', '').trim();
+    } else if (element.classList.contains('hidden-message')) {
+      textContentInput.value = element.textContent.trim();
+    }
+  }
+  
+  if (elementSize) {
+    const fontSize = parseInt(window.getComputedStyle(element).fontSize) || 16;
+    elementSize.value = fontSize;
+  }
+  
+  if (elementFont) {
+    const fontFamily = window.getComputedStyle(element).fontFamily;
+    elementFont.value = fontFamily.replace(/['"]/g, '');
+  }
+  
+  if (elementColor) {
+    const color = window.getComputedStyle(element).color;
+    elementColor.value = rgbToHex(color) || '#ffffff';
+  }
+  
+  if (elementOpacity) {
+    const opacity = Math.round(parseFloat(window.getComputedStyle(element).opacity || '1') * 100);
+    elementOpacity.value = opacity;
+  }
+}
 
 // Initialize glow color presets
 function initializeGlowColorPresets() {
@@ -2827,8 +3134,10 @@ async function generateCard() {
     // CAPTURE ALL ADVANCED WEB APP FEATURES
     const cardData = {
       // Basic card info
-      senderName: senderNameInput?.textContent?.replace('From ', '').trim() || 'Anonymous',
-      hiddenMessage: hiddenMessageInput?.value?.trim() || 'Surprise!',
+      // ENHANCED: Basic card info with proper hidden message extraction
+  senderName: senderNameInput?.textContent?.replace('From ', '').trim() || 'Anonymous',
+  hiddenMessage: getHiddenMessageContent(), // Use the new function
+  // ... rest
       backgroundImage: selectedAssets.background || placeholderAssets.backgrounds[0],
       symbol: selectedAssets.symbol || placeholderAssets.symbols[0],
       animation: document.getElementById('animationType')?.value || 'hearts',
@@ -3199,6 +3508,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeTemplates();
   initializeCardElements();
   initializePropertyControls();
+  initializeHiddenMessageEditing(); 
   applyBackgroundToCard();
   addSymbolToCard();
   applyScratchTexture();

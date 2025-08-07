@@ -188,7 +188,6 @@
             box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
         }
 
-        /* Replaced with older version's grid styles */
         .background-grid, .symbol-grid, .scratch-texture-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -389,25 +388,25 @@
         }
 
         .scratch-area {
-    position: absolute;
-    top: 45%;
-    left: 16%;
-    width: 350px;
-    height: 150px;
-    background: rgba(192, 192, 192, 0.9);
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    color: #666;
-    font-weight: 500;
-    border: 2px dashed rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(5px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 150px;
-    min-height: 60px;
-}
+            position: absolute;
+            top: 45%;
+            left: 16%;
+            width: 350px;
+            height: 150px;
+            background: rgba(192, 192, 192, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-weight: 500;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 150px;
+            min-height: 60px;
+        }
 
         .card-symbol {
             top: 20px;
@@ -621,6 +620,65 @@
             font-size: 12px;
         }
 
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .range-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .range-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .range-value {
+            font-size: 14px;
+            color: #667eea;
+        }
+
+        .glow-color-controls {
+            margin-top: 10px;
+        }
+
+        .glow-presets {
+            display: flex;
+            gap: 5px;
+        }
+
+        .glow-preset {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .color-preset-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .smoke-preset {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
         @media (max-width: 1200px) {
             .left-sidebar { width: 280px; }
             .right-sidebar { width: 280px; }
@@ -813,98 +871,45 @@
                     <i class="fas fa-edit section-icon"></i> Element Properties
                 </h3>
                 <div class="property-group">
-                    <label class="property-label" for="elementText">Selected Element Text</label>
-                    <input type="text" id="elementText" class="property-input" placeholder="Edit selected element">
+                    <label class="property-label" for="textTypeDropdown">Text Type</label>
+                    <select id="textTypeDropdown" class="property-input property-select">
+                        <option value="senderInfo">Sender Name</option>
+                        <option value="hiddenMessage">Hidden Message</option>
+                    </select>
                 </div>
-            <div class="sidebar-section">
-                <h3 class="section-title">
-                    <i class="fas fa-user section-icon"></i> Sender Info
-                </h3>
                 <div class="property-group">
-                    <label class="property-label" for="senderNameInput">From (Sender Name)</label>
-                    <input type="text" id="senderNameInput" class="property-input" placeholder="Enter sender name..." value="">
+                    <label class="property-label" for="textContentInput">Text Content</label>
+                    <textarea id="textContentInput" class="property-input property-textarea" placeholder="Enter text..."></textarea>
                 </div>
-                <div class="sidebar-section">
-                <h3 class="section-title">
-                </h3>
-                <div class="property-group">
-                    <label class="property-label" for="hiddenMessage">Secret Message</label>
-                    <textarea id="hiddenMessage" class="property-input property-textarea" placeholder="Enter your secret message here..."></textarea>
-                </div>
-            </div>
                 <div class="property-group">
                     <label class="property-label" for="elementSize">Font/Size</label>
                     <input type="range" id="elementSize" class="property-input" min="12" max="72" value="16">
                 </div>
                 <div class="property-group">
-    <label class="property-label" for="elementFont">Font Family</label>
-    <select id="elementFont" class="property-input property-select">
-        <option value="Inter">Inter (Default)</option>
-        <option value="Arial">Arial</option>
-        <option value="Georgia">Georgia</option>
-        <option value="Times New Roman">Times New Roman</option>
-        <option value="Helvetica">Helvetica</option>
-        <option value="Verdana">Verdana</option>
-        <option value="Courier New">Courier New</option>
-        <option value="Impact">Impact</option>
-        <option value="Comic Sans MS">Comic Sans MS</option>
-        <option value="Trebuchet MS">Trebuchet MS</option>
-    </select>
-</div>
-<div class="property-group">
-    <label class="property-label" for="elementColor">Font Color</label>
-    <input type="color" id="elementColor" class="property-input" value="#ffffff" style="height: 48px;">
-</div>
+                    <label class="property-label" for="elementFont">Font Family</label>
+                    <select id="elementFont" class="property-input property-select">
+                        <option value="Inter">Inter (Default)</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Impact">Impact</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                        <option value="Trebuchet MS">Trebuchet MS</option>
+                    </select>
+                </div>
+                <div class="property-group">
+                    <label class="property-label" for="elementColor">Font Color</label>
+                    <input type="color" id="elementColor" class="property-input" value="#ffffff" style="height: 48px;">
+                </div>
                 <div class="property-group">
                     <label class="property-label" for="elementOpacity">Opacity</label>
                     <input type="range" id="elementOpacity" class="property-input" min="0" max="100" value="100">
                 </div>
             </div>
-            <div class="control-group">
-  <label for="glowEffect">Glow Effect:</label>
-  <div class="range-group">
-    <input type="range" id="glowEffect" min="6" max="30" value="4" step="1">
-    <span id="glowValue">0px</span>
-  </div>
-  <div class="glow-color-controls" style="margin-top: 10px;">
-    <label for="glowColor" style="display: block; margin-bottom: 5px;">Glow Color:</label>
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <input type="color" id="glowColor" value="#667eea" style="width: 40px; height: 30px; border: none; border-radius: 5px; cursor: pointer;">
-      <div class="glow-presets" style="display: flex; gap: 5px;">
-        <div class="glow-preset" data-color="#667eea" style="width: 20px; height: 20px; background: #667eea; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Blue"></div>
-        <div class="glow-preset" data-color="#ff6b6b" style="width: 20px; height: 20px; background: #ff6b6b; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Red"></div>
-        <div class="glow-preset" data-color="#4ecdc4" style="width: 20px; height: 20px; background: #4ecdc4; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Cyan"></div>
-        <div class="glow-preset" data-color="#45b7d1" style="width: 20px; height: 20px; background: #45b7d1; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Light Blue"></div>
-        <div class="glow-preset" data-color="#96ceb4" style="width: 20px; height: 20px; background: #96ceb4; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Green"></div>
-        <div class="glow-preset" data-color="#feca57" style="width: 20px; height: 20px; background: #feca57; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Yellow"></div>
-        <div class="glow-preset" data-color="#ff9ff3" style="width: 20px; height: 20px; background: #ff9ff3; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Pink"></div>
-        <div class="glow-preset" data-color="#a29bfe" style="width: 20px; height: 20px; background: #a29bfe; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Purple"></div>
-      </div>
-    </div>
-    
-    <div class="control-group">
-  <label for="smokeEffect">Smoke Effects</label>
-  <div class="range-group">
-    <input type="range" id="smokeEffect" min="0" max="50" value="0" class="range-input">
-    <span id="smokeValue" class="range-value">0</span>
-  </div>
-</div>
-
-<div class="control-group">
-  <label>Smoke Colors</label>
-  <div class="color-preset-grid">
-    <div class="smoke-preset" data-color="#667eea" style="background: #667eea;" title="Blue Smoke"></div>
-    <div class="smoke-preset" data-color="#764ba2" style="background: #764ba2;" title="Purple Smoke"></div>
-    <div class="smoke-preset" data-color="#ff6b6b" style="background: #ff6b6b;" title="Red Smoke"></div>
-    <div class="smoke-preset" data-color="#4ecdc4" style="background: #4ecdc4;" title="Teal Smoke"></div>
-    <div class="smoke-preset" data-color="#45b7d1" style="background: #45b7d1;" title="Sky Blue"></div>
-    <div class="smoke-preset" data-color="#96ceb4" style="background: #96ceb4;" title="Mint Green"></div>
-    <div class="smoke-preset" data-color="#feca57" style="background: #feca57;" title="Golden Smoke"></div>
-    <div class="smoke-preset" data-color="#ff9ff3" style="background: #ff9ff3;" title="Pink Smoke"></div>
-  </div>
-  <input type="color" id="smokeColor" value="#667eea" style="width: 100%; height: 40px; border: none; border-radius: 8px; margin-top: 10px;">
-</div>
-    <div class="sidebar-section">
+            <div class="sidebar-section">
                 <h3 class="section-title">
                     <i class="fas fa-cog section-icon"></i> Card Settings
                 </h3>
@@ -928,13 +933,56 @@
             <div class="sidebar-section">
                 <h3 class="section-title">
                     <i class="fas fa-sliders-h section-icon"></i> Advanced Effects
+                </h3>
                 <div class="property-group">
-                <label class="property-label">Animation Speed</label>
+                    <label class="property-label">Animation Speed</label>
                     <input type="range" class="property-input" min="0.5" max="5" value="1" step="0.1" id="animSpeed">
                 </div>
                 <div class="control-group">
-  </div>
-</div>
+                    <label for="glowEffect">Glow Effect:</label>
+                    <div class="range-group">
+                        <input type="range" id="glowEffect" min="6" max="30" value="4" step="1">
+                        <span id="glowValue">0px</span>
+                    </div>
+                    <div class="glow-color-controls">
+                        <label for="glowColor" style="display: block; margin-bottom: 5px;">Glow Color:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="color" id="glowColor" value="#667eea" style="width: 40px; height: 30px; border: none; border-radius: 5px; cursor: pointer;">
+                            <div class="glow-presets">
+                                <div class="glow-preset" data-color="#667eea" style="width: 20px; height: 20px; background: #667eea; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Blue"></div>
+                                <div class="glow-preset" data-color="#ff6b6b" style="width: 20px; height: 20px; background: #ff6b6b; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Red"></div>
+                                <div class="glow-preset" data-color="#4ecdc4" style="width: 20px; height: 20px; background: #4ecdc4; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Cyan"></div>
+                                <div class="glow-preset" data-color="#45b7d1" style="width: 20px; height: 20px; background: #45b7d1; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Light Blue"></div>
+                                <div class="glow-preset" data-color="#96ceb4" style="width: 20px; height: 20px; background: #96ceb4; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Green"></div>
+                                <div class="glow-preset" data-color="#feca57" style="width: 20px; height: 20px; background: #feca57; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Yellow"></div>
+                                <div class="glow-preset" data-color="#ff9ff3" style="width: 20px; height: 20px; background: #ff9ff3; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Pink"></div>
+                                <div class="glow-preset" data-color="#a29bfe" style="width: 20px; height: 20px; background: #a29bfe; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Purple"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label for="smokeEffect">Smoke Effects</label>
+                    <div class="range-group">
+                        <input type="range" id="smokeEffect" min="0" max="50" value="0" class="range-input">
+                        <span id="smokeValue" class="range-value">0</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Smoke Colors</label>
+                    <div class="color-preset-grid">
+                        <div class="smoke-preset" data-color="#667eea" style="background: #667eea;" title="Blue Smoke"></div>
+                        <div class="smoke-preset" data-color="#764ba2" style="background: #764ba2;" title="Purple Smoke"></div>
+                        <div class="smoke-preset" data-color="#ff6b6b" style="background: #ff6b6b;" title="Red Smoke"></div>
+                        <div class="smoke-preset" data-color="#4ecdc4" style="background: #4ecdc4;" title="Teal Smoke"></div>
+                        <div class="smoke-preset" data-color="#45b7d1" style="background: #45b7d1;" title="Sky Blue"></div>
+                        <div class="smoke-preset" data-color="#96ceb4" style="background: #96ceb4;" title="Mint Green"></div>
+                        <div class="smoke-preset" data-color="#feca57" style="background: #feca57;" title="Golden Smoke"></div>
+                        <div class="smoke-preset" data-color="#ff9ff3" style="background: #ff9ff3;" title="Pink Smoke"></div>
+                    </div>
+                    <input type="color" id="smokeColor" value="#667eea" style="width: 100%; height: 40px; border: none; border-radius: 8px; margin-top: 10px;">
+                </div>
+            </div>
         </aside>
     </div>
 
@@ -991,30 +1039,22 @@
             const userName = document.getElementById('userName');
 
             if (user) {
-                // User is signed in
                 authButtons.style.display = 'none';
                 userProfile.style.display = 'flex';
-                
-                // Update user info
                 userName.textContent = user.displayName || user.email.split('@')[0];
-                
-                // Set avatar
                 if (user.photoURL) {
                     userAvatar.innerHTML = `<img src="${user.photoURL}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
                 } else {
                     userAvatar.textContent = (user.displayName || user.email).charAt(0).toUpperCase();
                 }
-                
                 console.log('✅ User signed in:', user.email);
             } else {
-                // User is signed out
                 authButtons.style.display = 'flex';
                 userProfile.style.display = 'none';
                 console.log('👤 User signed out');
             }
         }
 
-        // Make Firebase functions globally available
         window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
         window.signInWithEmailAndPassword = signInWithEmailAndPassword;
         window.signInWithPopup = signInWithPopup;

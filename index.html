@@ -829,13 +829,32 @@
                 </h3>
                 <div class="property-group">
                     <label class="property-label" for="hiddenMessage">Secret Message</label>
-                    <textarea id="hiddenMessage" class="property-input property-textarea" placeholder="Enter your secret message here...">You are amazing! ✨</textarea>
+                    <textarea id="hiddenMessage" class="property-input property-textarea" placeholder="Enter your secret message here..."></textarea>
                 </div>
             </div>
                 <div class="property-group">
                     <label class="property-label" for="elementSize">Font/Size</label>
                     <input type="range" id="elementSize" class="property-input" min="12" max="72" value="16">
                 </div>
+                <div class="property-group">
+    <label class="property-label" for="elementFont">Font Family</label>
+    <select id="elementFont" class="property-input property-select">
+        <option value="Inter">Inter (Default)</option>
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Helvetica">Helvetica</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Impact">Impact</option>
+        <option value="Comic Sans MS">Comic Sans MS</option>
+        <option value="Trebuchet MS">Trebuchet MS</option>
+    </select>
+</div>
+<div class="property-group">
+    <label class="property-label" for="elementColor">Font Color</label>
+    <input type="color" id="elementColor" class="property-input" value="#ffffff" style="height: 48px;">
+</div>
                 <div class="property-group">
                     <label class="property-label" for="elementOpacity">Opacity</label>
                     <input type="range" id="elementOpacity" class="property-input" min="0" max="100" value="100">

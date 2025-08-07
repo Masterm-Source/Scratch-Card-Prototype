@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masterm Cards - Revolutionary Card Designer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            overflow: hidden;
+            height: 100vh;
+            color: white;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        .top-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .primary-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        }
+
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #667eea;
+        }
+
+        .left-sidebar {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.5) rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-section {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            width: 20px;
+            height: 20px;
+            color: #667eea;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .template-card {
+            aspect-ratio: 1.6;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+
+        .template-card:hover {
+            border-color: #667eea;
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .template-card.active {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Replaced with older version's grid styles */
+        .background-grid, .symbol-grid, .scratch-texture-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .audio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .background-item, .symbol-item, .scratch-texture-item {
+            aspect-ratio: 1;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            background-size: cover;
+            background-position: center;
+        }
+
+        .audio-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .background-item:hover, .symbol-item:hover, .scratch-texture-item:hover, .audio-item:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .background-item.active, .symbol-item.active, .scratch-texture-item.active, .audio-item.active {
+            border-color: #667eea;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .load-more-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            border-radius: 12px;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .load-more-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .bg-obsidian-rose {
+            background: linear-gradient(45deg, rgba(255, 154, 158, 0.3) 0%, rgba(254, 207, 239, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(255, 154, 158, 0.2);
+        }
+
+        .bg-obsidian-ocean {
+            background: linear-gradient(45deg, rgba(168, 237, 234, 0.3) 0%, rgba(254, 214, 227, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(168, 237, 234, 0.2);
+        }
+
+        .bg-obsidian-galaxy {
+            background: linear-gradient(45deg, rgba(210, 153, 194, 0.3) 0%, rgba(254, 249, 215, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(210, 153, 194, 0.2);
+        }
+
+        .bg-obsidian-gold {
+            background: linear-gradient(45deg, rgba(246, 211, 101, 0.3) 0%, rgba(253, 160, 133, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(246, 211, 101, 0.2);
+        }
+
+        .bg-obsidian-sunset {
+            background: linear-gradient(45deg, rgba(255, 138, 128, 0.3) 0%, rgba(255, 128, 171, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(255, 138, 128, 0.2);
+        }
+
+        .bg-obsidian-emerald {
+            background: linear-gradient(45deg, rgba(132, 250, 176, 0.3) 0%, rgba(143, 211, 244, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            box-shadow: inset 0 0 50px rgba(132, 250, 176, 0.2);
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 12px;
+            color: #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        .upload-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .main-canvas {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 60px;
+            padding: 40px;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            max-height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-preview {
+            width: 100%;
+            aspect-ratio: 1.6;
+            background: linear-gradient(45deg, rgba(255, 154, 158, 0.3) 0%, rgba(254, 207, 239, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.5s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-preview:hover {
+            transform: rotateY(5deg) rotateX(5deg);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+        }
+
+        .card-element {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+        }
+
+        .card-element.selected {
+            border: 2px dashed #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .card-element.resizing {
+            resize: both;
+            overflow: hidden;
+        }
+
+        .sender-name {
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .scratch-area {
+    position: absolute;
+    top: 45%;
+    left: 16%;
+    width: 350px;
+    height: 150px;
+    background: rgba(192, 192, 192, 0.9);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-weight: 500;
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    min-height: 60px;
+}
+
+        .card-symbol {
+            top: 20px;
+            right: 20px;
+            font-size: 48px;
+            opacity: 0.8;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #667eea;
+            border: 2px solid white;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card-element.selected .resize-handle {
+            opacity: 1;
+        }
+
+        .resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
+        .resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+
+        .right-sidebar {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(102, 126, 234, 0.5) rgba(0, 0, 0, 0.2);
+        }
+
+        .property-group {
+            margin-bottom: 16px;
+        }
+
+        .property-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .property-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .property-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .property-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+        }
+
+        .property-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.7);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .pulsing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn {
+            background: transparent;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .signup-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-profile {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: white;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1200px) {
+            .left-sidebar { width: 280px; }
+            .right-sidebar { width: 280px; }
+        }
+
+        @media (max-width: 968px) {
+            .left-sidebar {
+                position: fixed;
+                left: -320px;
+                z-index: 1002;
+                transition: left 0.3s ease;
+            }
+            .left-sidebar.active { left: 0; }
+            .right-sidebar {
+                position: fixed;
+                right: -320px;
+                z-index: 1002;
+                transition: right 0.3s ease;
+            }
+            .right-sidebar.active { right: 0; }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <header class="top-header">
+        <div class="logo-section">
+            <div class="logo-icon">🎯</div>
+            <div class="logo-text">Masterm Cards</div>
+        </div>
+        <div class="header-actions">
+            <button class="action-btn secondary-btn undo-btn" onclick="undo()" disabled>
+                <i class="fas fa-undo"></i> Undo
+            </button>
+            <button class="action-btn secondary-btn redo-btn" onclick="redo()" disabled>
+                <i class="fas fa-redo"></i> Redo
+            </button>
+            <button class="action-btn secondary-btn" onclick="saveDraft()">
+                <i class="fas fa-save"></i> Save Draft
+            </button>
+            <button class="action-btn primary-btn" onclick="exportCard()">
+                <i class="fas fa-download"></i> Export Card
+            </button>
+            <div class="auth-section">
+                <div class="auth-buttons" id="authButtons">
+                    <button class="auth-btn login-btn" onclick="showLogin()">Sign In</button>
+                    <button class="auth-btn signup-btn" onclick="showSignup()">Sign Up</button>
+                </div>
+                <div class="user-profile" id="userProfile">
+                    <div class="user-avatar" id="userAvatar"></div>
+                    <div class="user-name" id="userName"></div>
+                    <button class="logout-btn" onclick="logout()">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="left-sidebar">
+            <div class="sidebar-section">
+                <h3 class="section-title">
+                    <i class="fas fa-layer-group section-icon"></i> Layout Templates
+                </h3>
+                <div class="template-grid">
+                    <div class="template-card active" data-template="classic">Classic Layout</div>
+                    <div class="template-card" data-template="modern">Modern Style</div>
+                    <div class="template-card" data-template="minimal">Minimal Clean</div>
+                    <div class="template-card" data-template="elegant">Elegant Design</div>
+                </div>
+            </div>
+
+            <div class="sidebar-section background-section">
+                <h3 class="section-title">
+                    <i class="fas fa-palette section-icon"></i> Backgrounds
+                </h3>
+                <div class="background-grid" id="backgroundGrid">
+                    <div class="background-item bg-obsidian-rose" data-bg="obsidian-rose"></div>
+                    <div class="background-item bg-obsidian-ocean" data-bg="obsidian-ocean"></div>
+                    <div class="background-item bg-obsidian-galaxy" data-bg="obsidian-galaxy"></div>
+                    <div class="background-item bg-obsidian-gold" data-bg="obsidian-gold"></div>
+                    <div class="background-item bg-obsidian-sunset" data-bg="obsidian-sunset"></div>
+                    <div class="background-item bg-obsidian-emerald" data-bg="obsidian-emerald"></div>
+                </div>
+                <button class="upload-btn" onclick="uploadCustomBackground()">
+                    <i class="fas fa-upload"></i> Upload Custom Background
+                </button>
+                <input type="file" id="backgroundUpload" class="file-input" accept="image/*">
+                <button class="load-more-btn" id="loadMoreBackgrounds" style="display: none;">
+                    <i class="fas fa-plus"></i> Load More
+                </button>
+            </div>
+
+            <div class="sidebar-section symbol-section">
+                <h3 class="section-title">
+                    <i class="fas fa-icons section-icon"></i> Symbols & Images
+                </h3>
+                <div class="symbol-grid" id="symbolGrid">
+                    <div class="symbol-item" data-symbol="❤️">❤️</div>
+                    <div class="symbol-item" data-symbol="🌟">🌟</div>
+                    <div class="symbol-item" data-symbol="🎉">🎉</div>
+                    <div class="symbol-item" data-symbol="🎁">🎁</div>
+                    <div class="symbol-item" data-symbol="🔥">🔥</div>
+                    <div class="symbol-item" data-symbol="✨">✨</div>
+                </div>
+                <button class="upload-btn" onclick="uploadCustomSymbol()">
+                    <i class="fas fa-image"></i> Upload Photo/Image
+                </button>
+                <input type="file" id="symbolUpload" class="file-input" accept="image/*">
+                <button class="load-more-btn" id="loadMoreSymbols" style="display: none;">
+                    <i class="fas fa-plus"></i> Load More
+                </button>
+            </div>
+
+            <div class="sidebar-section scratch-texture-section">
+                <h3 class="section-title">
+                    <i class="fas fa-paint-brush section-icon"></i> Scratch Textures
+                </h3>
+                <div class="scratch-texture-grid" id="scratchTextureGrid"></div>
+                <button class="upload-btn" onclick="uploadCustomScratchTexture()">
+                    <i class="fas fa-upload"></i> Upload Custom Texture
+                </button>
+                <input type="file" id="scratchTextureUpload" class="file-input" accept="image/*">
+                <button class="load-more-btn" id="loadMoreScratchTextures" style="display: none;">
+                    <i class="fas fa-plus"></i> Load More
+                </button>
+            </div>
+
+            <div class="sidebar-section audio-section">
+                <h3 class="section-title">
+                    <i class="fas fa-volume-up section-icon"></i> Sound Effects
+                </h3>
+                <div class="audio-grid" id="audioGrid"></div>
+                <button class="upload-btn" onclick="uploadCustomAudio()">
+                    <i class="fas fa-microphone"></i> Upload Custom Audio
+                </button>
+                <input type="file" id="audioUpload" class="file-input" accept="audio/*">
+                <button class="load-more-btn" id="loadMoreAudio" style="display: none;">
+                    <i class="fas fa-plus"></i> Load More
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-canvas">
+            <div class="canvas-wrapper">
+                <div class="card-preview floating" id="cardPreview">
+                    <div class="card-element sender-name" id="senderName" draggable="true">
+                        From Sarah
+                        <div class="resize-handle nw"></div>
+                        <div class="resize-handle ne"></div>
+                        <div class="resize-handle sw"></div>
+                        <div class="resize-handle se"></div>
+                    </div>
+                    <div class="card-element scratch-area" id="scratchArea" draggable="true">
+                        <p>Scratch here to reveal your message!</p>
+                        <div class="resize-handle nw"></div>
+                        <div class="resize-handle ne"></div>
+                        <div class="resize-handle sw"></div>
+                        <div class="resize-handle se"></div>
+                    </div>
+                    <div class="card-element card-symbol" id="cardSymbol" draggable="true">
+                        ❤️
+                        <div class="resize-handle nw"></div>
+                        <div class="resize-handle ne"></div>
+                        <div class="resize-handle sw"></div>
+                        <div class="resize-handle se"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="right-sidebar">
+            <div class="sidebar-section">
+                <h3 class="section-title">
+                    <i class="fas fa-edit section-icon"></i> Element Properties
+                </h3>
+                <div class="property-group">
+                    <label class="property-label" for="elementText">Selected Element Text</label>
+                    <input type="text" id="elementText" class="property-input" placeholder="Edit selected element">
+                </div>
+            <div class="sidebar-section">
+                <h3 class="section-title">
+                    <i class="fas fa-user section-icon"></i> Sender Info
+                </h3>
+                <div class="property-group">
+                    <label class="property-label" for="senderNameInput">From (Sender Name)</label>
+                    <input type="text" id="senderNameInput" class="property-input" placeholder="Enter sender name..." value="">
+                </div>
+                <div class="sidebar-section">
+                <h3 class="section-title">
+                </h3>
+                <div class="property-group">
+                    <label class="property-label" for="hiddenMessage">Secret Message</label>
+                    <textarea id="hiddenMessage" class="property-input property-textarea" placeholder="Enter your secret message here...">You are amazing! ✨</textarea>
+                </div>
+            </div>
+                <div class="property-group">
+                    <label class="property-label" for="elementSize">Font/Size</label>
+                    <input type="range" id="elementSize" class="property-input" min="12" max="72" value="16">
+                </div>
+                <div class="property-group">
+                    <label class="property-label" for="elementOpacity">Opacity</label>
+                    <input type="range" id="elementOpacity" class="property-input" min="0" max="100" value="100">
+                </div>
+            </div>
+            <div class="control-group">
+  <label for="glowEffect">Glow Effect:</label>
+  <div class="range-group">
+    <input type="range" id="glowEffect" min="6" max="30" value="4" step="1">
+    <span id="glowValue">0px</span>
+  </div>
+  <div class="glow-color-controls" style="margin-top: 10px;">
+    <label for="glowColor" style="display: block; margin-bottom: 5px;">Glow Color:</label>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <input type="color" id="glowColor" value="#667eea" style="width: 40px; height: 30px; border: none; border-radius: 5px; cursor: pointer;">
+      <div class="glow-presets" style="display: flex; gap: 5px;">
+        <div class="glow-preset" data-color="#667eea" style="width: 20px; height: 20px; background: #667eea; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Blue"></div>
+        <div class="glow-preset" data-color="#ff6b6b" style="width: 20px; height: 20px; background: #ff6b6b; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Red"></div>
+        <div class="glow-preset" data-color="#4ecdc4" style="width: 20px; height: 20px; background: #4ecdc4; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Cyan"></div>
+        <div class="glow-preset" data-color="#45b7d1" style="width: 20px; height: 20px; background: #45b7d1; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Light Blue"></div>
+        <div class="glow-preset" data-color="#96ceb4" style="width: 20px; height: 20px; background: #96ceb4; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Green"></div>
+        <div class="glow-preset" data-color="#feca57" style="width: 20px; height: 20px; background: #feca57; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Yellow"></div>
+        <div class="glow-preset" data-color="#ff9ff3" style="width: 20px; height: 20px; background: #ff9ff3; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Pink"></div>
+        <div class="glow-preset" data-color="#a29bfe" style="width: 20px; height: 20px; background: #a29bfe; border-radius: 50%; cursor: pointer; border: 2px solid transparent;" title="Purple"></div>
+      </div>
+    </div>
+    
+    <div class="control-group">
+  <label for="smokeEffect">Smoke Effects</label>
+  <div class="range-group">
+    <input type="range" id="smokeEffect" min="0" max="50" value="0" class="range-input">
+    <span id="smokeValue" class="range-value">0</span>
+  </div>
+</div>
+
+<div class="control-group">
+  <label>Smoke Colors</label>
+  <div class="color-preset-grid">
+    <div class="smoke-preset" data-color="#667eea" style="background: #667eea;" title="Blue Smoke"></div>
+    <div class="smoke-preset" data-color="#764ba2" style="background: #764ba2;" title="Purple Smoke"></div>
+    <div class="smoke-preset" data-color="#ff6b6b" style="background: #ff6b6b;" title="Red Smoke"></div>
+    <div class="smoke-preset" data-color="#4ecdc4" style="background: #4ecdc4;" title="Teal Smoke"></div>
+    <div class="smoke-preset" data-color="#45b7d1" style="background: #45b7d1;" title="Sky Blue"></div>
+    <div class="smoke-preset" data-color="#96ceb4" style="background: #96ceb4;" title="Mint Green"></div>
+    <div class="smoke-preset" data-color="#feca57" style="background: #feca57;" title="Golden Smoke"></div>
+    <div class="smoke-preset" data-color="#ff9ff3" style="background: #ff9ff3;" title="Pink Smoke"></div>
+  </div>
+  <input type="color" id="smokeColor" value="#667eea" style="width: 100%; height: 40px; border: none; border-radius: 8px; margin-top: 10px;">
+</div>
+    <div class="sidebar-section">
+                <h3 class="section-title">
+                    <i class="fas fa-cog section-icon"></i> Card Settings
+                </h3>
+                <div class="property-group">
+                    <label class="property-label">Card Orientation</label>
+                    <select class="property-input property-select" id="cardOrientation">
+                        <option value="landscape">Landscape</option>
+                        <option value="portrait">Portrait</option>
+                        <option value="square">Square</option>
+                    </select>
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Animation Type</label>
+                    <select class="property-input property-select" id="animationType">
+                        <option value="none">None</option>
+                        <option value="hearts">Hearts</option>
+                        <option value="sparkles">Sparkles</option>
+                    </select>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <h3 class="section-title">
+                    <i class="fas fa-sliders-h section-icon"></i> Advanced Effects
+                <div class="property-group">
+                <label class="property-label">Animation Speed</label>
+                    <input type="range" class="property-input" min="0.5" max="5" value="1" step="0.1" id="animSpeed">
+                </div>
+                <div class="control-group">
+  </div>
+</div>
+        </aside>
+    </div>
+
+    <button class="fab pulsing" title="Generate Card" onclick="generateCard()">
+        <i class="fas fa-magic"></i>
+    </button>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import {
+            getAuth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signInWithPopup,
+            GoogleAuthProvider,
+            onAuthStateChanged,
+            signOut,
+            updateProfile
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkWLeBSPd9UksKYpMh3L7_E9BgtTY7bzU",
+            authDomain: "masterm-cards-cf68f.firebaseapp.com",
+            projectId: "masterm-cards-cf68f",
+            storageBucket: "masterm-cards-cf68f.firebasestorage.app",
+            messagingSenderId: "1069043590833",
+            appId: "1:1069043590833:web:1fe6f6b7bff08138806490",
+            measurementId: "G-ERY91KPGG1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
+
+        // Make auth available globally
+        window.firebaseAuth = auth;
+        window.googleProvider = googleProvider;
+        window.currentUser = null;
+
+        // Authentication state listener
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            updateAuthUI(user);
+        });
+
+        function updateAuthUI(user) {
+            const authButtons = document.getElementById('authButtons');
+            const userProfile = document.getElementById('userProfile');
+            const userAvatar = document.getElementById('userAvatar');
+            const userName = document.getElementById('userName');
+
+            if (user) {
+                // User is signed in
+                authButtons.style.display = 'none';
+                userProfile.style.display = 'flex';
+                
+                // Update user info
+                userName.textContent = user.displayName || user.email.split('@')[0];
+                
+                // Set avatar
+                if (user.photoURL) {
+                    userAvatar.innerHTML = `<img src="${user.photoURL}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                } else {
+                    userAvatar.textContent = (user.displayName || user.email).charAt(0).toUpperCase();
+                }
+                
+                console.log('✅ User signed in:', user.email);
+            } else {
+                // User is signed out
+                authButtons.style.display = 'flex';
+                userProfile.style.display = 'none';
+                console.log('👤 User signed out');
+            }
+        }
+
+        // Make Firebase functions globally available
+        window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
+        window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+        window.signInWithPopup = signInWithPopup;
+        window.signOut = signOut;
+        window.updateProfile = updateProfile;
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>

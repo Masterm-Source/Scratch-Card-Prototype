@@ -287,19 +287,49 @@ function saveCurrentProject(projectName = null, autoId = null) {
     uploadedFiles: {...uploadedFiles},
     senderName: senderNameInput?.textContent?.replace('From ', '').trim() || '',
     hiddenMessage: hiddenMessageInput?.value?.trim() || '',
-    elements: Array.from(document.querySelectorAll('.card-element')).map(el => ({
-      type: el.classList.contains('sender-name') ? 'sender' : 
-            el.classList.contains('scratch-area') ? 'scratch' : 'symbol',
-      content: el.textContent.trim(),
-      style: {
-        left: el.style.left,
-        top: el.style.top,
-        width: el.style.width,
-        height: el.style.height,
-        fontSize: el.style.fontSize,
-        opacity: el.style.opacity
-      }
-    })),
+    elements: Array.from(document.querySelectorAll('.card-element')).map(el => {
+      // Get computed styles to capture all actual rendered styles
+      const computedStyle = window.getComputedStyle(el);
+      
+      return {
+        type: el.classList.contains('sender-name') ? 'sender' : 
+              el.classList.contains('scratch-area') ? 'scratch' : 'symbol',
+        content: el.textContent.trim(),
+        elementStyles: {
+          // Exact computed font string
+          font: computedStyle.font,
+          fontFamily: computedStyle.fontFamily,
+          fontSize: computedStyle.fontSize,
+          fontWeight: computedStyle.fontWeight,
+          fontStyle: computedStyle.fontStyle,
+          letterSpacing: computedStyle.letterSpacing,
+          lineHeight: computedStyle.lineHeight,
+          
+          // Colors and effects - exact computed values
+          color: computedStyle.color,
+          textShadow: computedStyle.textShadow,
+          opacity: computedStyle.opacity,
+          backgroundColor: computedStyle.backgroundColor,
+          
+          // Text settings
+          textAlign: computedStyle.textAlign,
+          textTransform: computedStyle.textTransform,
+          whiteSpace: computedStyle.whiteSpace,
+          wordSpacing: computedStyle.wordSpacing,
+          
+          // Stroke and decoration
+          strokeColor: el.dataset.strokeColor || computedStyle.strokeStyle || '#000000',
+          strokeWidth: el.dataset.strokeWidth || computedStyle.lineWidth || '2',
+          textDecoration: computedStyle.textDecoration
+        },
+        style: {
+          left: el.style.left,
+          top: el.style.top,
+          width: el.style.width,
+          height: el.style.height
+        }
+      };
+    }),
     cardStyle: {
       backgroundImage: cardPreview?.style.backgroundImage || '',
       className: cardPreview?.className || ''
@@ -846,6 +876,16 @@ function updateSenderNameOnCard(senderName) {
       senderElement.id = 'senderName';
       senderElement.textContent = `From ${senderName}`;
       
+      // Add text wrapping styles
+      senderElement.style.cssText = `
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        hyphens: auto;
+      `;
+      
       ['nw', 'ne', 'sw', 'se'].forEach(pos => {
         const handle = document.createElement('div');
         handle.className = `resize-handle ${pos}`;
@@ -857,6 +897,15 @@ function updateSenderNameOnCard(senderName) {
     } else {
       const handles = senderElement.querySelectorAll('.resize-handle');
       senderElement.innerHTML = `From ${senderName}`;
+      
+      // Apply text wrapping styles to existing element
+      senderElement.style.wordWrap = 'break-word';
+      senderElement.style.overflowWrap = 'break-word';
+      senderElement.style.whiteSpace = 'normal';
+      senderElement.style.overflow = 'hidden';
+      senderElement.style.textOverflow = 'ellipsis';
+      senderElement.style.hyphens = 'auto';
+      
       handles.forEach(handle => senderElement.appendChild(handle));
     }
   } else {
@@ -865,7 +914,6 @@ function updateSenderNameOnCard(senderName) {
     }
   }
 }
-
 // FIXED: selectTemplate function - TRANSPARENT ELEMENTS IN CLASSIC TEMPLATE
 function selectTemplate(templateType) {
   document.querySelectorAll('.template-card').forEach(card => {
@@ -880,58 +928,24 @@ function selectTemplate(templateType) {
     // Blank template: completely empty but ready for dynamic element creation
     cardPreview.innerHTML = '';
     cardPreview.dataset.template = 'blank';
-    
-    // FIXED: Create scratch area with proper texture application capability
-    const scratchArea = document.createElement('div');
-    scratchArea.className = 'card-element scratch-area';
-    scratchArea.id = 'scratchArea';
-    scratchArea.style.cssText = `
-      position: absolute; 
-      top: 150px; 
-      left: 76px; 
-      width: 350px; 
-      height: 150px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      border-radius: 8px; 
-      background: transparent; 
-      background-color: transparent;
-      overflow: hidden;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-    `;
-    
-    scratchArea.innerHTML = '<p style="margin: 0; padding: 10px; text-align: center; word-wrap: break-word;">Scratch here to reveal your message!</p>';
-    
-    // Add resize handles
-    ['nw', 'ne', 'sw', 'se'].forEach(pos => {
-      const handle = document.createElement('div');
-      handle.className = `resize-handle ${pos}`;
-      scratchArea.appendChild(handle);
-    });
-    
-    cardPreview.appendChild(scratchArea);
-    makeElementInteractive(scratchArea);
-    
   } else {
-    // Classic template with absolutely transparent elements
+    // CLASSIC TEMPLATE WITH FULL-SIZE TEXT AREA
     cardPreview.innerHTML = `
-      <div class="card-element sender-name" id="senderName" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
+      <div class="card-element sender-name" id="senderName" style="background: transparent; background-color: transparent;">
         From Sarah
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
         <div class="resize-handle se"></div>
       </div>
-      <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
-        <p style="margin: 0; padding: 10px; text-align: center; word-wrap: break-word;">Scratch here to reveal your message!</p>
+      <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+        <p style="width: 100%; height: 100%; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; text-align: center; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; font-size: 16px; line-height: 1.2; box-sizing: border-box;">Scratch here to reveal your message!</p>
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
         <div class="resize-handle se"></div>
       </div>
-      <div class="card-element card-symbol" id="cardSymbol" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
+      <div class="card-element card-symbol" id="cardSymbol" style="background: transparent; background-color: transparent;">
         ❤️
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
@@ -943,7 +957,6 @@ function selectTemplate(templateType) {
   }
   initializeCardElements();
 }
-
 // NEW FUNCTION: Handle text wrapping within element boundaries
 function wrapTextToFitElement(text, element) {
   if (!text || !element) return text;
@@ -1563,8 +1576,8 @@ function updateHiddenMessageText(text) {
       padding: 10px;
       text-align: center;
       word-wrap: break-word;
-      max-width: 90%;
-      background: rgba(255, 255, 255, 0.9);
+      max-width: 100%; width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0);
       border-radius: 8px;
       opacity: 1;
       transition: all 0.3s ease;
@@ -1601,7 +1614,7 @@ function showHiddenMessageForEditing() {
     
     // Make hidden message fully visible
     hiddenMsg.style.opacity = '1';
-    hiddenMsg.style.background = 'rgba(255, 255, 255, 0.95)';
+    hiddenMsg.style.background = 'rgba(255, 255, 255, 0)';
     hiddenMsg.style.color = '#333';
     hiddenMsg.style.zIndex = '20';
     
@@ -2509,8 +2522,8 @@ function applyScratchTexture() {
           scratchArea = document.createElement('div');
           scratchArea.className = 'card-element scratch-area';
           scratchArea.id = 'scratchArea';
-          scratchArea.style.cssText = 'position: absolute; top: 150px; left: 76px; width: 350px; height: 150px; display: flex; align-items: center; justify-content: center; border-radius: 8px;';
-          scratchArea.innerHTML = '<p>Scratch here to reveal your message!</p>';
+          scratchArea.style.cssText = 'position: absolute; top: 150px; left: 76px; width: 350px; height: 150px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 10px; box-sizing: border-box;';
+          scratchArea.innerHTML = '<p style="width: 100%; height: 100%; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 16px; line-height: 1.2;">Scratch here to reveal your message!</p>';
           
           // Add resize handles
           ['nw', 'ne', 'sw', 'se'].forEach(pos => {
@@ -2523,9 +2536,17 @@ function applyScratchTexture() {
           makeElementInteractive(scratchArea);
         }
         
+        // Make sure the paragraph takes full area
+        const paragraph = scratchArea.querySelector('p');
+        if (paragraph) {
+          paragraph.style.cssText = 'width: 100%; height: 100%; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 16px; line-height: 1.2; box-sizing: border-box;';
+        }
+        
         scratchArea.style.backgroundImage = `url(${textureData})`;
         scratchArea.style.backgroundSize = 'cover';
         scratchArea.style.backgroundPosition = 'center';
+        scratchArea.style.padding = '10px';
+        scratchArea.style.boxSizing = 'border-box';
         
         selectedAssets.scratchTexture = textureData;
         
@@ -3006,8 +3027,79 @@ async function handleAudioClick(audioElement, item) {
     selectAsset('audio', item);
   }
 }
+function extractElementStyles() {
+    const styles = {};
+    document.querySelectorAll('.card-element').forEach(element => {
+        const computed = window.getComputedStyle(element);
+        const className = element.className.split(' ').find(cls => 
+            cls === 'sender-name' || cls === 'scratch-area' || cls === 'card-symbol' || cls === 'custom-element'
+        ) || 'card-element';
+        
+        styles[className] = {
+            fontFamily: computed.fontFamily,
+            fontSize: computed.fontSize,
+            fontWeight: computed.fontWeight,
+            fontStyle: computed.fontStyle,
+            lineHeight: computed.lineHeight,
+            letterSpacing: computed.letterSpacing,
+            textAlign: computed.textAlign,
+            color: computed.color,
+            textShadow: computed.textShadow,
+            textTransform: computed.textTransform
+        };
+    });
+    return styles;
+}
 
 // Add this function anywhere in your script (before the generateCard function)
+function getHiddenMessageContent() {
+  const scratchArea = document.getElementById('scratchArea');
+  
+  function extractElementStyles() {
+    const styles = {};
+    document.querySelectorAll('.card-element').forEach(element => {
+        const computed = window.getComputedStyle(element);
+        const className = element.className.split(' ').find(cls => 
+            cls === 'sender-name' || cls === 'scratch-area' || cls === 'card-symbol' || cls === 'custom-element'
+        ) || 'card-element';
+        
+        styles[className] = {
+            // Text styling
+            fontFamily: computed.fontFamily,
+            fontSize: computed.fontSize,
+            fontWeight: computed.fontWeight,
+            fontStyle: computed.fontStyle,
+            lineHeight: computed.lineHeight,
+            letterSpacing: computed.letterSpacing,
+            textAlign: computed.textAlign,
+            color: computed.color,
+            textShadow: computed.textShadow,
+            textTransform: computed.textTransform,
+            wordWrap: computed.wordWrap,
+            wordBreak: computed.wordBreak,
+            whiteSpace: computed.whiteSpace,
+            overflow: computed.overflow,
+            textOverflow: computed.textOverflow,
+            
+            // Box styling
+            padding: computed.padding,
+            margin: computed.margin,
+            border: computed.border,
+            borderRadius: computed.borderRadius,
+            background: computed.background,
+            boxShadow: computed.boxShadow,
+            opacity: computed.opacity,
+            
+            // Positioning
+            position: computed.position,
+            zIndex: computed.zIndex,
+            transform: computed.transform
+        };
+    });
+    return styles;
+}
+}
+
 function getHiddenMessageContent() {
   const scratchArea = document.getElementById('scratchArea');
   const hiddenMsg = scratchArea?.querySelector('.hidden-message');

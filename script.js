@@ -1231,15 +1231,37 @@ function stopDrag() {
 }
 
 function selectCardElement(element) {
+  // Clear all selections first
   document.querySelectorAll('.card-element').forEach(el => {
     el.classList.remove('selected');
+    // Remove any editing indicators
+    const indicator = el.querySelector('.editing-indicator');
+    if (indicator) indicator.remove();
+    // Reset editing styles but NOT applied assets
+    el.style.border = '';
+    if (el.id === 'senderName') {
+      el.style.background = 'transparent';
+    }
   });
   
+  // Reset scratch area editing styles but KEEP applied textures
+  const scratchArea = document.getElementById('scratchArea');
+  if (scratchArea) {
+    // Only reset editing-related styles, NOT backgroundImage
+    scratchArea.style.border = '';
+    const hiddenMsg = scratchArea.querySelector('.hidden-message');
+    if (hiddenMsg) {
+      hiddenMsg.style.opacity = '0';
+      hiddenMsg.style.background = 'transparent';
+    }
+    // DON'T touch backgroundImage - that's where scratch textures are applied!
+  }
+  
+  // Select new element
   element.classList.add('selected');
   selectedElement = element;
   updatePropertyPanel(element);
 }
-
 function updatePropertyPanel(element) {
   const textInput = document.getElementById('elementText');
   const sizeSlider = document.getElementById('elementSize');
@@ -2545,6 +2567,31 @@ function ensureSenderNameElement() {
   return senderName;
 }
 
+// Restore this function for dynamic element creation in blank template
+function ensureSymbolElement() {
+  const cardPreview = document.getElementById('cardPreview');
+  let cardSymbol = document.getElementById('cardSymbol');
+  
+  if (!cardSymbol && cardPreview.dataset.template === 'blank') {
+    cardSymbol = document.createElement('div');
+    cardSymbol.className = 'card-element card-symbol';
+    cardSymbol.id = 'cardSymbol';
+    cardSymbol.style.cssText = 'position: absolute; top: 50px; left: 50px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; background: transparent; background-color: transparent;';
+    
+    // Add resize handles
+    ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+      const handle = document.createElement('div');
+      handle.className = `resize-handle ${pos}`;
+      cardSymbol.appendChild(handle);
+    });
+    
+    cardPreview.appendChild(cardSymbol);
+    makeElementInteractive(cardSymbol);
+  }
+  
+  return cardSymbol;
+}
+
 // FIXED: Upload button functionality
 function initializeUploadButtons() {
   // Background upload
@@ -2958,6 +3005,24 @@ async function handleAudioClick(audioElement, item) {
     playBeepSound();
     selectAsset('audio', item);
   }
+}
+
+// Add this function anywhere in your script (before the generateCard function)
+function getHiddenMessageContent() {
+  const scratchArea = document.getElementById('scratchArea');
+  const hiddenMsg = scratchArea?.querySelector('.hidden-message');
+  
+  if (hiddenMsg && hiddenMsg.textContent.trim() !== 'Your hidden message') {
+    return hiddenMsg.textContent.trim();
+  }
+  
+  // Fallback: check if there's a hidden message input
+  const hiddenMessageInput = document.getElementById('hiddenMessage');
+  if (hiddenMessageInput && hiddenMessageInput.value.trim()) {
+    return hiddenMessageInput.value.trim();
+  }
+  
+  return 'Surprise! You found the hidden message!';
 }
 
 // Load assets into grids with fallbacks - FIXED VERSION
@@ -3578,45 +3643,57 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('🌐 Base URL:', BASE_URL);
   
    // BRUTAL GLOBAL CLICK HANDLER - KILLS ALL EDITING
-  document.body.addEventListener('click', function(e) {
-    const clickedElement = e.target;
+document.body.addEventListener('click', function(e) {
+  const clickedElement = e.target;
+  
+  // If clicking on asset items, do nothing (let them work)
+  if (clickedElement.closest('.background-item') ||
+      clickedElement.closest('.symbol-item') ||
+      clickedElement.closest('.scratch-texture-item') ||
+      clickedElement.closest('.audio-item') ||
+      clickedElement.closest('.right-sidebar')) {
+    return; // Let asset selection work normally
+  }
+  
+  // If clicking outside card elements (but still on card), exit editing
+  if (!clickedElement.closest('.card-element')) {
     
-    // If NOT clicking on card elements or right sidebar, KILL EDITING
-    if (!clickedElement.closest('.card-element') && 
-        !clickedElement.closest('.right-sidebar')) {
-      
-      // BRUTALLY remove all editing states
-      document.querySelectorAll('.editing-indicator').forEach(ind => ind.remove());
-      
-      // Reset sender
-      const sender = document.getElementById('senderName');
-      if (sender) {
-        sender.style.border = '';
-        sender.style.background = 'transparent';
-      }
-      
-      // Reset scratch area
-      const scratch = document.getElementById('scratchArea');
-      if (scratch) {
-        scratch.style.backgroundImage = scratch.dataset.originalBackground || '';
-        scratch.style.background = '';
-        scratch.style.border = '';
-        const hiddenMsg = scratch.querySelector('.hidden-message');
-        if (hiddenMsg) {
-          hiddenMsg.style.opacity = '0';
-          hiddenMsg.style.background = 'transparent';
-        }
-        delete scratch.dataset.originalBackground;
-      }
-      
-      // Clear selections
-      document.querySelectorAll('.card-element').forEach(el => {
-        el.classList.remove('selected');
-      });
-      
-      selectedElement = null;
+    // Reset editing states but PRESERVE applied assets
+    document.querySelectorAll('.editing-indicator').forEach(ind => ind.remove());
+    
+    const sender = document.getElementById('senderName');
+    if (sender) {
+      sender.style.border = '';
+      sender.style.background = 'transparent';
     }
-  });
+    
+    const scratch = document.getElementById('scratchArea');
+    if (scratch) {
+      // Exit editing mode: restore scratch texture if it was hidden for editing
+      if (selectedAssets.scratchTexture && scratch.dataset.hiddenForEditing === 'true') {
+        scratch.style.backgroundImage = `url(${selectedAssets.scratchTexture})`;
+        scratch.style.backgroundSize = 'cover';
+        scratch.style.backgroundPosition = 'center';
+        delete scratch.dataset.hiddenForEditing;
+      }
+      
+      // Reset editing styles only
+      scratch.style.border = '';
+      const hiddenMsg = scratch.querySelector('.hidden-message');
+      if (hiddenMsg) {
+        hiddenMsg.style.opacity = '0';
+        hiddenMsg.style.background = 'transparent';
+      }
+    }
+    
+    // Clear selections
+    document.querySelectorAll('.card-element').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    selectedElement = null;
+  }
+});
   // Initialize first history state
   saveToHistory();
   
@@ -3719,14 +3796,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   
   // Card click to deselect elements
-  cardPreview?.addEventListener('click', function(e) {
-    if (e.target === this) {
-      document.querySelectorAll('.card-element').forEach(el => {
-        el.classList.remove('selected');
-      });
-      selectedElement = null;
+ // Card click to deselect elements - FIXED VERSION
+cardPreview?.addEventListener('click', function(e) {
+  // Only deselect if clicking on the card background itself, not on elements
+  if (e.target === this) {
+    // Remove selections and editing states but PRESERVE applied assets
+    document.querySelectorAll('.card-element').forEach(el => {
+      el.classList.remove('selected');
+      const indicator = el.querySelector('.editing-indicator');
+      if (indicator) indicator.remove();
+      el.style.border = '';
+      if (el.id === 'senderName') {
+        el.style.background = 'transparent';
+      }
+    });
+    
+    // Reset scratch area editing styles but KEEP applied textures
+    const scratchArea = document.getElementById('scratchArea');
+    if (scratchArea) {
+      scratchArea.style.border = '';
+      const hiddenMsg = scratchArea.querySelector('.hidden-message');
+      if (hiddenMsg) {
+        hiddenMsg.style.opacity = '0';
+        hiddenMsg.style.background = 'transparent';
+      }
+      // DON'T reset backgroundImage - that's where textures are applied!
     }
-  });
+    
+    selectedElement = null;
+    document.getElementById('textContentInput')?.blur();
+  }
+});
 
   // Initial preview update
   updatePreview();

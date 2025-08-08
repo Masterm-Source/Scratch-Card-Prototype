@@ -880,24 +880,58 @@ function selectTemplate(templateType) {
     // Blank template: completely empty but ready for dynamic element creation
     cardPreview.innerHTML = '';
     cardPreview.dataset.template = 'blank';
+    
+    // FIXED: Create scratch area with proper texture application capability
+    const scratchArea = document.createElement('div');
+    scratchArea.className = 'card-element scratch-area';
+    scratchArea.id = 'scratchArea';
+    scratchArea.style.cssText = `
+      position: absolute; 
+      top: 150px; 
+      left: 76px; 
+      width: 350px; 
+      height: 150px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      border-radius: 8px; 
+      background: transparent; 
+      background-color: transparent;
+      overflow: hidden;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    `;
+    
+    scratchArea.innerHTML = '<p style="margin: 0; padding: 10px; text-align: center; word-wrap: break-word;">Scratch here to reveal your message!</p>';
+    
+    // Add resize handles
+    ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+      const handle = document.createElement('div');
+      handle.className = `resize-handle ${pos}`;
+      scratchArea.appendChild(handle);
+    });
+    
+    cardPreview.appendChild(scratchArea);
+    makeElementInteractive(scratchArea);
+    
   } else {
-    // ✅ CLASSIC TEMPLATE WITH ABSOLUTELY TRANSPARENT ELEMENTS
+    // Classic template with absolutely transparent elements
     cardPreview.innerHTML = `
-      <div class="card-element sender-name" id="senderName" style="background: transparent; background-color: transparent;">
+      <div class="card-element sender-name" id="senderName" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
         From Sarah
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
         <div class="resize-handle se"></div>
       </div>
-      <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent;">
-        <p>Scratch here to reveal your message!</p>
+      <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
+        <p style="margin: 0; padding: 10px; text-align: center; word-wrap: break-word;">Scratch here to reveal your message!</p>
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
         <div class="resize-handle se"></div>
       </div>
-      <div class="card-element card-symbol" id="cardSymbol" style="background: transparent; background-color: transparent;">
+      <div class="card-element card-symbol" id="cardSymbol" style="background: transparent; background-color: transparent; overflow: hidden; word-wrap: break-word; white-space: pre-wrap;">
         ❤️
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
@@ -908,6 +942,47 @@ function selectTemplate(templateType) {
     cardPreview.dataset.template = 'classic';
   }
   initializeCardElements();
+}
+
+// NEW FUNCTION: Handle text wrapping within element boundaries
+function wrapTextToFitElement(text, element) {
+  if (!text || !element) return text;
+  
+  // Get element dimensions
+  const elementWidth = element.offsetWidth || parseInt(element.style.width) || 200;
+  const elementHeight = element.offsetHeight || parseInt(element.style.height) || 50;
+  
+  // Create a temporary canvas to measure text width
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Get computed font style
+  const computedStyle = window.getComputedStyle(element);
+  const fontSize = computedStyle.fontSize || '16px';
+  const fontFamily = computedStyle.fontFamily || 'Arial';
+  ctx.font = `${fontSize} ${fontFamily}`;
+  
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0];
+  
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine + ' ' + word;
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+    
+    if (testWidth > elementWidth - 20) { // 20px padding
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+  lines.push(currentLine);
+  
+  // Join lines with <br> tags for proper HTML line breaks
+  return lines.join('<br>');
 }
 // Make card elements interactive
 function initializeCardElements() {
@@ -1233,20 +1308,30 @@ function initializePropertyControls() {
 
   // Text Type Dropdown - NEW FUNCTIONALITY
   // Text Type Dropdown - ENHANCED WITH VISIBILITY CONTROL
+// Text Type Dropdown - ENHANCED WITH PROPER EDITING CONTROL
 textTypeDropdown?.addEventListener('change', function() {
   const selectedType = this.value;
-  const currentElement = getCurrentElementByType(selectedType);
   
-  // Handle visibility based on selection
-  if (selectedType === 'hiddenMessage') {
-    showHiddenMessageForEditing();
-  } else {
-    hideHiddenMessageFromEditing();
-  }
+  // Exit current editing mode first
+  exitEditingMode();
+  
+  // Get the element for the new type
+  const currentElement = getCurrentElementByType(selectedType);
   
   if (currentElement) {
     selectCardElement(currentElement);
     updatePropertyPanelForElement(currentElement);
+    
+    // If text input is focused, show editing mode for new type
+    if (document.activeElement === textContentInput) {
+      setTimeout(() => {
+        if (selectedType === 'hiddenMessage') {
+          showHiddenMessageForEditing();
+        } else if (selectedType === 'senderInfo') {
+          showSenderForEditing();
+        }
+      }, 50);
+    }
   } else {
     // Clear the property panel if element doesn't exist
     if (textContentInput) textContentInput.value = '';
@@ -1457,7 +1542,7 @@ function updateHiddenMessageText(text) {
       text-align: center;
       word-wrap: break-word;
       max-width: 90%;
-      background: rgba(255, 255, 255, 0);
+      background: rgba(255, 255, 255, 0.9);
       border-radius: 8px;
       opacity: 1;
       transition: all 0.3s ease;
@@ -1494,7 +1579,7 @@ function showHiddenMessageForEditing() {
     
     // Make hidden message fully visible
     hiddenMsg.style.opacity = '1';
-    hiddenMsg.style.background = 'rgba(255, 255, 255, 0)';
+    hiddenMsg.style.background = 'rgba(255, 255, 255, 0.95)';
     hiddenMsg.style.color = '#333';
     hiddenMsg.style.zIndex = '20';
     
@@ -1521,6 +1606,7 @@ function showHiddenMessageForEditing() {
 }
 
 // NEW: Hide hidden message from editing (restore scratch texture)
+// ENHANCED: Hide hidden message from editing (restore scratch texture)
 function hideHiddenMessageFromEditing() {
   const scratchArea = document.getElementById('scratchArea');
   const hiddenMsg = scratchArea?.querySelector('.hidden-message');
@@ -1543,6 +1629,9 @@ function hideHiddenMessageFromEditing() {
     if (indicator) {
       indicator.remove();
     }
+    
+    // Clear the original background data
+    delete scratchArea.dataset.originalBackground;
   }
 }
 
@@ -1564,38 +1653,56 @@ function getHiddenMessageContent() {
   return 'Surprise! You found the hidden message!';
 }
 
-// NEW: Initialize hidden message editing behavior
-function initializeHiddenMessageEditing() {
+// NEW: Show sender for editing
+function showSenderForEditing() {
+  const senderElement = document.getElementById('senderName');
   const textTypeDropdown = document.getElementById('textTypeDropdown');
-  const textContentInput = document.getElementById('textContentInput');
   
-  // Auto-show when user focuses on text input with hidden message selected
-  textContentInput?.addEventListener('focus', function() {
-    if (textTypeDropdown?.value === 'hiddenMessage') {
-      showHiddenMessageForEditing();
+  if (senderElement && textTypeDropdown?.value === 'senderInfo') {
+    // Add editing indicator to sender
+    if (!senderElement.querySelector('.editing-indicator')) {
+      const indicator = document.createElement('div');
+      indicator.className = 'editing-indicator';
+      indicator.style.cssText = `
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #667eea;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: bold;
+        z-index: 25;
+        pointer-events: none;
+      `;
+      indicator.textContent = 'EDITING';
+      senderElement.appendChild(indicator);
     }
-  });
-  
-  // Auto-hide when user clicks elsewhere (with delay to allow styling)
-  document.addEventListener('click', function(e) {
-  const scratchArea = document.getElementById('scratchArea');
-  const rightSidebar = document.querySelector('.right-sidebar');
-  
-  if (!scratchArea?.contains(e.target) && !rightSidebar?.contains(e.target)) {
-    console.log('Click outside detected, hiding editing mode'); // Debug log
-    hideHiddenMessageFromEditing();
+    
+    // Add editing border to sender
+    senderElement.style.border = '2px dashed #667eea';
+    senderElement.style.background = 'rgba(102, 126, 234, 0.1)';
   }
-});
-  
-  // Show when dropdown changes to hidden message
-  textTypeDropdown?.addEventListener('change', function() {
-    if (this.value === 'hiddenMessage') {
-      setTimeout(showHiddenMessageForEditing, 100);
-    } else {
-      hideHiddenMessageFromEditing();
-    }
-  });
 }
+
+// NEW: Hide sender from editing
+function hideSenderFromEditing() {
+  const senderElement = document.getElementById('senderName');
+  const indicator = senderElement?.querySelector('.editing-indicator');
+  
+  if (senderElement) {
+    // Remove editing styles
+    senderElement.style.border = '';
+    senderElement.style.background = 'transparent';
+    
+    // Remove editing indicator
+    if (indicator) {
+      indicator.remove();
+    }
+  }
+}
+
 
 // NEW: Update property panel for specific element
 function updatePropertyPanelForElement(element) {
@@ -2243,6 +2350,17 @@ function applyCardGlow(intensity) {
     saveToHistory();
   });
 
+  // TEST: Add visual feedback to see if clicks are detected
+function addClickDebugger() {
+  document.addEventListener('click', function(e) {
+    console.log('CLICK DETECTED:', {
+      target: e.target,
+      className: e.target.className,
+      id: e.target.id,
+      tagName: e.target.tagName
+    });
+  });
+}
 
 // FIXED: Background selection - properly apply backgrounds
 function applyBackgroundToCard() {
@@ -3459,6 +3577,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('🎯 Masterm Cards - Enhanced Frontend Loading...');
   console.log('🌐 Base URL:', BASE_URL);
   
+   // BRUTAL GLOBAL CLICK HANDLER - KILLS ALL EDITING
+  document.body.addEventListener('click', function(e) {
+    const clickedElement = e.target;
+    
+    // If NOT clicking on card elements or right sidebar, KILL EDITING
+    if (!clickedElement.closest('.card-element') && 
+        !clickedElement.closest('.right-sidebar')) {
+      
+      // BRUTALLY remove all editing states
+      document.querySelectorAll('.editing-indicator').forEach(ind => ind.remove());
+      
+      // Reset sender
+      const sender = document.getElementById('senderName');
+      if (sender) {
+        sender.style.border = '';
+        sender.style.background = 'transparent';
+      }
+      
+      // Reset scratch area
+      const scratch = document.getElementById('scratchArea');
+      if (scratch) {
+        scratch.style.backgroundImage = scratch.dataset.originalBackground || '';
+        scratch.style.background = '';
+        scratch.style.border = '';
+        const hiddenMsg = scratch.querySelector('.hidden-message');
+        if (hiddenMsg) {
+          hiddenMsg.style.opacity = '0';
+          hiddenMsg.style.background = 'transparent';
+        }
+        delete scratch.dataset.originalBackground;
+      }
+      
+      // Clear selections
+      document.querySelectorAll('.card-element').forEach(el => {
+        el.classList.remove('selected');
+      });
+      
+      selectedElement = null;
+    }
+  });
   // Initialize first history state
   saveToHistory();
   
@@ -3504,8 +3662,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeTemplates();
   initializeCardElements();
   initializePropertyControls();
-  initializeHiddenMessageEditing(); 
+  initializeGlobalClickHandler();
   applyBackgroundToCard();
+  addClickDebugger();
   addSymbolToCard();
   applyScratchTexture();
   initializeUploadButtons();

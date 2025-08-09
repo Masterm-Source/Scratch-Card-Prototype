@@ -127,6 +127,10 @@ let selectedAssets = {
 // Audio playback control
 let currentlyPlayingAudio = null;
 let currentlyPlayingElement = null;
+// Scratch audio integration variables
+let scratchAudio = null;
+let isScratchSoundPlaying = false;
+let isScratching = false;
 
 // Project naming system
 function generateProjectId() {
@@ -1019,71 +1023,84 @@ function makeElementInteractive(element) {
 
   // DRAG functionality - ONLY on the element itself, NOT on handles
   element.addEventListener('mousedown', function(e) {
-    // CRITICAL: Completely block if clicking on resize handle or delete button
-    if (e.target.classList.contains('resize-handle') || 
-        e.target.classList.contains('delete-x') ||
-        e.target.closest('.resize-handle') ||
-        e.target.closest('.delete-x')) {
-      return; // Do absolutely nothing - let resize handle it
+  // CRITICAL: Completely block if clicking on resize handle or delete button
+  if (e.target.classList.contains('resize-handle') || 
+      e.target.classList.contains('delete-x') ||
+      e.target.closest('.resize-handle') ||
+      e.target.closest('.delete-x')) {
+    return; // Do absolutely nothing - let resize handle it
+  }
+  
+  console.log('🎯 Starting DRAG operation');
+  isDragging = true;
+  selectedElement = this;
+  selectCardElement(this);
+  
+  // START SCRATCH AUDIO - if this is a scratch area
+  if (this.classList.contains('scratch-area')) {
+    isScratching = true;
+    playScratchSound();
+  }
+  
+  // Tutorial-style drag logic
+  let startX = e.clientX;
+  let startY = e.clientY;
+  
+  function handleMouseMove(e) {
+    if (!isDragging || !selectedElement) return;
+    
+    // Calculate distance moved (tutorial logic)
+    let newX = startX - e.clientX;
+    let newY = startY - e.clientY;
+    
+    // Reset start position for next move
+    startX = e.clientX;
+    startY = e.clientY;
+    
+    // Get current position
+    const currentLeft = parseInt(selectedElement.style.left) || 0;
+    const currentTop = parseInt(selectedElement.style.top) || 0;
+    
+    // Apply movement
+    let finalX = currentLeft - newX;
+    let finalY = currentTop - newY;
+    
+    // Boundary constraints
+    const cardRect = document.getElementById('cardPreview').getBoundingClientRect();
+    const elementWidth = selectedElement.offsetWidth;
+    const elementHeight = selectedElement.offsetHeight;
+    
+    finalX = Math.max(0, Math.min(finalX, cardRect.width - elementWidth));
+    finalY = Math.max(0, Math.min(finalY, cardRect.height - elementHeight));
+    
+    // Apply position
+    selectedElement.style.position = 'absolute';
+    selectedElement.style.left = finalX + 'px';
+    selectedElement.style.top = finalY + 'px';
+  }
+  
+  function handleMouseUp() {
+    console.log('🎯 Ending DRAG operation');
+    isDragging = false;
+    selectedElement.style.cursor = 'move';
+    
+    // STOP SCRATCH AUDIO - when mouse up
+    // SET SCRATCH FLAG - when mouse up (don't stop audio immediately)
+    if (selectedElement && selectedElement.classList.contains('scratch-area')) {
+      isScratching = false; // ✅ FIXED: Only set flag, let audio finish naturally
     }
     
-    console.log('🎯 Starting DRAG operation');
-    isDragging = true;
-    selectedElement = this;
-    selectCardElement(this);
-    
-    // Tutorial-style drag logic
-    let startX = e.clientX;
-    let startY = e.clientY;
-    
-    function handleMouseMove(e) {
-      if (!isDragging || !selectedElement) return;
-      
-      // Calculate distance moved (tutorial logic)
-      let newX = startX - e.clientX;
-      let newY = startY - e.clientY;
-      
-      // Reset start position for next move
-      startX = e.clientX;
-      startY = e.clientY;
-      
-      // Get current position
-      const currentLeft = parseInt(selectedElement.style.left) || 0;
-      const currentTop = parseInt(selectedElement.style.top) || 0;
-      
-      // Apply movement
-      let finalX = currentLeft - newX;
-      let finalY = currentTop - newY;
-      
-      // Boundary constraints
-      const cardRect = document.getElementById('cardPreview').getBoundingClientRect();
-      const elementWidth = selectedElement.offsetWidth;
-      const elementHeight = selectedElement.offsetHeight;
-      
-      finalX = Math.max(0, Math.min(finalX, cardRect.width - elementWidth));
-      finalY = Math.max(0, Math.min(finalY, cardRect.height - elementHeight));
-      
-      // Apply position
-      selectedElement.style.position = 'absolute';
-      selectedElement.style.left = finalX + 'px';
-      selectedElement.style.top = finalY + 'px';
-    }
-    
-    function handleMouseUp() {
-      console.log('🎯 Ending DRAG operation');
-      isDragging = false;
-      selectedElement.style.cursor = 'move';
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      setTimeout(() => saveToHistory(), 50);
-    }
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    this.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    setTimeout(() => saveToHistory(), 50);
+  }
+  
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+  
+  this.style.cursor = 'grabbing';
+  e.preventDefault();
+});
 
   // RESIZE functionality - ONLY on handles, completely separate from drag
   const handles = element.querySelectorAll('.resize-handle');
@@ -2978,54 +2995,61 @@ function stopCurrentAudio() {
 }
 
 // Handle audio playback with proper controls
+// Handle audio selection with green border visual feedback
+// Handle audio selection with green border visual feedback
 async function handleAudioClick(audioElement, item) {
-  const audio = audioElement;
-  const playButton = item.querySelector('.play-btn, i');
-  
-  // If this audio is currently playing, stop it
-  if (currentlyPlayingAudio === audio && !audio.paused) {
+  // If this audio is currently playing, stop it but keep it selected
+  if (currentlyPlayingAudio === audioElement && !audioElement.paused) {
     stopCurrentAudio();
-    return;
+    return; // Keep the green border and selection
   }
   
-  // Stop any currently playing audio
+  // Stop any currently playing preview audio
   stopCurrentAudio();
   
+  // Remove green border from all audio items
+  document.querySelectorAll('.audio-item').forEach(audioItem => {
+    audioItem.style.border = '';
+    audioItem.classList.remove('selected-audio');
+  });
+  
+  // Add green border to selected audio
+  item.style.border = '3px solid #48bb78';
+  item.classList.add('selected-audio');
+  
+  // Store selected audio for scratch integration
+  selectedAssets.soundEffect = item.dataset.audio;
+  
+  // Preview play the selected audio
   try {
-    // Set up the new audio
-    currentlyPlayingAudio = audio;
+    currentlyPlayingAudio = audioElement;
     currentlyPlayingElement = item;
     
-    // Update play button to pause icon
+    const playButton = item.querySelector('.play-btn, i');
     if (playButton) {
       if (playButton.classList.contains('fa-play')) {
         playButton.classList.remove('fa-play');
         playButton.classList.add('fa-pause');
-      } else if (playButton.textContent === '▶️') {
-        playButton.textContent = '⏸️';
       }
     }
     
     item.classList.add('playing');
     
-    // Reset audio to beginning and play
-    audio.currentTime = 0;
-    await audio.play();
+    audioElement.currentTime = 0;
+    await audioElement.play();
     
-    // When audio ends, reset the UI
-    audio.addEventListener('ended', () => {
+    audioElement.addEventListener('ended', () => {
       stopCurrentAudio();
     }, { once: true });
     
-    // Select this audio asset
-    selectAsset('audio', item);
+    console.log('🎵 Audio selected and previewed:', selectedAssets.soundEffect);
     
   } catch (err) {
-    console.log('Audio play failed, playing fallback beep:', err);
-    stopCurrentAudio();
+    console.log('Audio preview failed:', err);
     playBeepSound();
-    selectAsset('audio', item);
   }
+  
+  saveToHistory();
 }
 function extractElementStyles() {
     const styles = {};
@@ -3258,6 +3282,53 @@ function playBeepSound() {
   } catch (error) {
     console.log('Web Audio API not supported:', error);
   }
+}
+
+// Scratch-integrated audio playback system
+function initializeScratchAudio() {
+  if (!selectedAssets.soundEffect) return null;
+  
+  if (scratchAudio) {
+    scratchAudio.pause();
+    scratchAudio = null;
+  }
+  
+  scratchAudio = new Audio(selectedAssets.soundEffect);
+  scratchAudio.loop = false;
+  scratchAudio.volume = 1.0;
+  
+  // Key logic: Auto-restart if still scratching when audio ends
+  scratchAudio.addEventListener('ended', () => {
+    isScratchSoundPlaying = false;
+    console.log('Scratch audio finished playing naturally.');
+    if (isScratching && selectedAssets.soundEffect) {
+      playScratchSound(); // Auto-restart if still scratching
+    }
+  });
+  
+  return scratchAudio;
+}
+
+function playScratchSound() {
+  if (!selectedAssets.soundEffect) return;
+  
+  if (!isScratchSoundPlaying) {
+    if (!scratchAudio) {
+      initializeScratchAudio();
+    }
+    
+    isScratchSoundPlaying = true;
+    scratchAudio.volume = 1.0;
+    scratchAudio.currentTime = 0;
+    scratchAudio.play().catch(err => console.log('Scratch sound play error:', err));
+    console.log('🎵 Scratch audio started');
+  }
+}
+
+function stopScratchSound() {
+  isScratching = false; // ✅ FIXED: Only set flag, don't force stop audio
+  // Audio will stop naturally when it ends and sees isScratching = false
+  console.log('🎵 Scratch flag set to false - audio will finish naturally');
 }
 
 // Select an asset - FIXED VERSION

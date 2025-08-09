@@ -3299,16 +3299,15 @@ function initializeScratchAudio() {
   
   // Key logic: Auto-restart if still scratching when audio ends
   scratchAudio.addEventListener('ended', () => {
+  console.log('Scratch audio finished playing naturally.');
+  if (isScratching && selectedAssets.soundEffect) {
     isScratchSoundPlaying = false;
-    console.log('Scratch audio finished playing naturally.');
-    if (isScratching && selectedAssets.soundEffect) {
-      playScratchSound(); // Auto-restart if still scratching
-    }
-  });
-  
-  return scratchAudio;
+    playScratchSound(); // Auto-restart if still scratching
+  } else {
+    isScratchSoundPlaying = false;
+  }
+});
 }
-
 function playScratchSound() {
   if (!selectedAssets.soundEffect) return;
   
@@ -3326,8 +3325,8 @@ function playScratchSound() {
 }
 
 function stopScratchSound() {
-  isScratching = false; // ✅ FIXED: Only set flag, don't force stop audio
-  // Audio will stop naturally when it ends and sees isScratching = false
+  isScratching = false;
+  isScratchSoundPlaying = false; // Add this line
   console.log('🎵 Scratch flag set to false - audio will finish naturally');
 }
 

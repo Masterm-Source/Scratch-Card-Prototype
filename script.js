@@ -12,6 +12,9 @@ const backgroundUpload = document.getElementById('backgroundUpload');
 const symbolUpload = document.getElementById('symbolUpload');
 const scratchTextureUpload = document.getElementById('scratchTextureUpload');
 const audioUpload = document.getElementById('audioUpload');
+const aiVoiceGrid = document.getElementById('aiVoiceGrid');
+const aiVoiceUpload = document.getElementById('aiVoiceUpload');
+const loadMoreAiVoices = document.getElementById('loadMoreAiVoices');
 const loadMoreBackgrounds = document.getElementById('loadMoreBackgrounds');
 const loadMoreSymbols = document.getElementById('loadMoreSymbols');
 const loadMoreScratchTextures = document.getElementById('loadMoreScratchTextures');
@@ -58,46 +61,73 @@ const placeholderAssets = {
 };
 
 // All assets from your assets folder - we'll try to load these but fall back to placeholders
+// All assets from your assets folder - we'll try to load these but fall back to placeholders
 const allAssets = {
   backgrounds: [
-    '10032.jpeg', '11123.jpeg', '11233.jpeg', '11393.jpeg', '11937.jpeg', '12343.jpeg', '12435.jpeg', '12545.jpeg',
-    '13200.jpeg', '13230.jpeg', '13454.jpeg', '13485.jpeg', '13546.jpeg', '13748.jpeg', '13828.jpeg', '13833.jpeg',
-    '14334.jpeg', '14533.jpeg', '15667.jpeg', '16236.jpeg', '17623.jpeg', '18319.jpeg', '18872.jpeg', '18923.jpeg',
-    '20330.jpg', '22340.jpeg', '22344.jpeg', '22356.jpeg', '23494.jpeg', '23563.jpeg', '23723.jpeg', '23763.jpeg',
-    '23891.jpeg', '23894.jpeg', '24334.jpeg', '25789.jpeg', '26262.jpeg', '27623.jpeg', '31384.jpeg', '32343.jpeg',
-    '32372.jpeg', '33423.jpeg', '33533.jpeg', '34256.jpeg', '34333.jpeg', '34347.jpeg', '34465.jpeg', '34546.jpeg',
-    '34577.jpeg', '34784.jpeg', '34822.jpeg', '35236.jpeg', '35323.jpeg', '35633.jpeg', '36356.jpeg', '36376.jpeg',
-    '36383.jpeg', '36536.jpeg', '37627.jpeg', '37632.jpeg', '38473.jpeg', '38923.jpeg', '40024.jpeg', '43234.jpeg',
-    '43345.jpeg', '43435.jpeg', '43455.jpeg', '43578.jpeg', '44284.jpeg', '44321.jpeg', '44783.jpeg', '44784.jpeg',
-    '45223.jpeg', '45353.jpeg', '45355.jpeg', '46666.jpeg', '47843.jpeg', '52376.jpeg', '53632.jpeg', '54355.jpeg',
-    '55330.jpeg', '55445.jpeg', '56351.jpeg', '56353.jpeg', '56356.jpeg', '56363.jpeg', '56378.jpeg', '56435.jpeg',
-    '56764.jpeg', '58583.jpeg', '58955.jpeg', '63333.jpeg', '63343.jpeg', '63564.jpeg', '63632.jpeg', '63763.jpeg',
-    '64344.jpeg', '64356.jpeg', '64444.jpeg', '64556.jpeg', '64723.jpeg', '64744.jpeg', '64748.jpeg', '65646.jpeg',
-    '65677.jpeg', '66755.jpeg', '67823.jpeg', '68113.jpeg', '68445.jpeg', '73532.jpeg', '73747.jpeg', '74785.jpeg',
-    '75785.jpeg', '76463.jpeg', '76476.gif', '76478.jpeg', '76678.jpeg', '77865.jpeg', '78237.jpeg', '78378.jpeg',
-    '78463.jpeg', '78571.jpeg', '78575.jpeg', '78578.jpeg', '78589.jpeg', '80980.jpeg', '82376.jpeg', '83783.jpeg',
-    '84123.jpeg', '84262.jpeg', '84578.jpeg', '85736.jpeg', '87365.jpeg', '87564.jpeg', '87653.jpeg', '87654.jpeg',
-    '87876.jpeg', '87888.jpeg', '88756.jpeg', '88778.jpeg', '88933.jpeg', '89123.jpeg', '89245.jpeg', '89333.jpeg',
-    '89435.png', '89523.jpeg', '89534.jpeg', '89578.jpeg', '89589.jpeg', '89745.jpeg', '89781.jpeg', '89784.jpeg',
-    '89785.jpeg', '89893.jpeg', '89894.jpeg', '90888.jpeg', '94333.jpeg', '95763.jpeg', '95784.jpeg', '96243.jpeg',
-    '96857.jpeg', '97412.jpeg', '97853.jpeg', '98363.jpeg', '98372.jpeg', '98524.jpeg', '98934.jpeg', '99811.jpeg',
-    '99892.jpeg', '99939.jpeg'
+    '10032.jpeg', '11123.jpeg', '11221.jpeg', '11233.jpeg', '11345.jpeg', '11393.jpeg', '11937.jpeg', '12335.jpeg',
+    '12343.jpeg', '12344.jpeg', '12435.jpeg', '12545.jpeg', '13200.jpeg', '13230.jpeg', '13234.jpeg', '13336.jpeg',
+    '13454.jpeg', '13485.jpeg', '13546.jpeg', '13567.jpeg', '13748.jpeg', '13828.jpeg', '13833.jpeg', '14334.jpeg',
+    '14533.jpeg', '15667.jpeg', '16236.jpeg', '17623.jpeg', '18319.jpeg', '18872.jpeg', '18923.jpeg', '20330.jpg',
+    '22340.jpeg', '22344.jpeg', '22356.jpeg', '23225.jpeg', '23494.jpeg', '23563.jpeg', '23641.jpeg', '23723.jpeg',
+    '23763.jpeg', '23891.jpeg', '23894.jpeg', '24334.jpeg', '24579.jpeg', '25673.jpeg', '25789.jpeg', '26262.jpeg',
+    '27623.jpeg', '31384.jpeg', '32343.jpeg', '32372.jpeg', '32453.jpeg', '33387.jpeg', '33423.jpeg', '33533.jpeg',
+    '33577.jpeg', '34256.jpeg', '34333.jpeg', '34347.jpeg', '34465.jpeg', '34478.jpeg', '34546.jpeg', '34577.jpeg',
+    '34768.jpeg', '34784.jpeg', '34822.jpeg', '35236.jpeg', '35323.jpeg', '35627.jpeg', '35633.jpeg', '36356.jpeg',
+    '36376.jpeg', '36383.jpeg', '36536.jpeg', '37335.jpeg', '37627.jpeg', '37632.jpeg', '38473.jpeg', '38923.jpeg',
+    '40024.jpeg', '42435.jpeg', '42576.jpeg', '43234.jpeg', '43345.jpeg', '43435.jpeg', '43453.jpeg', '43455.jpeg',
+    '43578.jpeg', '43678.jpeg', '44284.jpeg', '44321.jpeg', '44433.jpeg', '44466.jpeg', '44566.jpeg', '44577.jpeg',
+    '44783.jpeg', '44784.jpeg', '45223.jpeg', '45336.jpeg', '45353.jpeg', '45355.jpeg', '45533.jpeg', '45534.jpeg',
+    '45675.jpeg', '46578.jpeg', '46666.jpeg', '46673.jpeg', '46678.jpeg', '47843.jpeg', '52376.jpeg', '52389.jpeg',
+    '53632.jpeg', '53633.jpeg', '54355.jpeg', '54677.jpeg', '55330.jpeg', '55445.jpeg', '55564.jpeg', '55588.jpeg',
+    '55777.jpeg', '56351.jpeg', '56353.jpeg', '56356.jpeg', '56362.jpeg', '56363.jpeg', '56378.jpeg', '56435.jpeg',
+    '56764.jpeg', '56846.jpeg', '56879.jpeg', '57578.jpeg', '57665.jpeg', '58456.jpeg', '58583.jpeg', '58955.jpeg',
+    '62456.jpeg', '63333.jpeg', '63343.jpeg', '63564.jpeg', '63632.jpeg', '63677.jpeg', '63763.jpeg', '64344.jpeg',
+    '64356.jpeg', '64444.jpeg', '64556.jpeg', '64677.jpeg', '64723.jpeg', '64744.jpeg', '64748.jpeg', '65463.jpeg',
+    '65646.jpeg', '65677.jpeg', '66556.jpeg', '66755.jpeg', '66756.jpeg', '67453.jpeg', '67467.jpeg', '67634.jpeg',
+    '67823.jpeg', '68113.jpeg', '68445.jpeg', '68869.jpeg', '73532.jpeg', '73747.jpeg', '74457.jpeg', '74564.jpeg',
+    '74785.jpeg', '75533.jpeg', '75744.jpeg', '75777.jpeg', '75785.jpeg', '75834.jpeg', '76463.jpeg', '76476.gif',
+    '76478.jpeg', '76555.jpeg', '76678.jpeg', '77865.jpeg', '78237.jpeg', '78378.jpeg', '78463.jpeg', '78571.jpeg',
+    '78575.jpeg', '78578.jpeg', '78589.jpeg', '78787.jpeg', '78886.jpeg', '80003.jpeg', '80980.jpeg', '82376.jpeg',
+    '82377.jpeg', '83783.jpeg', '84123.jpeg', '84262.jpeg', '84578.jpeg', '85557.jpeg', '85683.jpeg', '85736.jpeg',
+    '86666.jpeg', '86756.jpeg', '87365.jpeg', '87545.jpeg', '87564.jpeg', '87589.jpeg', '87645.jpeg', '87647.jpeg',
+    '87653.jpeg', '87654.jpeg', '87876.jpeg', '87888.jpeg', '88756.jpeg', '88778.jpeg', '88933.jpeg', '89123.jpeg',
+    '89245.jpeg', '89333.jpeg', '89344.jpeg', '89435.png', '89523.jpeg', '89534.jpeg', '89576.jpeg', '89578.jpeg',
+    '89589.jpeg', '89655.jpeg', '89745.jpeg', '89781.jpeg', '89784.jpeg', '89785.jpeg', '89893.jpeg', '89894.jpeg',
+    '89967.jpeg', '90880.jpeg', '90888.jpeg', '91433.jpeg', '94333.jpeg', '95763.jpeg', '95784.jpeg', '96243.jpeg',
+    '96857.jpeg', '97412.jpeg', '97677.jpeg', '97768.jpeg', '97853.jpeg', '97890.jpeg', '98000.jpeg', '98363.jpeg',
+    '98372.jpeg', '98476.jpeg', '98524.jpeg', '98577.jpeg', '98746.jpeg', '98788.jpeg', '98792.jpeg', '98934.jpeg',
+    '98989.jpeg', '99181.jpeg', '99811.jpeg', '99836.jpeg', '99885.jpeg', '99892.jpeg', '99939.jpeg', '99999.jpeg'
   ],
   symbols: [
     '030855.png', '031033.png', '031120.png', '031218.png', '031513.png', '031556.png', '031656.png', '031835.png',
     '031949.png', '032112.png', '032221.png', '032314.png', '032428.png', '032617.png', '032742.png', '032846.png',
-    '033007.png', '033054.png', '033155.png', '033331.png', '136450.png', '206970.png', '210862.png', '212452.png',
-    '234566.png', '567554.png', '673038.png'
+    '033007.png', '033054.png', '033155.png', '033331.png', '12257.png', '12577.png', '136450.png', '206970.png',
+    '210862.png', '212452.png', '22398.png', '22456.png', '23334.png', '23344.png', '234566.png', '23635.png',
+    '24545.png', '25678.png', '33366.png', '33763.png', '34533.png', '34633.png', '35631.png', '35633.png',
+    '35635.png', '35636.png', '36344.png', '36346.png', '36364.png', '36644.png', '38363.png', '39833.png',
+    '42566.png', '44644.png', '44664.png', '44764.png', '45477.png', '45555.png', '45556.png', '45677.png',
+    '45788.png', '47844.png', '48944.png', '53566.png', '55544.png', '55655.png', '5566.png', '55667.png',
+    '56354.png', '56476.png', '56754.png', '567554.png', '56774.png', '57842.png', '57876.png', '59825.png',
+    '64467.png', '64554.png', '64646.png', '65654.png', '66326.png', '66544.png', '66557.png', '66663.png',
+    '66778.png', '673038.png', '67677.png', '67899.png', '68642.png', '68832.png', '74644.png', '76233.png',
+    '76666.png', '76764.png', '79797.png', '82892.png', '84784.png', '85665.png', '85757.png', '85789.png',
+    '87436.png', '87899.png', '88978.png', '89766.png', '898432.png', '89856.png', '89862.png', '89866.png',
+    '89898.png', '95644.png', '95852.png', '97066.png', '97833.png', '98935.png', '99999.png'
   ],
   scratchTextures: [
-    '12456.jpg', '23435.jpeg', '23455.jpeg', '24567.jpeg', '32413.jpeg', '32456.jpeg', '34456.jpeg', '34522.jpeg',
-    '34636.jpeg', '35605.jpeg', '36744.jpeg', '36764.jpeg', '43565.jpeg', '43566.jpeg', '45678.jpeg', '74355.jpeg',
-    '76523.jpeg', '76533.jpeg', '76543.jpeg', '76577.jpeg', '84633.jpeg', '87433.jpeg', '87634.jpeg', '89765.jpeg',
-    '98760.jpeg', '98765.jpeg'
+    '12456.jpg', '23435.jpeg', '23455.jpeg', '24567.jpeg', '32413.jpeg', '32456.jpeg', '33668.jpeg', '34456.jpeg',
+    '34522.jpeg', '34556.jpeg', '34636.jpeg', '35605.jpeg', '35636.jpeg', '36744.jpeg', '36764.jpeg', '43468.jpeg',
+    '43565.jpeg', '43566.jpeg', '45678.jpeg', '56778.jpeg', '57647.jpeg', '64478.jpeg', '67888.jpeg', '68833.jpeg',
+    '74355.jpeg', '74558.jpeg', '75665.jpeg', '76523.jpeg', '76533.jpeg', '76543.jpeg', '76577.jpeg', '76667.jpeg',
+    '78645.jpeg', '84633.jpeg', '87433.jpeg', '87634.jpeg', '88457.jpeg', '88866.jpeg', '89464.jpeg', '89765.jpeg',
+    '97774.jpeg', '98760.jpeg', '98765.jpeg', '98766.jpeg'
   ],
   audio: [
     '25633.mp3', '45434.mp3', '45637.mp3', '53343.mp3', '55236.mp3', '56356.mp3', '56535.mp3', '78764.mp3',
     '89723.mp3', '97822.mp3'
+  ],
+  aiVoices: [
+    'Auri.mp3', 'Diana.mp3', 'Huli.mp3', 'Naliaka.mp3', 'Ryan.mp3', 'Selah.mp3', 'Yahya.mp3', 'Yasini.mp3'
   ]
 };
 
@@ -109,15 +139,16 @@ const loadedAssets = {
   backgrounds: { items: [], page: 0 },
   symbols: { items: [], page: 0 },
   scratchTextures: { items: [], page: 0 },
-  audio: { items: [], page: 0 }
+  audio: { items: [], page: 0 },
+  aiVoices: { items: [], page: 0 }
 };
 
-// Store base64 data for uploaded files
 const uploadedFiles = {
   backgroundImage: null,
   symbol: null,
   soundEffect: null,
-  scratchTexture: null
+  scratchTexture: null,
+  aiVoice: null
 };
 
 // Store selected assets - FIXED: Better structure
@@ -126,6 +157,7 @@ let selectedAssets = {
   symbol: null,
   scratchTexture: null,
   soundEffect: null,
+  aiVoice: null,
   deliveryAnimation: null
 };
 
@@ -136,6 +168,12 @@ let currentlyPlayingElement = null;
 let scratchAudio = null;
 let isScratchSoundPlaying = false;
 let isScratching = false;
+
+// AI Voice control
+let currentlyPlayingAIVoice = null;
+let currentlyPlayingAIElement = null;
+let isCardFrozen = false;
+let originalCardInteractivity = null;
 
 // Project naming system
 function generateProjectId() {
@@ -296,49 +334,19 @@ function saveCurrentProject(projectName = null, autoId = null) {
     uploadedFiles: {...uploadedFiles},
     senderName: senderNameInput?.textContent?.replace('From ', '').trim() || '',
     hiddenMessage: hiddenMessageInput?.value?.trim() || '',
-    elements: Array.from(document.querySelectorAll('.card-element')).map(el => {
-      // Get computed styles to capture all actual rendered styles
-      const computedStyle = window.getComputedStyle(el);
-      
-      return {
-        type: el.classList.contains('sender-name') ? 'sender' : 
-              el.classList.contains('scratch-area') ? 'scratch' : 'symbol',
-        content: el.textContent.trim(),
-        elementStyles: {
-          // Exact computed font string
-          font: computedStyle.font,
-          fontFamily: computedStyle.fontFamily,
-          fontSize: computedStyle.fontSize,
-          fontWeight: computedStyle.fontWeight,
-          fontStyle: computedStyle.fontStyle,
-          letterSpacing: computedStyle.letterSpacing,
-          lineHeight: computedStyle.lineHeight,
-          
-          // Colors and effects - exact computed values
-          color: computedStyle.color,
-          textShadow: computedStyle.textShadow,
-          opacity: computedStyle.opacity,
-          backgroundColor: computedStyle.backgroundColor,
-          
-          // Text settings
-          textAlign: computedStyle.textAlign,
-          textTransform: computedStyle.textTransform,
-          whiteSpace: computedStyle.whiteSpace,
-          wordSpacing: computedStyle.wordSpacing,
-          
-          // Stroke and decoration
-          strokeColor: el.dataset.strokeColor || computedStyle.strokeStyle || '#000000',
-          strokeWidth: el.dataset.strokeWidth || computedStyle.lineWidth || '2',
-          textDecoration: computedStyle.textDecoration
-        },
-        style: {
-          left: el.style.left,
-          top: el.style.top,
-          width: el.style.width,
-          height: el.style.height
-        }
-      };
-    }),
+    elements: Array.from(document.querySelectorAll('.card-element')).map(el => ({
+      type: el.classList.contains('sender-name') ? 'sender' : 
+            el.classList.contains('scratch-area') ? 'scratch' : 'symbol',
+      content: el.textContent.trim(),
+      style: {
+        left: el.style.left,
+        top: el.style.top,
+        width: el.style.width,
+        height: el.style.height,
+        fontSize: el.style.fontSize,
+        opacity: el.style.opacity
+      }
+    })),
     cardStyle: {
       backgroundImage: cardPreview?.style.backgroundImage || '',
       className: cardPreview?.className || ''
@@ -386,6 +394,7 @@ function loadProject(projectId) {
   uploadedFiles.symbol = data.uploadedFiles?.symbol || null;
   uploadedFiles.scratchTexture = data.uploadedFiles?.scratchTexture || null;
   uploadedFiles.soundEffect = data.uploadedFiles?.soundEffect || null;
+  uploadedFiles.aiVoice = data.uploadedFiles?.aiVoice || null;
   
   // Restore form inputs
   if (senderNameInput && data.senderName) {
@@ -414,7 +423,6 @@ function loadProject(projectId) {
   
   console.log('✅ Project loaded:', project.name);
 }
-
 function showMyProjects() {
   const savedProjects = JSON.parse(localStorage.getItem('mastermProjects') || '[]');
   
@@ -655,7 +663,7 @@ function restoreState(stateToRestore) {
       console.error('❌ Error restoring selectedAssets:', e);
     }
     
-    try {
+   try {
       if (stateToRestore.uploadedFiles) {
         Object.keys(stateToRestore.uploadedFiles).forEach(key => {
           uploadedFiles[key] = stateToRestore.uploadedFiles[key];
@@ -834,13 +842,14 @@ function initializeUndoRedo() {
 
 function updateActiveAssets() {
   // Update active states in grids based on selected assets
-  ['backgrounds', 'symbols', 'scratchTextures', 'audio'].forEach(type => {
+  ['backgrounds', 'symbols', 'scratchTextures', 'audio', 'aiVoices'].forEach(type => {
     const grid = document.getElementById(`${type}Grid`);
     if (grid) {
       grid.querySelectorAll('.active').forEach(item => item.classList.remove('active'));
       
       const assetKey = type === 'scratchTextures' ? 'scratchTexture' : 
-                      type === 'audio' ? 'soundEffect' : 
+                      type === 'audio' ? 'soundEffect' :
+                      type === 'aiVoices' ? 'aiVoice' :
                       type.slice(0, -1);
       
       if (selectedAssets[assetKey]) {
@@ -948,7 +957,7 @@ function selectTemplate(templateType) {
         <div class="resize-handle se"></div>
       </div>
       <div class="card-element scratch-area" id="scratchArea" style="background: transparent; background-color: transparent; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
-        <p style="width: 100%; height: 100%; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; text-align: center; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; font-size: 16px; line-height: 1.2; box-sizing: border-box;">Scratch here to reveal your message!</p>
+        <p style="width: 100%; height: 100%; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; text-align: center; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; font-size: 25px; line-height: 1.2; box-sizing: border-box;">Scratch Me!</p>
         <div class="resize-handle nw"></div>
         <div class="resize-handle ne"></div>
         <div class="resize-handle sw"></div>
@@ -4273,7 +4282,7 @@ function applyScratchTexture() {
           scratchArea.className = 'card-element scratch-area';
           scratchArea.id = 'scratchArea';
           scratchArea.style.cssText = 'position: absolute; top: 150px; left: 76px; width: 350px; height: 150px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 10px; box-sizing: border-box;';
-          scratchArea.innerHTML = '<p style="width: 100%; height: 100%; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 16px; line-height: 1.2;">Scratch here to reveal your message!</p>';
+          scratchArea.innerHTML = '<p style="width: 100%; height: 100%; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 25px; line-height: 1.2;">Scratch Me!</p>';
           
           // Add resize handles
           ['nw', 'ne', 'sw', 'se'].forEach(pos => {
@@ -4653,6 +4662,66 @@ function initializeUploadButtons() {
     }
   });
 }
+// AI Voice upload - add this right before the closing brace of initializeUploadButtons
+  aiVoiceUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('audio/')) {
+      const url = URL.createObjectURL(file);
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const item = document.createElement('div');
+        item.className = 'ai-voice-item uploaded-item';
+        item.dataset.aiVoice = url;
+        item.style.position = 'relative';
+        
+        item.innerHTML = `
+          <i class="fas fa-play play-btn"></i>
+          <span>🤖 ${file.name.replace(/\.[^/.]+$/, "")}</span>
+          <audio preload="metadata">
+            <source src="${url}" type="${file.type}">
+          </audio>
+          <div class="delete-btn" style="
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          ">🗑️</div>
+        `;
+        
+        const deleteBtn = item.querySelector('.delete-btn');
+        const audio = item.querySelector('audio');
+        
+        item.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        item.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0');
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.remove();
+          URL.revokeObjectURL(url);
+        });
+        
+        item.addEventListener('click', () => handleAIVoiceClick(audio, item));
+        
+        aiVoiceGrid.insertBefore(item, aiVoiceGrid.firstChild);
+        uploadedFiles.aiVoice = reader.result;
+        selectAsset('aiVoices', item);
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
 
 // Enhanced save/export functions - with project naming
 function showMyProjectsButton() {
@@ -4892,7 +4961,8 @@ async function loadAssets(type, gridElement, page = 0) {
   console.log(`🎯 Loading assets for type: ${type}, page: ${page}`);
   
   const isAudio = type === 'audio';
-  const currentItemsPerPage = isAudio ? audioItemsPerPage : itemsPerPage;
+  const isAIVoice = type === 'aiVoices';
+  const currentItemsPerPage = (isAudio || isAIVoice) ? audioItemsPerPage : itemsPerPage;
   const start = page * currentItemsPerPage;
   let items;
 
@@ -4902,28 +4972,37 @@ async function loadAssets(type, gridElement, page = 0) {
 
   for (const file of items) {
     if (!loadedAssets[type].items.includes(file)) {
-      const assetUrl = `${BASE_URL}/assets/${type}/${file}`;
+      // Set correct asset path based on type
+      let assetPath;
+      if (isAIVoice) {
+        assetPath = `${BASE_URL}/assets/AI Delivery Agent/${file}`;
+      } else {
+        assetPath = `${BASE_URL}/assets/${type}/${file}`;
+      }
       
       // Check if asset exists
-      const exists = await checkAssetExists(assetUrl);
+      const exists = await checkAssetExists(assetPath);
       
       if (exists) {
         const item = document.createElement('div');
         
-        // FIXED: Consistent naming for all types
+        // Set consistent naming for all types
         if (type === 'scratchTextures') {
           item.className = 'scratch-texture-item';
-          item.dataset.scratchTexture = assetUrl;
+          item.dataset.scratchTexture = assetPath;
         } else if (isAudio) {
           item.className = 'audio-item';
-          item.dataset.audio = assetUrl;
+          item.dataset.audio = assetPath;
+        } else if (isAIVoice) {
+          item.className = 'ai-voice-item';
+          item.dataset.aiVoice = assetPath;
         } else {
           item.className = `${type.slice(0, -1)}-item`;
-          item.dataset[type.slice(0, -1)] = assetUrl;
+          item.dataset[type.slice(0, -1)] = assetPath;
         }
         
-        if (!isAudio) {
-          item.style.backgroundImage = `url(${assetUrl})`;
+        if (!isAudio && !isAIVoice) {
+          item.style.backgroundImage = `url(${assetPath})`;
           item.style.backgroundSize = 'cover';
           item.style.backgroundPosition = 'center';
           item.title = file;
@@ -4933,10 +5012,10 @@ async function loadAssets(type, gridElement, page = 0) {
             item.addEventListener('click', function() {
               const cardPreview = document.getElementById('cardPreview');
               cardPreview.className = 'card-preview floating';
-              cardPreview.style.backgroundImage = `url(${assetUrl})`;
+              cardPreview.style.backgroundImage = `url(${assetPath})`;
               cardPreview.style.backgroundSize = 'cover';
               cardPreview.style.backgroundPosition = 'center';
-              selectedAssets.background = assetUrl;
+              selectedAssets.background = assetPath;
               
               document.querySelectorAll('.background-item').forEach(bg => bg.classList.remove('active'));
               this.classList.add('active');
@@ -4947,10 +5026,10 @@ async function loadAssets(type, gridElement, page = 0) {
               const cardSymbol = document.getElementById('cardSymbol');
               if (cardSymbol) {
                 const handles = cardSymbol.querySelectorAll('.resize-handle');
-                cardSymbol.innerHTML = `<img src="${assetUrl}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
+                cardSymbol.innerHTML = `<img src="${assetPath}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
                 handles.forEach(handle => cardSymbol.appendChild(handle));
                 
-                selectedAssets.symbol = assetUrl;
+                selectedAssets.symbol = assetPath;
                 document.querySelectorAll('.symbol-item').forEach(sym => sym.classList.remove('active'));
                 this.classList.add('active');
                 saveToHistory();
@@ -4960,51 +5039,63 @@ async function loadAssets(type, gridElement, page = 0) {
             item.addEventListener('click', function() {
               const scratchArea = document.getElementById('scratchArea');
               if (scratchArea) {
-                scratchArea.style.backgroundImage = `url(${assetUrl})`;
+                scratchArea.style.backgroundImage = `url(${assetPath})`;
+                scratchArea.style
                 scratchArea.style.backgroundSize = 'cover';
-                scratchArea.style.backgroundPosition = 'center';
-                
-                selectedAssets.scratchTexture = assetUrl;
-                document.querySelectorAll('.scratch-texture-item').forEach(tex => tex.classList.remove('active'));
-                this.classList.add('active');
-                saveToHistory();
-              }
-            });
-          }
-          
-          console.log(`✅ Added server ${type} asset: ${file}`);
-        } else {
-          item.innerHTML = `
-            <i class="fas fa-play play-btn"></i>
-            <span>${file.replace('.mp3', '')}</span>
-            <audio preload="metadata" crossorigin="anonymous">
-              <source src="${assetUrl}" type="audio/mpeg">
-            </audio>
-          `;
-          
-          const audio = item.querySelector('audio');
-          item.addEventListener('click', () => handleAudioClick(audio, item));
-        }
-        
-        gridElement.appendChild(item);
-        loadedAssets[type].items.push(file);
-      } else {
-        console.log(`❌ Asset not found: ${assetUrl}`);
-      }
-    }
-  }
+               scratchArea.style.backgroundPosition = 'center';
+               
+               selectedAssets.scratchTexture = assetPath;
+               document.querySelectorAll('.scratch-texture-item').forEach(tex => tex.classList.remove('active'));
+               this.classList.add('active');
+               saveToHistory();
+             }
+           });
+         }
+         
+         console.log(`✅ Added server ${type} asset: ${file}`);
+       } else if (isAudio) {
+         item.innerHTML = `
+           <i class="fas fa-play play-btn"></i>
+           <span>${file.replace('.mp3', '')}</span>
+           <audio preload="metadata" crossorigin="anonymous">
+             <source src="${assetPath}" type="audio/mpeg">
+           </audio>
+         `;
+         
+         const audio = item.querySelector('audio');
+         item.addEventListener('click', () => handleAudioClick(audio, item));
+       } else if (isAIVoice) {
+         item.innerHTML = `
+           <i class="fas fa-play play-btn"></i>
+           <span>🤖 ${file.replace('.mp3', '')}</span>
+           <audio preload="metadata" crossorigin="anonymous">
+             <source src="${assetPath}" type="audio/mpeg">
+           </audio>
+         `;
+         
+         const audio = item.querySelector('audio');
+         item.addEventListener('click', () => handleAIVoiceClick(audio, item));
+       }
+       
+       gridElement.appendChild(item);
+       loadedAssets[type].items.push(file);
+     } else {
+       console.log(`❌ Asset not found: ${assetPath}`);
+     }
+   }
+ }
 
-  // Show/hide Load More button
-  const loadMoreButton = document.getElementById(`loadMore${type.charAt(0).toUpperCase() + type.slice(1)}`);
-  if (loadMoreButton) {
-    const totalAvailable = allAssets[type]?.length || 0;
-    const totalLoaded = loadedAssets[type].items.length;
-    
-    const hasMoreItems = totalLoaded < totalAvailable;
-    loadMoreButton.style.display = hasMoreItems ? 'flex' : 'none';
-    
-    console.log(`📊 ${type}: ${totalLoaded}/${totalAvailable} items loaded, hasMore: ${hasMoreItems}`);
-  }
+ // Show/hide Load More button
+ const loadMoreButton = document.getElementById(`loadMore${type.charAt(0).toUpperCase() + type.slice(1)}`);
+ if (loadMoreButton) {
+   const totalAvailable = allAssets[type]?.length || 0;
+   const totalLoaded = loadedAssets[type].items.length;
+   
+   const hasMoreItems = totalLoaded < totalAvailable;
+   loadMoreButton.style.display = hasMoreItems ? 'flex' : 'none';
+   
+   console.log(`📊 ${type}: ${totalLoaded}/${totalAvailable} items loaded, hasMore: ${hasMoreItems}`);
+ }
 }
 
 // Play a simple beep sound using Web Audio API
@@ -5027,6 +5118,169 @@ function playBeepSound() {
     oscillator.stop(audioContext.currentTime + 0.3);
   } catch (error) {
     console.log('Web Audio API not supported:', error);
+  }
+}
+
+// AI Voice Control Functions
+function stopCurrentAIVoice() {
+  if (currentlyPlayingAIVoice && !currentlyPlayingAIVoice.paused) {
+    currentlyPlayingAIVoice.pause();
+    currentlyPlayingAIVoice.currentTime = 0;
+  }
+  
+  if (currentlyPlayingAIElement) {
+    const playButton = currentlyPlayingAIElement.querySelector('.play-btn, i');
+    if (playButton) {
+      if (playButton.classList.contains('fa-pause')) {
+        playButton.classList.remove('fa-pause');
+        playButton.classList.add('fa-play');
+      } else if (playButton.textContent === '⏸️') {
+        playButton.textContent = '▶️';
+      }
+    }
+    currentlyPlayingAIElement.classList.remove('playing');
+  }
+  
+  // Unfreeze card when AI stops
+  unfreezeCard();
+  
+  currentlyPlayingAIVoice = null;
+  currentlyPlayingAIElement = null;
+}
+
+function freezeCard() {
+  console.log('🧊 Freezing card - AI is speaking');
+  isCardFrozen = true;
+  
+  const cardPreview = document.getElementById('cardPreview');
+  if (cardPreview) {
+    // Store original interactivity
+    originalCardInteractivity = {
+      pointerEvents: cardPreview.style.pointerEvents,
+      cursor: cardPreview.style.cursor,
+      opacity: cardPreview.style.opacity
+    };
+    
+    // Apply frozen state
+    cardPreview.style.pointerEvents = 'none';
+    cardPreview.style.cursor = 'not-allowed';
+    cardPreview.style.opacity = '0.7';
+    cardPreview.style.filter = (cardPreview.style.filter || '') + ' grayscale(50%)';
+    
+    // Disable all card elements
+    document.querySelectorAll('.card-element').forEach(element => {
+      element.style.pointerEvents = 'none';
+      element.style.opacity = '0.7';
+    });
+    
+    // Add frozen overlay indicator
+    if (!document.getElementById('frozenOverlay')) {
+      const overlay = document.createElement('div');
+      overlay.id = 'frozenOverlay';
+      overlay.innerHTML = '🤖 AI Delivery Agent Speaking...';
+      overlay.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        z-index: 999;
+        animation: pulse 2s infinite;
+        pointer-events: none;
+      `;
+      cardPreview.appendChild(overlay);
+    }
+  }
+}
+
+function unfreezeCard() {
+  console.log('🔥 Unfreezing card - AI finished speaking');
+  isCardFrozen = false;
+  
+  const cardPreview = document.getElementById('cardPreview');
+  if (cardPreview && originalCardInteractivity) {
+    // Restore original interactivity
+    cardPreview.style.pointerEvents = originalCardInteractivity.pointerEvents || '';
+    cardPreview.style.cursor = originalCardInteractivity.cursor || '';
+    cardPreview.style.opacity = originalCardInteractivity.opacity || '';
+    cardPreview.style.filter = cardPreview.style.filter.replace(' grayscale(50%)', '');
+    
+    // Re-enable all card elements
+    document.querySelectorAll('.card-element').forEach(element => {
+      element.style.pointerEvents = '';
+      element.style.opacity = '';
+    });
+    
+    // Remove frozen overlay
+    const overlay = document.getElementById('frozenOverlay');
+    if (overlay) {
+      overlay.remove();
+    }
+    
+    originalCardInteractivity = null;
+  }
+}
+
+async function handleAIVoiceClick(audioElement, item) {
+  const audio = audioElement;
+  const playButton = item.querySelector('.play-btn, i');
+  
+  // If this AI voice is currently playing, stop it
+  if (currentlyPlayingAIVoice === audio && !audio.paused) {
+    stopCurrentAIVoice();
+    return;
+  }
+  
+  // Stop any currently playing AI voice
+  stopCurrentAIVoice();
+  
+  // Also stop regular audio if playing
+  stopCurrentAudio();
+  
+  try {
+    // Set up the new AI voice
+    currentlyPlayingAIVoice = audio;
+    currentlyPlayingAIElement = item;
+    
+    // Freeze card before AI starts speaking
+    freezeCard();
+    
+    // Update play button to pause icon
+    if (playButton) {
+      if (playButton.classList.contains('fa-play')) {
+        playButton.classList.remove('fa-play');
+        playButton.classList.add('fa-pause');
+      } else if (playButton.textContent === '▶️') {
+        playButton.textContent = '⏸️';
+      }
+    }
+    
+    item.classList.add('playing');
+    
+    // Reset audio to beginning and play
+    audio.currentTime = 0;
+    await audio.play();
+    
+    console.log('🤖 AI Delivery Agent started speaking');
+    
+    // When AI voice ends, unfreeze the card
+    audio.addEventListener('ended', () => {
+      console.log('🤖 AI Delivery Agent finished speaking');
+      stopCurrentAIVoice(); // This will call unfreezeCard()
+    }, { once: true });
+    
+    // Select this AI voice asset
+    selectAsset('aiVoices', item);
+    
+  } catch (err) {
+    console.log('AI Voice play failed, playing fallback beep:', err);
+    stopCurrentAIVoice();
+    playBeepSound();
+    selectAsset('aiVoices', item);
   }
 }
 
@@ -5080,12 +5334,20 @@ function stopScratchSound() {
 function selectAsset(type, element) {
   const grid = document.getElementById(`${type}Grid`);
   
-  // FIXED: Handle different item classes properly
+  // Add null check for grid
+  if (!grid) {
+    console.warn(`Grid not found for type: ${type}. Grid ID: ${type}Grid`);
+    return;
+  }
+  
+  // Handle different item classes properly
   let itemClass;
   if (type === 'scratchTextures') {
     itemClass = 'scratch-texture-item';
   } else if (type === 'audio') {
     itemClass = 'audio-item';
+  } else if (type === 'aiVoices') {
+    itemClass = 'ai-voice-item';
   } else {
     itemClass = `${type.slice(0, -1)}-item`;
   }
@@ -5094,7 +5356,7 @@ function selectAsset(type, element) {
   grid.querySelectorAll(`.${itemClass}`).forEach(item => item.classList.remove('active'));
   element.classList.add('active');
   
-  // FIXED: Map type to correct selectedAssets key and dataset attribute
+  // Map type to correct selectedAssets key and dataset attribute
   let assetKey, datasetKey;
   if (type === 'scratchTextures') {
     assetKey = 'scratchTexture';
@@ -5102,6 +5364,9 @@ function selectAsset(type, element) {
   } else if (type === 'audio') {
     assetKey = 'soundEffect';
     datasetKey = 'audio';
+  } else if (type === 'aiVoices') {
+    assetKey = 'aiVoice';
+    datasetKey = 'aiVoice';
   } else {
     assetKey = type.slice(0, -1);
     datasetKey = type.slice(0, -1);
@@ -5129,6 +5394,10 @@ function setupLoadMore() {
   loadMoreAudio?.addEventListener('click', () => {
     loadedAssets.audio.page++;
     loadAssets('audio', audioGrid, loadedAssets.audio.page);
+  });
+  loadMoreAiVoices?.addEventListener('click', () => {
+    loadedAssets.aiVoices.page++;
+    loadAssets('aiVoices', aiVoiceGrid, loadedAssets.aiVoices.page);
   });
 }
 
@@ -5637,6 +5906,7 @@ document.body.addEventListener('click', function(e) {
     loadAssets('backgrounds', backgroundGridEl),
     loadAssets('symbols', symbolGridEl),
     loadAssets('scratchTextures', scratchTextureGridEl),
+    loadAssets('aiVoices', aiVoiceGrid, 0),
     loadAssets('audio', audioGridEl)
   ]);
   

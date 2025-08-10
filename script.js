@@ -3618,12 +3618,10 @@ class CorporateConfettiSystem {
     }
 }
 
-// 3D Emoji Animation System
-class ThreeDEmojiSystem {
+class CanvasEmojiSystem {
     constructor() {
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
+        this.canvas = null;
+        this.ctx = null;
         this.emojis = [];
         this.isRunning = false;
         this.animationId = null;
@@ -3632,7 +3630,6 @@ class ThreeDEmojiSystem {
         this.mouse = { x: 0, y: 0 };
         this.isMouseDown = false;
         
-        // Physics constants
         this.gravity = -0.018;
         this.gravityEnabled = true;
         this.BOUNCE_DAMPING = 0.85;
@@ -3643,9 +3640,8 @@ class ThreeDEmojiSystem {
     }
 
     initialize() {
-        if (this.renderer) return; // Already initialized
+        if (this.canvas) return;
         
-        // Create container
         this.container = document.createElement('div');
         this.container.style.cssText = `
             position: fixed;
@@ -3659,151 +3655,58 @@ class ThreeDEmojiSystem {
         `;
         document.body.appendChild(this.container);
 
-        // Scene
-        this.scene = new THREE.Scene();
-        this.scene.fog = new THREE.Fog(0x000000, 50, 200);
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.canvas.style.cssText = `
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        `;
+        this.container.appendChild(this.canvas);
 
-        // Camera
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        this.camera.position.set(0, 5, 25);
-        this.camera.lookAt(0, 0, 0);
-
-        // Renderer
-        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1.2;
-        this.renderer.setClearColor(0x000000, 0); // Transparent background
-        this.container.appendChild(this.renderer.domElement);
-
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
-        this.scene.add(ambientLight);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 20, 10);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 2048;
-        directionalLight.shadow.mapSize.height = 2048;
-        this.scene.add(directionalLight);
-
-        // Floor (invisible but functional for physics)
-        const floorGeometry = new THREE.PlaneGeometry(100, 100);
-        const floorMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x111111,
-            transparent: true,
-            opacity: 0 // Completely invisible
-        });
-        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-        floor.rotation.x = -Math.PI / 2;
-        floor.position.y = -this.BOUNDS.y;
-        floor.receiveShadow = true;
-        this.scene.add(floor);
-
-        // Event listeners
         this.onWindowResize = this.onWindowResize.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
         
         window.addEventListener('resize', this.onWindowResize);
-        this.renderer.domElement.addEventListener('mousemove', this.onMouseMove);
-        this.renderer.domElement.addEventListener('mousedown', this.onMouseDown);
-        this.renderer.domElement.addEventListener('mouseup', this.onMouseUp);
+        this.canvas.addEventListener('mousemove', this.onMouseMove);
+        this.canvas.addEventListener('mousedown', this.onMouseDown);
+        this.canvas.addEventListener('mouseup', this.onMouseUp);
     }
 
-    createEmojiMesh() {
-        const group = new THREE.Group();
-
-        // Base sphere (face) - Large size
-        const faceGeometry = new THREE.SphereGeometry(2, 32, 32);
-        const faceMaterial = new THREE.MeshPhongMaterial({
-            color: 0xffdd44,
-            emissive: 0xffaa00,
-            emissiveIntensity: 0.3,
-            shininess: 100
-        });
-        const face = new THREE.Mesh(faceGeometry, faceMaterial);
-        face.castShadow = true;
-        face.receiveShadow = true;
-        group.add(face);
-
-        // Eyes
-        const eyeGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-        const eyeMaterial = new THREE.MeshPhongMaterial({
-            color: 0x000000,
-            emissive: 0x000000,
-            emissiveIntensity: 0.1
-        });
-
-        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        leftEye.position.set(-0.6, 0.6, 1.6);
-        group.add(leftEye);
-
-        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        rightEye.position.set(0.6, 0.6, 1.6);
-        group.add(rightEye);
-
-        // Smile
-        const smileGeometry = new THREE.TorusGeometry(0.8, 0.16, 8, 16, Math.PI);
-        const smileMaterial = new THREE.MeshPhongMaterial({
-            color: 0x000000,
-            emissive: 0x000000,
-            emissiveIntensity: 0.1
-        });
-        const smile = new THREE.Mesh(smileGeometry, smileMaterial);
-        smile.position.set(0, -0.4, 1.6);
-        smile.rotation.z = Math.PI;
-        group.add(smile);
-
-        // Glow effect
-        const glowGeometry = new THREE.SphereGeometry(2.4, 16, 16);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffdd44,
-            transparent: true,
-            opacity: 0.2,
-            side: THREE.BackSide
-        });
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-        group.add(glow);
-
-        // Point light for emission
-        const pointLight = new THREE.PointLight(0xffdd44, 2, 20);
-        pointLight.position.set(0, 0, 0);
-        group.add(pointLight);
-
-        return group;
+    createEmojiObject() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        return {
+            x: (Math.random() - 0.5) * screenWidth * 0.8 + screenWidth / 2,
+            y: Math.random() * screenHeight * 0.3 + 100,
+            z: (Math.random() - 0.5) * 20,
+            
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: Math.random() * 0.8 + 0.4,
+            vz: (Math.random() - 0.5) * 0.6,
+            
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.3,
+            glowIntensity: Math.random() * 0.5 + 0.5,
+            baseScale: Math.random() * 0.3 + 1.2,
+            pulseSpeed: Math.random() * 0.02 + 0.01,
+            giggleIntensity: 0.5,
+            lifespan: 8000 + Math.random() * 10000,
+            birthTime: Date.now(),
+            isDisappearing: false,
+            
+            size: 60 + Math.random() * 40,
+            alpha: 1.0
+        };
     }
 
     createAndAddEmoji() {
-        const emoji = this.createEmojiMesh();
-        
-        // Random position
-        emoji.position.set(
-            (Math.random() - 0.5) * 20,
-            Math.random() * 10 + 5,
-            (Math.random() - 0.5) * 20
-        );
-
-        // Physics properties
-        emoji.velocity = new THREE.Vector3(
-            (Math.random() - 0.5) * 0.6,
-            Math.random() * 0.8 + 0.4,
-            (Math.random() - 0.5) * 0.6
-        );
-
-        // Unique properties
-        emoji.glowIntensity = Math.random() * 0.5 + 0.5;
-        emoji.baseScale = Math.random() * 0.3 + 1.2;
-        emoji.pulseSpeed = Math.random() * 0.02 + 0.01;
-        emoji.giggleIntensity = 0.5;
-        emoji.lifespan = 8000 + Math.random() * 10000;
-        emoji.birthTime = Date.now();
-        emoji.isDisappearing = false;
-
-        this.scene.add(emoji);
+        const emoji = this.createEmojiObject();
         this.emojis.push(emoji);
     }
 
@@ -3814,14 +3717,12 @@ class ThreeDEmojiSystem {
     manageEmojiLifecycle() {
         const currentTime = Date.now();
         
-        // Add new emoji if needed
         if (this.emojis.length < this.MAX_EMOJIS && 
             Math.random() < 0.02 && 
             currentTime - this.animationStartTime > 2000) {
             this.createAndAddEmoji();
         }
         
-        // Ensure minimum emojis
         if (this.emojis.length < this.MIN_EMOJIS) {
             this.createAndAddEmoji();
         }
@@ -3831,150 +3732,144 @@ class ThreeDEmojiSystem {
         this.manageEmojiLifecycle();
         
         this.emojis.forEach((emoji, index) => {
-            // Check if emoji should start disappearing
             const age = Date.now() - emoji.birthTime;
             if (age > emoji.lifespan && !emoji.isDisappearing) {
                 this.startEmojiDisappearing(emoji);
             }
 
-            // Handle disappearing animation
             if (emoji.isDisappearing) {
-                emoji.scale.multiplyScalar(0.95);
-                emoji.children[4].material.opacity *= 0.9;
-                emoji.children[5].intensity *= 0.9;
+                emoji.baseScale *= 0.95;
+                emoji.alpha *= 0.9;
                 
-                if (emoji.scale.x < 0.1) {
-                    this.scene.remove(emoji);
+                if (emoji.baseScale < 0.1) {
                     this.emojis.splice(index, 1);
                     return;
                 }
             }
 
-            // Physics
-            emoji.velocity.y += 0.008;
+            emoji.vy += 0.008;
             if (this.gravityEnabled) {
-                emoji.velocity.y += this.gravity;
+                emoji.vy += this.gravity;
             }
 
-            emoji.position.add(emoji.velocity);
-            emoji.lookAt(this.camera.position);
+            emoji.x += emoji.vx * 20;
+            emoji.y -= emoji.vy * 20;
+            emoji.z += emoji.vz;
 
-            // Boundary collisions
-            if (emoji.position.y < -this.BOUNDS.y + 2) {
-                emoji.position.y = -this.BOUNDS.y + 2;
-                emoji.velocity.y *= -this.BOUNCE_DAMPING;
-                emoji.velocity.y += 0.1;
+            const screenBoundsX = window.innerWidth / 40;
+            const screenBoundsY = window.innerHeight / 40;
+            
+            if (emoji.y > window.innerHeight - screenBoundsY) {
+                emoji.y = window.innerHeight - screenBoundsY;
+                emoji.vy *= -this.BOUNCE_DAMPING * 1.1;
+                emoji.vy += 0.15;
+                emoji.giggleIntensity = 2.0;
+            }
+            if (emoji.y < screenBoundsY) {
+                emoji.y = screenBoundsY;
+                emoji.vy *= -this.BOUNCE_DAMPING;
                 emoji.giggleIntensity = 1.2;
             }
-            if (emoji.position.y > this.BOUNDS.y) {
-                emoji.position.y = this.BOUNDS.y;
-                emoji.velocity.y *= -this.BOUNCE_DAMPING;
+
+            if (emoji.x < screenBoundsX) {
+                emoji.x = screenBoundsX;
+                emoji.vx *= -this.BOUNCE_DAMPING;
+                emoji.giggleIntensity = 1.2;
+            }
+            if (emoji.x > window.innerWidth - screenBoundsX) {
+                emoji.x = window.innerWidth - screenBoundsX;
+                emoji.vx *= -this.BOUNCE_DAMPING;
                 emoji.giggleIntensity = 1.2;
             }
 
-            // X and Z boundaries
-            ['x', 'z'].forEach(axis => {
-                if (emoji.position[axis] < -this.BOUNDS[axis]) {
-                    emoji.position[axis] = -this.BOUNDS[axis];
-                    emoji.velocity[axis] *= -this.BOUNCE_DAMPING;
-                    emoji.giggleIntensity = 1.2;
-                }
-                if (emoji.position[axis] > this.BOUNDS[axis]) {
-                    emoji.position[axis] = this.BOUNDS[axis];
-                    emoji.velocity[axis] *= -this.BOUNCE_DAMPING;
-                    emoji.giggleIntensity = 1.2;
-                }
-            });
-
-            // Apply friction
-            emoji.velocity.x *= this.FRICTION;
-            emoji.velocity.z *= this.FRICTION;
+            emoji.vx *= this.FRICTION;
+            emoji.vz *= this.FRICTION;
             
             if (emoji.giggleIntensity) {
                 emoji.giggleIntensity *= 0.95;
                 if (emoji.giggleIntensity < 0.1) emoji.giggleIntensity = 0;
             }
 
-            // Emoji collisions
             for (let j = index + 1; j < this.emojis.length; j++) {
                 const other = this.emojis[j];
-                const distance = emoji.position.distanceTo(other.position);
+                const dx = emoji.x - other.x;
+                const dy = emoji.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance < 4.4) {
-                    const direction = new THREE.Vector3().subVectors(emoji.position, other.position).normalize();
-                    const force = (4.4 - distance) * 0.1;
+                if (distance < 100) {
+                    const angle = Math.atan2(dy, dx);
+                    const force = (100 - distance) * 0.002;
                     
-                    emoji.velocity.add(direction.multiplyScalar(force));
-                    other.velocity.sub(direction.multiplyScalar(force));
+                    emoji.vx += Math.cos(angle) * force;
+                    emoji.vy += Math.sin(angle) * force;
+                    other.vx -= Math.cos(angle) * force;
+                    other.vy -= Math.sin(angle) * force;
                     
-                    const separation = direction.multiplyScalar((4.4 - distance) * 0.5);
-                    emoji.position.add(separation);
-                    other.position.sub(separation);
+                    const separation = (100 - distance) * 0.5;
+                    emoji.x += Math.cos(angle) * separation * 0.5;
+                    emoji.y += Math.sin(angle) * separation * 0.5;
+                    other.x -= Math.cos(angle) * separation * 0.5;
+                    other.y -= Math.sin(angle) * separation * 0.5;
                     
                     emoji.giggleIntensity = 1.5;
                     other.giggleIntensity = 1.5;
                 }
             }
-
-            // Giggling animation
-            const currentTime = Date.now() * 0.001;
-            const giggleIntensity = emoji.giggleIntensity || 0.5;
-            
-            const baseGiggle = Math.sin(currentTime * 3 + index * 0.8) * 0.02;
-            const intensifiedGiggle = Math.sin(currentTime * 6 + index) * giggleIntensity * 0.05;
-            
-            emoji.lookAt(this.camera.position);
-            emoji.rotation.z += (baseGiggle + intensifiedGiggle);
-            
-            const bounceGiggle = Math.sin(currentTime * 4 + index) * giggleIntensity * 0.01;
-            emoji.position.y += bounceGiggle;
-
-            // Pulsing effects
-            const pulseTime = Date.now() * emoji.pulseSpeed;
-            const pulseScale = emoji.baseScale + Math.sin(pulseTime) * 0.1;
-            emoji.scale.setScalar(pulseScale);
-
-            const glowMesh = emoji.children[4];
-            if (glowMesh) {
-                glowMesh.material.opacity = 0.2 + Math.sin(pulseTime * 2) * 0.1;
-            }
-
-            const light = emoji.children[5];
-            if (light) {
-                light.intensity = emoji.glowIntensity + Math.sin(pulseTime * 3) * 0.3;
-            }
         });
     }
 
+    drawEmoji(emoji) {
+        this.ctx.save();
+        
+        this.ctx.translate(emoji.x, emoji.y);
+        
+        const currentTime = Date.now() * 0.001;
+        const giggleIntensity = emoji.giggleIntensity || 0;
+        
+        if (giggleIntensity > 0.1) {
+            const giggleWobble = Math.sin(currentTime * 12) * giggleIntensity * 8;
+            this.ctx.translate(giggleWobble, 0);
+        }
+        
+        const pulseTime = Date.now() * emoji.pulseSpeed;
+        const pulseScale = emoji.baseScale + Math.sin(pulseTime) * 0.1;
+        this.ctx.scale(pulseScale, pulseScale);
+        
+        this.ctx.globalAlpha = emoji.alpha;
+        
+        this.ctx.font = `${emoji.size * pulseScale}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('😊', 0, 0);
+        
+        this.ctx.restore();
+    }
+
     onMouseMove(event) {
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        this.mouse.x = event.clientX;
+        this.mouse.y = event.clientY;
     }
 
     onMouseDown(event) {
         this.isMouseDown = true;
         
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(this.mouse, this.camera);
-        
         let closestEmoji = null;
         let closestDistance = Infinity;
         
         this.emojis.forEach(emoji => {
-            const distance = raycaster.ray.distanceToPoint(emoji.position);
+            const dx = emoji.x - this.mouse.x;
+            const dy = emoji.y - this.mouse.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < closestDistance) {
                 closestDistance = distance;
                 closestEmoji = emoji;
             }
         });
         
-        if (closestEmoji && closestDistance < 8) {
-            const force = new THREE.Vector3(
-                (Math.random() - 0.5) * 0.8,
-                Math.random() * 0.6 + 0.4,
-                (Math.random() - 0.5) * 0.8
-            );
-            closestEmoji.velocity.add(force);
+        if (closestEmoji && closestDistance < 150) {
+            const angle = Math.atan2(this.mouse.y - closestEmoji.y, this.mouse.x - closestEmoji.x);
+            closestEmoji.vx += Math.cos(angle) * 0.8;
+            closestEmoji.vy += Math.sin(angle) * 0.6;
             closestEmoji.giggleIntensity = 2.0;
         }
     }
@@ -3984,20 +3879,18 @@ class ThreeDEmojiSystem {
     }
 
     onWindowResize() {
-        if (this.camera && this.renderer) {
-            this.camera.aspect = window.innerWidth / window.innerHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        if (this.canvas) {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
         }
     }
 
     start() {
         this.initialize();
-        this.stop(); // Clear any existing animation
+        this.stop();
         
         this.animationStartTime = Date.now();
         
-        // Create initial emojis
         for (let i = 0; i < this.MIN_EMOJIS; i++) {
             this.createAndAddEmoji();
         }
@@ -4005,7 +3898,6 @@ class ThreeDEmojiSystem {
         this.isRunning = true;
         this.animate();
         
-        // Auto-stop after 15 seconds
         setTimeout(() => {
             this.stop();
         }, 15000);
@@ -4014,15 +3906,16 @@ class ThreeDEmojiSystem {
     animate() {
         if (!this.isRunning) return;
         
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
         this.updatePhysics();
         
-        // Camera movement
-        const cameraTime = Date.now() * 0.0005;
-        this.camera.position.x = Math.sin(cameraTime) * 2;
-        this.camera.position.z = 25 + Math.cos(cameraTime * 0.7) * 3;
-        this.camera.lookAt(0, 0, 0);
+        this.emojis.sort((a, b) => b.z - a.z);
         
-        this.renderer.render(this.scene, this.camera);
+        this.emojis.forEach(emoji => {
+            this.drawEmoji(emoji);
+        });
+        
         this.animationId = requestAnimationFrame(() => this.animate());
     }
 
@@ -4033,38 +3926,33 @@ class ThreeDEmojiSystem {
             this.animationId = null;
         }
         
-        // Clear emojis
-        this.emojis.forEach(emoji => {
-            this.scene.remove(emoji);
-        });
         this.emojis = [];
+        
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
     }
 
     destroy() {
         this.stop();
         
-        // Remove event listeners
         if (this.onWindowResize) window.removeEventListener('resize', this.onWindowResize);
-        if (this.renderer && this.renderer.domElement) {
-            this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove);
-            this.renderer.domElement.removeEventListener('mousedown', this.onMouseDown);
-            this.renderer.domElement.removeEventListener('mouseup', this.onMouseUp);
+        if (this.canvas) {
+            this.canvas.removeEventListener('mousemove', this.onMouseMove);
+            this.canvas.removeEventListener('mousedown', this.onMouseDown);
+            this.canvas.removeEventListener('mouseup', this.onMouseUp);
         }
         
-        // Clean up Three.js
-        if (this.renderer) {
-            this.renderer.dispose();
-        }
         if (this.container) {
             this.container.remove();
             this.container = null;
         }
         
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
+        this.canvas = null;
+        this.ctx = null;
     }
 }
+
 
 // Play delivery animation
 // Play delivery animation with lazy initialization
@@ -4077,7 +3965,7 @@ if (Object.keys(deliveryAnimations).length === 0) {
         'heart-fireworks': new HeartFireworksSystem(),
         'birthday-fireworks': new BirthdayFireworksSystem(),
         'corporate-confetti': new CorporateConfettiSystem(),
-        'emoji-3d': new ThreeDEmojiSystem()
+        'emoji-3d': new CanvasEmojiSystem()
     };
 }
     

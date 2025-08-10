@@ -16,6 +16,7 @@ const loadMoreBackgrounds = document.getElementById('loadMoreBackgrounds');
 const loadMoreSymbols = document.getElementById('loadMoreSymbols');
 const loadMoreScratchTextures = document.getElementById('loadMoreScratchTextures');
 const loadMoreAudio = document.getElementById('loadMoreAudio');
+const deliveryAnimationSelect = document.getElementById('deliveryAnimation');
 
 // New variables for additional functionality
 let selectedElement = null;
@@ -26,6 +27,9 @@ let currentTemplate = 'classic';
 
 // Smoke effect control variables
 let isSmokeEnabled = false;
+// Delivery Animation control variables
+let currentDeliveryAnimation = null;
+let deliveryAnimations = {};
 
 // Project management
 let currentProject = null;
@@ -121,7 +125,8 @@ let selectedAssets = {
   background: null,
   symbol: null,
   scratchTexture: null,
-  soundEffect: null
+  soundEffect: null,
+  deliveryAnimation: null
 };
 
 // Audio playback control
@@ -1010,10 +1015,15 @@ function initializeCardElements() {
 
 function makeElementInteractive(element) {
   // Click to select
-  element.addEventListener('click', function(e) {
-    e.stopPropagation();
-    selectCardElement(this);
-  });
+element.addEventListener('click', function(e) {
+  e.stopPropagation();
+  selectCardElement(this);
+  
+  // Trigger delivery animation if this is scratch area and animation is selected
+  if (this.classList.contains('scratch-area') && selectedAssets.deliveryAnimation) {
+    playDeliveryAnimation(selectedAssets.deliveryAnimation);
+  }
+});
 
   // Double-click to show delete
   element.addEventListener('dblclick', function(e) {
@@ -1494,6 +1504,24 @@ textTypeDropdown?.addEventListener('change', function() {
     }
     saveToHistory();
   });
+
+  // Delivery Animation Dropdown
+deliveryAnimationSelect?.addEventListener('change', function() {
+  const selectedAnimation = this.value;
+  selectedAssets.deliveryAnimation = selectedAnimation;
+  
+  if (selectedAnimation) {
+    // Play preview when selected
+    playDeliveryAnimation(selectedAnimation);
+    console.log('🎆 Selected delivery animation:', selectedAnimation);
+  } else {
+    // Stop any running animation when "None" is selected
+    stopAllDeliveryAnimations();
+    console.log('🎆 Delivery animation disabled');
+  }
+  
+  saveToHistory();
+});
 
   // Animation Type (keep existing)
   animationType?.addEventListener('change', function() {
@@ -2264,6 +2292,1822 @@ function removeSmokeEffect() {
     }
 }
 
+// Heart Fireworks Animation System
+class HeartFireworksParticle {
+    constructor(x, y, vx, vy, color, life, size = 2) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        this.size = size;
+        this.gravity = 0.02;
+        this.friction = 0.98;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.life--;
+    }
+
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        const brightness = Math.min(1, alpha * 1.5);
+        
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        
+        const glowSize = this.size * 3;
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+        gradient.addColorStop(0, `rgba(${this.color}, ${brightness * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(${this.color}, ${brightness * 0.4})`);
+        gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = `rgba(${this.color}, ${brightness})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class HeartFireworksEmojiParticle {
+    constructor(x, y, vx, vy, emoji, life, targetX = null, targetY = null) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.emoji = emoji;
+        this.life = life;
+        this.maxLife = life;
+        this.gravity = 0.015;
+        this.friction = 0.99;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.element = null;
+        this.hasExploded = false;
+        this.formationTime = 0;
+        this.isForming = targetX !== null;
+        this.formationDuration = 100;
+    }
+
+    update() {
+        if (this.isForming && this.formationTime < this.formationDuration) {
+            const progress = this.formationTime / this.formationDuration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            this.x = this.startX + (this.targetX - this.startX) * easeProgress;
+            this.y = this.startY + (this.targetY - this.startY) * easeProgress;
+            this.formationTime++;
+        } else {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += this.gravity;
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+        }
+        this.life--;
+        this.updateElement();
+    }
+
+    createElement() {
+        this.element = document.createElement('div');
+        this.element.className = 'emoji heart-fireworks-emoji';
+        this.element.textContent = this.emoji;
+        this.element.style.cssText = `
+            position: absolute;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 1000;
+            left: ${this.x}px;
+            top: ${this.y}px;
+        `;
+        document.body.appendChild(this.element);
+    }
+
+    updateElement() {
+        if (!this.element) this.createElement();
+        
+        const alpha = this.life / this.maxLife;
+        this.element.style.left = this.x + 'px';
+        this.element.style.top = this.y + 'px';
+        this.element.style.opacity = alpha;
+        this.element.style.transform = `scale(${0.5 + alpha * 0.5})`;
+    }
+
+    destroy() {
+        if (this.element) {
+            this.element.remove();
+            this.element = null;
+        }
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class HeartFireworksSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.particles = [];
+        this.emojiParticles = [];
+        this.isRunning = false;
+        this.animationId = null;
+    }
+
+    initialize() {
+        if (this.canvas) return; // Already initialized
+        
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        document.body.appendChild(this.canvas);
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (this.canvas) {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+        });
+    }
+
+    createHeartShape() {
+        const points = [];
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height * 0.35;
+        const scale = 10;
+        
+        for (let t = 0; t < Math.PI * 2; t += 0.15) {
+            const x = scale * (16 * Math.sin(t) ** 3);
+            const y = scale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            points.push({
+                x: centerX + x,
+                y: centerY - y
+            });
+        }
+        return points;
+    }
+
+    start() {
+        this.initialize();
+        this.stop(); // Clear any existing animation
+        
+        const launchX = this.canvas.width / 2;
+        const launchY = this.canvas.height - 50;
+        const targetY = this.canvas.height * 0.35;
+        
+        // Launch trail
+        for (let i = 0; i < 25; i++) {
+            setTimeout(() => {
+                const trail = new HeartFireworksParticle(
+                    launchX + (Math.random() - 0.5) * 8,
+                    launchY - i * 12,
+                    (Math.random() - 0.5) * 1.5,
+                    -6 + Math.random() * 1.5,
+                    '255, 180, 80',
+                    50,
+                    2
+                );
+                this.particles.push(trail);
+            }, i * 25);
+        }
+
+        // Main explosion
+        setTimeout(() => {
+            this.explodeIntoHeart(launchX, targetY);
+        }, 700);
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 6 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 6000);
+    }
+
+    explodeIntoHeart(centerX, centerY) {
+        const heartPoints = this.createHeartShape();
+        
+        // Clear existing
+        this.particles = [];
+        this.emojiParticles.forEach(ep => ep.destroy());
+        this.emojiParticles = [];
+        
+        // Initial explosion
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 / 30) * i;
+            const speed = 12 + Math.random() * 8;
+            this.particles.push(new HeartFireworksParticle(
+                centerX,
+                centerY,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '255, 255, 200',
+                40,
+                3
+            ));
+        }
+
+        // Heart shape formation
+        setTimeout(() => {
+            heartPoints.forEach((point, index) => {
+                const emojiParticle = new HeartFireworksEmojiParticle(
+                    centerX,
+                    centerY,
+                    0, 0,
+                    '❤️',
+                    250,
+                    point.x,
+                    point.y
+                );
+                this.emojiParticles.push(emojiParticle);
+            });
+
+            // Sparkle particles
+            for (let i = 0; i < 80; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 4 + Math.random() * 8;
+                this.particles.push(new HeartFireworksParticle(
+                    centerX + (Math.random() - 0.5) * 20,
+                    centerY + (Math.random() - 0.5) * 20,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    `${255}, ${200 + Math.random() * 55}, ${100 + Math.random() * 100}`,
+                    120,
+                    1.5
+                ));
+            }
+        }, 150);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update particles
+        this.particles = this.particles.filter(particle => {
+            particle.update();
+            particle.draw(this.ctx);
+            return !particle.isDead();
+        });
+
+        // Update emoji particles
+        this.emojiParticles = this.emojiParticles.filter(emojiParticle => {
+            emojiParticle.update();
+            if (emojiParticle.isDead()) {
+                emojiParticle.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear particles
+        this.particles = [];
+        this.emojiParticles.forEach(ep => ep.destroy());
+        this.emojiParticles = [];
+        
+        // Clear canvas
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Remove emoji elements
+        document.querySelectorAll('.heart-fireworks-emoji').forEach(el => el.remove());
+    }
+
+    destroy() {
+        this.stop();
+        if (this.canvas) {
+            this.canvas.remove();
+            this.canvas = null;
+            this.ctx = null;
+        }
+    }
+}
+
+// Birthday Fireworks Animation System
+class BirthdayFireworksParticle {
+    constructor(x, y, vx, vy, color, life, size = 2) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        this.size = size;
+        this.gravity = 0.02;
+        this.friction = 0.98;
+        this.isCakePart = false;
+        this.formationProgress = 0;
+        this.targetX = x;
+        this.targetY = y;
+        this.baseY = y;
+        this.isFlame = false;
+        this.flameOffset = 0;
+    }
+
+    update() {
+        if (this.isCakePart && this.formationProgress < 1) {
+            this.formationProgress = Math.min(1, this.formationProgress + 0.02);
+            const easeProgress = 1 - Math.pow(1 - this.formationProgress, 3);
+            
+            this.x = this.x + (this.targetX - this.x) * easeProgress * 0.1;
+            this.y = this.y + (this.targetY - this.y) * easeProgress * 0.1;
+            
+            if (this.isFlame) {
+                this.y = this.baseY + Math.sin(Date.now() * 0.01 + this.flameOffset) * 3;
+                this.x = this.targetX + Math.cos(Date.now() * 0.008 + this.flameOffset) * 2;
+            }
+        } else if (!this.isCakePart) {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += this.gravity;
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+        } else if (this.isFlame) {
+            this.y = this.baseY + Math.sin(Date.now() * 0.01 + this.flameOffset) * 3;
+            this.x = this.targetX + Math.cos(Date.now() * 0.008 + this.flameOffset) * 2;
+        }
+        
+        this.life--;
+    }
+
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        const brightness = Math.min(1, alpha * 1.5);
+        
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        
+        const glowSize = this.size * (this.isFlame ? 4 : 3);
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+        gradient.addColorStop(0, `rgba(${this.color}, ${brightness * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(${this.color}, ${brightness * 0.4})`);
+        gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = `rgba(${this.color}, ${brightness})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class BirthdayTextParticle {
+    constructor(x, y, char, targetX, targetY, color) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.char = char;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.color = color;
+        this.life = 300;
+        this.maxLife = 300;
+        this.element = null;
+        this.formationTime = 0;
+        this.formationDuration = 80;
+        this.isForming = true;
+        this.hasTriggeredExplosion = false;
+        this.birthdaySystem = null;
+    }
+
+    setBirthdaySystem(system) {
+        this.birthdaySystem = system;
+    }
+
+    update() {
+        if (this.isForming && this.formationTime < this.formationDuration) {
+            const progress = this.formationTime / this.formationDuration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            this.x = this.startX + (this.targetX - this.startX) * easeProgress;
+            this.y = this.startY + (this.targetY - this.startY) * easeProgress;
+            this.formationTime++;
+        } else {
+            this.isForming = false;
+            this.y += 1.2;
+            
+            if (!this.hasTriggeredExplosion && this.y > window.innerHeight * 0.6) {
+                this.hasTriggeredExplosion = true;
+                this.triggerSecondaryExplosion();
+            }
+        }
+        
+        this.life--;
+        this.updateElement();
+    }
+
+    triggerSecondaryExplosion() {
+        const launchX = Math.random() * window.innerWidth;
+        const launchY = window.innerHeight;
+        const targetX = this.x;
+        const targetY = Math.random() * window.innerHeight * 0.3 + window.innerHeight * 0.2;
+        
+        // Launch trail
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                const progress = i / 15;
+                const currentX = launchX + (targetX - launchX) * progress;
+                const currentY = launchY + (targetY - launchY) * progress;
+                
+                const trail = new BirthdayFireworksParticle(
+                    currentX + (Math.random() - 0.5) * 6,
+                    currentY + (Math.random() - 0.5) * 6,
+                    (Math.random() - 0.5) * 2,
+                    -2 + Math.random() * 1,
+                    '255, 150, 50',
+                    30,
+                    1.5
+                );
+                this.birthdaySystem.particles.push(trail);
+            }, i * 25);
+        }
+        
+        setTimeout(() => {
+            this.createSecondaryExplosion(targetX, targetY);
+        }, 400);
+    }
+
+    createSecondaryExplosion(x, y) {
+        const patterns = ['burst', 'ring', 'spiral', 'fountain'];
+        const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const colors = ['255, 50, 100', '50, 255, 150', '100, 150, 255', '255, 200, 50', '200, 50, 255'];
+        const mainColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        let particlesToCreate = [];
+        
+        switch (pattern) {
+            case 'burst':
+                for (let i = 0; i < 40; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 3 + Math.random() * 8;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x, y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        80 + Math.random() * 40,
+                        1.5 + Math.random()
+                    ));
+                }
+                break;
+                
+            case 'ring':
+                for (let i = 0; i < 24; i++) {
+                    const angle = (Math.PI * 2 / 24) * i;
+                    const speed = 6 + Math.random() * 3;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x, y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        100,
+                        2
+                    ));
+                }
+                break;
+                
+            case 'spiral':
+                for (let i = 0; i < 30; i++) {
+                    const angle = (Math.PI * 4 / 30) * i;
+                    const radius = i * 0.3;
+                    const speed = 4 + Math.random() * 4;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x + Math.cos(angle) * radius,
+                        y + Math.sin(angle) * radius,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        90,
+                        1.8
+                    ));
+                }
+                break;
+                
+            case 'fountain':
+                for (let i = 0; i < 35; i++) {
+                    const angle = -Math.PI/3 + (Math.PI/3) * Math.random();
+                    const speed = 5 + Math.random() * 6;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x + (Math.random() - 0.5) * 20,
+                        y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        120,
+                        1.5
+                    ));
+                }
+                break;
+        }
+        
+        if (this.birthdaySystem) {
+            this.birthdaySystem.particles.push(...particlesToCreate);
+        }
+    }
+
+    createElement() {
+        this.element = document.createElement('div');
+        this.element.className = 'text-char birthday-text-char';
+        this.element.textContent = this.char;
+        this.element.style.cssText = `
+            position: absolute;
+            font-size: 48px;
+            font-weight: 900;
+            color: ${this.color};
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.5);
+            pointer-events: none;
+            z-index: 1000;
+            font-family: 'Arial Black', sans-serif;
+            left: ${this.x}px;
+            top: ${this.y}px;
+        `;
+        document.body.appendChild(this.element);
+    }
+
+    updateElement() {
+        if (!this.element) this.createElement();
+        
+        const alpha = Math.min(1, this.life / this.maxLife);
+        this.element.style.left = this.x + 'px';
+        this.element.style.top = this.y + 'px';
+        this.element.style.opacity = alpha;
+        
+        const scale = this.isForming ? 
+            0.3 + (this.formationTime / this.formationDuration) * 0.7 : 
+            1;
+        this.element.style.transform = `scale(${scale})`;
+    }
+
+    destroy() {
+        if (this.element) {
+            this.element.remove();
+            this.element = null;
+        }
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class BirthdayCakeParticle {
+    constructor(x, y, targetX, targetY, birthdaySystem) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.life = 450;
+        this.maxLife = 450;
+        this.formationTime = 0;
+        this.formationDuration = 100;
+        this.isForming = true;
+        this.cakeParticles = [];
+        this.hasFormedCake = false;
+        this.birthdaySystem = birthdaySystem;
+    }
+
+    update() {
+        if (this.isForming && this.formationTime < this.formationDuration) {
+            const progress = this.formationTime / this.formationDuration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            this.x = this.startX + (this.targetX - this.startX) * easeProgress;
+            this.y = this.startY + (this.targetY - this.startY) * easeProgress;
+            this.formationTime++;
+        } else {
+            this.isForming = false;
+            if (!this.hasFormedCake) {
+                this.hasFormedCake = true;
+                this.createFireworksCake();
+            }
+            this.y += 0.3;
+            
+            this.cakeParticles.forEach(particle => {
+                particle.baseY += 0.3;
+            });
+        }
+        
+        this.life--;
+        
+        this.cakeParticles = this.cakeParticles.filter(particle => {
+            particle.update();
+            return !particle.isDead();
+        });
+    }
+
+    createFireworksCake() {
+        const centerX = this.targetX;
+        const centerY = this.targetY;
+        
+        this.createCakeLayer(centerX, centerY + 20, 80, 30, '139, 69, 19', 'base');
+        this.createCakeLayer(centerX, centerY - 5, 70, 20, '255, 182, 193', 'frosting');
+        this.createDecorations(centerX, centerY);
+        this.createCandles(centerX, centerY - 25);
+        this.createFlames(centerX, centerY - 45);
+    }
+
+    createCakeLayer(centerX, centerY, width, height, color, type) {
+        const particleCount = type === 'base' ? 200 : 150;
+        for (let i = 0; i < particleCount; i++) {
+            const x = centerX + (Math.random() - 0.5) * width;
+            const y = centerY + (Math.random() - 0.5) * height;
+            
+            const cakeParticle = new BirthdayFireworksParticle(
+                this.x, this.y,
+                0, 0,
+                color,
+                400,
+                type === 'base' ? 2.5 : 2
+            );
+            cakeParticle.targetX = x;
+            cakeParticle.targetY = y;
+            cakeParticle.baseY = y;
+            cakeParticle.isCakePart = true;
+            cakeParticle.formationProgress = 0;
+            cakeParticle.gravity = 0;
+            
+            this.cakeParticles.push(cakeParticle);
+        }
+    }
+
+    createDecorations(centerX, centerY) {
+        const decorationColors = ['255, 20, 147', '0, 255, 127', '255, 215, 0', '138, 43, 226'];
+        
+        for (let i = 0; i < 20; i++) {
+            const angle = (Math.PI * 2 / 20) * i;
+            const radius = 35;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * 8 - 5;
+            
+            const decoration = new BirthdayFireworksParticle(
+                this.x, this.y,
+                0, 0,
+                decorationColors[i % decorationColors.length],
+                400,
+                3
+            );
+            decoration.targetX = x;
+            decoration.targetY = y;
+            decoration.baseY = y;
+            decoration.isCakePart = true;
+            decoration.formationProgress = 0;
+            decoration.gravity = 0;
+            
+            this.cakeParticles.push(decoration);
+        }
+    }
+
+    createCandles(centerX, centerY) {
+        const candlePositions = [-30, -10, 10, 30];
+        
+        candlePositions.forEach(offset => {
+            for (let i = 0; i < 8; i++) {
+                const x = centerX + offset + (Math.random() - 0.5) * 6;
+                const y = centerY + i * 2;
+                
+                const candle = new BirthdayFireworksParticle(
+                    this.x, this.y,
+                    0, 0,
+                    '255, 215, 0',
+                    400,
+                    1.5
+                );
+                candle.targetX = x;
+                candle.targetY = y;
+                candle.baseY = y;
+                candle.isCakePart = true;
+                candle.formationProgress = 0;
+                candle.gravity = 0;
+                
+                this.cakeParticles.push(candle);
+            }
+        });
+    }
+
+    createFlames(centerX, centerY) {
+        const candlePositions = [-30, -10, 10, 30];
+        
+        candlePositions.forEach((offset, index) => {
+            for (let i = 0; i < 12; i++) {
+                const x = centerX + offset + (Math.random() - 0.5) * 8;
+                const y = centerY + (Math.random() - 0.5) * 12;
+                
+                const flame = new BirthdayFireworksParticle(
+                    this.x, this.y,
+                    0, 0,
+                    i < 6 ? '255, 100, 0' : '255, 200, 0',
+                    400,
+                    1 + Math.random()
+                );
+                flame.targetX = x;
+                flame.targetY = y;
+                flame.baseY = y;
+                flame.isCakePart = true;
+                flame.isFlame = true;
+                flame.flameOffset = Math.random() * Math.PI * 2;
+                flame.formationProgress = 0;
+                flame.gravity = 0;
+                
+                this.cakeParticles.push(flame);
+            }
+        });
+    }
+
+    draw() {
+        if (this.hasFormedCake && Math.random() < 0.1) {
+            const sparkle = new BirthdayFireworksParticle(
+                this.targetX + (Math.random() - 0.5) * 100,
+                this.targetY + (Math.random() - 0.5) * 60,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                '255, 255, 255',
+                30,
+                1
+            );
+            this.birthdaySystem.particles.push(sparkle);
+        }
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+
+    destroy() {
+        this.cakeParticles.forEach(particle => {
+            // Particles will be cleaned up by main system
+        });
+    }
+}
+
+class BirthdayFireworksSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.particles = [];
+        this.textParticles = [];
+        this.cakeParticles = [];
+        this.isRunning = false;
+        this.animationId = null;
+    }
+
+    initialize() {
+        if (this.canvas) return;
+        
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        document.body.appendChild(this.canvas);
+        
+        window.addEventListener('resize', () => {
+            if (this.canvas) {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+        });
+    }
+
+    getTextPositions() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height * 0.35;
+        const text = "HAPPY BIRTHDAY";
+        const charSpacing = 55;
+        const startX = centerX - (text.length * charSpacing) / 2;
+        
+        return text.split('').map((char, index) => ({
+            char: char === ' ' ? '\u00A0' : char,
+            x: startX + index * charSpacing,
+            y: centerY,
+            color: `hsl(${(index * 25) % 360}, 80%, 65%)`
+        }));
+    }
+
+    start() {
+        this.initialize();
+        this.stop();
+        
+        const launchX = this.canvas.width / 2;
+        const launchY = this.canvas.height - 50;
+        const targetY = this.canvas.height * 0.35;
+        
+        // Launch trail
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                const trail = new BirthdayFireworksParticle(
+                    launchX + (Math.random() - 0.5) * 8,
+                    launchY - i * 15,
+                    (Math.random() - 0.5) * 1.5,
+                    -7 + Math.random() * 2,
+                    '255, 200, 100',
+                    50,
+                    2
+                );
+                this.particles.push(trail);
+            }, i * 30);
+        }
+
+        setTimeout(() => {
+            this.explodeIntoBirthday(launchX, targetY);
+        }, 650);
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 8 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 12000);
+    }
+
+    explodeIntoBirthday(centerX, centerY) {
+        // Clear existing
+        this.particles = [];
+        this.textParticles.forEach(tp => tp.destroy());
+        this.textParticles = [];
+        this.cakeParticles.forEach(cp => cp.destroy());
+        this.cakeParticles = [];
+        
+        // Initial explosion
+        for (let i = 0; i < 25; i++) {
+            const angle = (Math.PI * 2 / 25) * i;
+            const speed = 10 + Math.random() * 8;
+            this.particles.push(new BirthdayFireworksParticle(
+                centerX,
+                centerY,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '255, 255, 255',
+                40,
+                3
+            ));
+        }
+
+        // Create text and cake
+        setTimeout(() => {
+            const positions = this.getTextPositions();
+            positions.forEach((pos, index) => {
+                const textParticle = new BirthdayTextParticle(
+                    centerX,
+                    centerY,
+                    pos.char,
+                    pos.x,
+                    pos.y,
+                    pos.color
+                );
+                textParticle.setBirthdaySystem(this);
+                this.textParticles.push(textParticle);
+            });
+
+            // Add birthday cake
+            const cakeX = this.canvas.width / 2;
+            const cakeY = this.canvas.height * 0.55;
+            const cake = new BirthdayCakeParticle(centerX, centerY, cakeX, cakeY, this);
+            this.cakeParticles.push(cake);
+
+            // Celebration sparkles
+            for (let i = 0; i < 60; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 3 + Math.random() * 6;
+                const colors = ['255, 215, 0', '255, 105, 180', '50, 205, 50', '255, 165, 0', '138, 43, 226'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                this.particles.push(new BirthdayFireworksParticle(
+                    centerX + (Math.random() - 0.5) * 30,
+                    centerY + (Math.random() - 0.5) * 30,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    color,
+                    100,
+                    1.5
+                ));
+            }
+        }, 120);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update particles
+        this.particles = this.particles.filter(particle => {
+            particle.update();
+            particle.draw(this.ctx);
+            return !particle.isDead();
+        });
+
+        // Update text particles
+        this.textParticles = this.textParticles.filter(textParticle => {
+            textParticle.update();
+            if (textParticle.isDead()) {
+                textParticle.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        // Update cake particles
+        this.cakeParticles = this.cakeParticles.filter(cakeParticle => {
+            cakeParticle.update();
+            cakeParticle.draw();
+            if (cakeParticle.isDead()) {
+                cakeParticle.destroy();
+                return false;
+            }
+            
+            // Add cake particles to main rendering
+            if (cakeParticle.cakeParticles) {
+                this.particles.push(...cakeParticle.cakeParticles.filter(p => !p.addedToMain));
+                cakeParticle.cakeParticles.forEach(p => p.addedToMain = true);
+            }
+            
+            return true;
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear particles
+        this.particles = [];
+        this.textParticles.forEach(tp => tp.destroy());
+        this.textParticles = [];
+        this.cakeParticles.forEach(cp => cp.destroy());
+        this.cakeParticles = [];
+        
+        // Clear canvas
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Remove text elements
+        document.querySelectorAll('.birthday-text-char').forEach(el => el.remove());
+    }
+
+    destroy() {
+        this.stop();
+        if (this.canvas) {
+            this.canvas.remove();
+            this.canvas = null;
+            this.ctx = null;
+        }
+    }
+}
+
+// Corporate Confetti Animation System
+class CorporateConfetti {
+    constructor(x, y, type = 'gold', launchAngle = 0) {
+        this.x = x;
+        this.y = y;
+        
+        const speed = 25 + Math.random() * 15;
+        const angle = launchAngle + (Math.random() - 0.5) * 0.8;
+        
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.3;
+        this.gravity = 0.12;
+        this.airResistance = 0.995;
+        this.life = 400 + Math.random() * 200;
+        this.maxLife = this.life;
+        this.type = type;
+        
+        this.shapes = ['rect', 'circle', 'triangle', 'diamond'];
+        this.shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
+        this.size = 6 + Math.random() * 8;
+        this.width = this.size + Math.random() * 4;
+        this.height = this.size + Math.random() * 4;
+        
+        if (type === 'gold') {
+            this.baseColors = [
+                { r: 255, g: 215, b: 0, name: 'pure_gold' },
+                { r: 218, g: 165, b: 32, name: 'goldenrod' },
+                { r: 255, g: 193, b: 7, name: 'amber_gold' },
+                { r: 184, g: 134, b: 11, name: 'dark_gold' }
+            ];
+        } else {
+            this.baseColors = [
+                { r: 192, g: 192, b: 192, name: 'silver' },
+                { r: 169, g: 169, b: 169, name: 'dark_silver' },
+                { r: 211, g: 211, b: 211, name: 'light_gray' },
+                { r: 128, g: 128, b: 128, name: 'gunmetal' }
+            ];
+        }
+        
+        this.currentColorIndex = 0;
+        this.shineFactor = Math.random() * 0.4 + 0.6;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= this.airResistance;
+        this.vy *= this.airResistance;
+        this.rotation += this.rotationSpeed;
+        this.life--;
+        
+        const rotationCycle = Math.sin(this.rotation * 2) * 0.5 + 0.5;
+        this.currentColorIndex = Math.floor(rotationCycle * this.baseColors.length);
+        
+        // Realistic bouncing
+        if (this.y > window.innerHeight - 10 && this.vy > 0) {
+            this.vy *= -0.4;
+            this.vx *= 0.8;
+            this.y = window.innerHeight - 10;
+            this.rotationSpeed *= 1.5;
+        }
+        
+        // Side wall bouncing
+        if ((this.x < 0 && this.vx < 0) || (this.x > window.innerWidth && this.vx > 0)) {
+            this.vx *= -0.6;
+            this.x = Math.max(0, Math.min(window.innerWidth, this.x));
+        }
+    }
+
+    draw(ctx) {
+        const alpha = Math.min(1, this.life / this.maxLife * 1.2);
+        const shimmer = Math.sin(Date.now() * 0.005 + this.x * 0.01 + this.y * 0.01) * 0.3 + 0.7;
+        
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        
+        const color = this.baseColors[this.currentColorIndex];
+        const brightness = shimmer * this.shineFactor;
+        
+        let gradient;
+        const gradientRadius = Math.max(this.width, this.height);
+        gradient = ctx.createRadialGradient(-gradientRadius/3, -gradientRadius/3, 0, 0, 0, gradientRadius);
+        
+        const highlightR = Math.min(255, color.r + 60 * brightness);
+        const highlightG = Math.min(255, color.g + 60 * brightness);
+        const highlightB = Math.min(255, color.b + 60 * brightness);
+        
+        const shadowR = Math.max(0, color.r - 50);
+        const shadowG = Math.max(0, color.g - 50);
+        const shadowB = Math.max(0, color.b - 50);
+        
+        gradient.addColorStop(0, `rgba(${highlightR}, ${highlightG}, ${highlightB}, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
+        gradient.addColorStop(1, `rgba(${shadowR}, ${shadowG}, ${shadowB}, ${alpha})`);
+        
+        ctx.fillStyle = gradient;
+        
+        switch(this.shape) {
+            case 'rect':
+                ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+                break;
+            case 'circle':
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+            case 'triangle':
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size/2);
+                ctx.lineTo(-this.size/2, this.size/2);
+                ctx.lineTo(this.size/2, this.size/2);
+                ctx.closePath();
+                ctx.fill();
+                break;
+            case 'diamond':
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size/2);
+                ctx.lineTo(this.size/2, 0);
+                ctx.lineTo(0, this.size/2);
+                ctx.lineTo(-this.size/2, 0);
+                ctx.closePath();
+                ctx.fill();
+                break;
+        }
+        
+        // Premium highlight effect
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * brightness * 0.4})`;
+        if (this.shape === 'rect') {
+            ctx.fillRect(-this.width/2, -this.height/2, this.width/3, this.height/3);
+        } else {
+            ctx.beginPath();
+            ctx.arc(-this.size/4, -this.size/4, this.size/6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class CorporateConfettiSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.confettiPieces = [];
+        this.isRunning = false;
+        this.animationId = null;
+        this.isLaunching = false;
+    }
+
+    initialize() {
+        if (this.canvas) return;
+        
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        document.body.appendChild(this.canvas);
+        
+        window.addEventListener('resize', () => {
+            if (this.canvas) {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+        });
+    }
+
+    start() {
+        this.initialize();
+        this.stop();
+        
+        if (this.isLaunching) return;
+        this.isLaunching = true;
+        
+        const leftCannonX = this.canvas.width * 0.15;
+        const rightCannonX = this.canvas.width * 0.85;
+        const cannonY = this.canvas.height + 20;
+        
+        // Professional launch sequence
+        const launchSequence = [
+            { delay: 0, burst: 40 },
+            { delay: 200, burst: 60 },
+            { delay: 400, burst: 80 },
+            { delay: 600, burst: 40 }
+        ];
+        
+        launchSequence.forEach(sequence => {
+            setTimeout(() => {
+                // Left cannon
+                for (let i = 0; i < sequence.burst; i++) {
+                    setTimeout(() => {
+                        const type = Math.random() > 0.5 ? 'gold' : 'silver';
+                        const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/3;
+                        this.confettiPieces.push(new CorporateConfetti(leftCannonX, cannonY, type, angle));
+                    }, i * 8);
+                }
+                
+                // Right cannon (slightly offset)
+                setTimeout(() => {
+                    for (let i = 0; i < sequence.burst; i++) {
+                        setTimeout(() => {
+                            const type = Math.random() > 0.5 ? 'gold' : 'silver';
+                            const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/3;
+                            this.confettiPieces.push(new CorporateConfetti(rightCannonX, cannonY, type, angle));
+                        }, i * 8);
+                    }
+                }, 50);
+            }, sequence.delay);
+        });
+        
+        // Re-enable launching after sequence
+        setTimeout(() => {
+            this.isLaunching = false;
+        }, 2000);
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 10 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 10000);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        // Transparent background - no dark overlay
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update confetti
+        this.confettiPieces = this.confettiPieces.filter(piece => {
+            piece.update();
+            piece.draw(this.ctx);
+            return !piece.isDead();
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        this.isLaunching = false;
+        
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear confetti
+        this.confettiPieces = [];
+        
+        // Clear canvas
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    destroy() {
+        this.stop();
+        if (this.canvas) {
+            this.canvas.remove();
+            this.canvas = null;
+            this.ctx = null;
+        }
+    }
+}
+
+// 3D Emoji Animation System
+class ThreeDEmojiSystem {
+    constructor() {
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+        this.emojis = [];
+        this.isRunning = false;
+        this.animationId = null;
+        this.container = null;
+        this.animationStartTime = 0;
+        this.mouse = { x: 0, y: 0 };
+        this.isMouseDown = false;
+        
+        // Physics constants
+        this.gravity = -0.018;
+        this.gravityEnabled = true;
+        this.BOUNCE_DAMPING = 0.85;
+        this.FRICTION = 0.99;
+        this.BOUNDS = { x: 15, y: 15, z: 15 };
+        this.MAX_EMOJIS = 12;
+        this.MIN_EMOJIS = 6;
+    }
+
+    initialize() {
+        if (this.renderer) return; // Already initialized
+        
+        // Create container
+        this.container = document.createElement('div');
+        this.container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        document.body.appendChild(this.container);
+
+        // Scene
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.Fog(0x000000, 50, 200);
+
+        // Camera
+        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(0, 5, 25);
+        this.camera.lookAt(0, 0, 0);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1.2;
+        this.renderer.setClearColor(0x000000, 0); // Transparent background
+        this.container.appendChild(this.renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 10);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        this.scene.add(directionalLight);
+
+        // Floor (invisible but functional for physics)
+        const floorGeometry = new THREE.PlaneGeometry(100, 100);
+        const floorMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0x111111,
+            transparent: true,
+            opacity: 0 // Completely invisible
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -this.BOUNDS.y;
+        floor.receiveShadow = true;
+        this.scene.add(floor);
+
+        // Event listeners
+        this.onWindowResize = this.onWindowResize.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
+        
+        window.addEventListener('resize', this.onWindowResize);
+        this.renderer.domElement.addEventListener('mousemove', this.onMouseMove);
+        this.renderer.domElement.addEventListener('mousedown', this.onMouseDown);
+        this.renderer.domElement.addEventListener('mouseup', this.onMouseUp);
+    }
+
+    createEmojiMesh() {
+        const group = new THREE.Group();
+
+        // Base sphere (face) - Large size
+        const faceGeometry = new THREE.SphereGeometry(2, 32, 32);
+        const faceMaterial = new THREE.MeshPhongMaterial({
+            color: 0xffdd44,
+            emissive: 0xffaa00,
+            emissiveIntensity: 0.3,
+            shininess: 100
+        });
+        const face = new THREE.Mesh(faceGeometry, faceMaterial);
+        face.castShadow = true;
+        face.receiveShadow = true;
+        group.add(face);
+
+        // Eyes
+        const eyeGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const eyeMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            emissive: 0x000000,
+            emissiveIntensity: 0.1
+        });
+
+        const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        leftEye.position.set(-0.6, 0.6, 1.6);
+        group.add(leftEye);
+
+        const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+        rightEye.position.set(0.6, 0.6, 1.6);
+        group.add(rightEye);
+
+        // Smile
+        const smileGeometry = new THREE.TorusGeometry(0.8, 0.16, 8, 16, Math.PI);
+        const smileMaterial = new THREE.MeshPhongMaterial({
+            color: 0x000000,
+            emissive: 0x000000,
+            emissiveIntensity: 0.1
+        });
+        const smile = new THREE.Mesh(smileGeometry, smileMaterial);
+        smile.position.set(0, -0.4, 1.6);
+        smile.rotation.z = Math.PI;
+        group.add(smile);
+
+        // Glow effect
+        const glowGeometry = new THREE.SphereGeometry(2.4, 16, 16);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffdd44,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        group.add(glow);
+
+        // Point light for emission
+        const pointLight = new THREE.PointLight(0xffdd44, 2, 20);
+        pointLight.position.set(0, 0, 0);
+        group.add(pointLight);
+
+        return group;
+    }
+
+    createAndAddEmoji() {
+        const emoji = this.createEmojiMesh();
+        
+        // Random position
+        emoji.position.set(
+            (Math.random() - 0.5) * 20,
+            Math.random() * 10 + 5,
+            (Math.random() - 0.5) * 20
+        );
+
+        // Physics properties
+        emoji.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.6,
+            Math.random() * 0.8 + 0.4,
+            (Math.random() - 0.5) * 0.6
+        );
+
+        // Unique properties
+        emoji.glowIntensity = Math.random() * 0.5 + 0.5;
+        emoji.baseScale = Math.random() * 0.3 + 1.2;
+        emoji.pulseSpeed = Math.random() * 0.02 + 0.01;
+        emoji.giggleIntensity = 0.5;
+        emoji.lifespan = 8000 + Math.random() * 10000;
+        emoji.birthTime = Date.now();
+        emoji.isDisappearing = false;
+
+        this.scene.add(emoji);
+        this.emojis.push(emoji);
+    }
+
+    startEmojiDisappearing(emoji) {
+        emoji.isDisappearing = true;
+    }
+
+    manageEmojiLifecycle() {
+        const currentTime = Date.now();
+        
+        // Add new emoji if needed
+        if (this.emojis.length < this.MAX_EMOJIS && 
+            Math.random() < 0.02 && 
+            currentTime - this.animationStartTime > 2000) {
+            this.createAndAddEmoji();
+        }
+        
+        // Ensure minimum emojis
+        if (this.emojis.length < this.MIN_EMOJIS) {
+            this.createAndAddEmoji();
+        }
+    }
+
+    updatePhysics() {
+        this.manageEmojiLifecycle();
+        
+        this.emojis.forEach((emoji, index) => {
+            // Check if emoji should start disappearing
+            const age = Date.now() - emoji.birthTime;
+            if (age > emoji.lifespan && !emoji.isDisappearing) {
+                this.startEmojiDisappearing(emoji);
+            }
+
+            // Handle disappearing animation
+            if (emoji.isDisappearing) {
+                emoji.scale.multiplyScalar(0.95);
+                emoji.children[4].material.opacity *= 0.9;
+                emoji.children[5].intensity *= 0.9;
+                
+                if (emoji.scale.x < 0.1) {
+                    this.scene.remove(emoji);
+                    this.emojis.splice(index, 1);
+                    return;
+                }
+            }
+
+            // Physics
+            emoji.velocity.y += 0.008;
+            if (this.gravityEnabled) {
+                emoji.velocity.y += this.gravity;
+            }
+
+            emoji.position.add(emoji.velocity);
+            emoji.lookAt(this.camera.position);
+
+            // Boundary collisions
+            if (emoji.position.y < -this.BOUNDS.y + 2) {
+                emoji.position.y = -this.BOUNDS.y + 2;
+                emoji.velocity.y *= -this.BOUNCE_DAMPING;
+                emoji.velocity.y += 0.1;
+                emoji.giggleIntensity = 1.2;
+            }
+            if (emoji.position.y > this.BOUNDS.y) {
+                emoji.position.y = this.BOUNDS.y;
+                emoji.velocity.y *= -this.BOUNCE_DAMPING;
+                emoji.giggleIntensity = 1.2;
+            }
+
+            // X and Z boundaries
+            ['x', 'z'].forEach(axis => {
+                if (emoji.position[axis] < -this.BOUNDS[axis]) {
+                    emoji.position[axis] = -this.BOUNDS[axis];
+                    emoji.velocity[axis] *= -this.BOUNCE_DAMPING;
+                    emoji.giggleIntensity = 1.2;
+                }
+                if (emoji.position[axis] > this.BOUNDS[axis]) {
+                    emoji.position[axis] = this.BOUNDS[axis];
+                    emoji.velocity[axis] *= -this.BOUNCE_DAMPING;
+                    emoji.giggleIntensity = 1.2;
+                }
+            });
+
+            // Apply friction
+            emoji.velocity.x *= this.FRICTION;
+            emoji.velocity.z *= this.FRICTION;
+            
+            if (emoji.giggleIntensity) {
+                emoji.giggleIntensity *= 0.95;
+                if (emoji.giggleIntensity < 0.1) emoji.giggleIntensity = 0;
+            }
+
+            // Emoji collisions
+            for (let j = index + 1; j < this.emojis.length; j++) {
+                const other = this.emojis[j];
+                const distance = emoji.position.distanceTo(other.position);
+                
+                if (distance < 4.4) {
+                    const direction = new THREE.Vector3().subVectors(emoji.position, other.position).normalize();
+                    const force = (4.4 - distance) * 0.1;
+                    
+                    emoji.velocity.add(direction.multiplyScalar(force));
+                    other.velocity.sub(direction.multiplyScalar(force));
+                    
+                    const separation = direction.multiplyScalar((4.4 - distance) * 0.5);
+                    emoji.position.add(separation);
+                    other.position.sub(separation);
+                    
+                    emoji.giggleIntensity = 1.5;
+                    other.giggleIntensity = 1.5;
+                }
+            }
+
+            // Giggling animation
+            const currentTime = Date.now() * 0.001;
+            const giggleIntensity = emoji.giggleIntensity || 0.5;
+            
+            const baseGiggle = Math.sin(currentTime * 3 + index * 0.8) * 0.02;
+            const intensifiedGiggle = Math.sin(currentTime * 6 + index) * giggleIntensity * 0.05;
+            
+            emoji.lookAt(this.camera.position);
+            emoji.rotation.z += (baseGiggle + intensifiedGiggle);
+            
+            const bounceGiggle = Math.sin(currentTime * 4 + index) * giggleIntensity * 0.01;
+            emoji.position.y += bounceGiggle;
+
+            // Pulsing effects
+            const pulseTime = Date.now() * emoji.pulseSpeed;
+            const pulseScale = emoji.baseScale + Math.sin(pulseTime) * 0.1;
+            emoji.scale.setScalar(pulseScale);
+
+            const glowMesh = emoji.children[4];
+            if (glowMesh) {
+                glowMesh.material.opacity = 0.2 + Math.sin(pulseTime * 2) * 0.1;
+            }
+
+            const light = emoji.children[5];
+            if (light) {
+                light.intensity = emoji.glowIntensity + Math.sin(pulseTime * 3) * 0.3;
+            }
+        });
+    }
+
+    onMouseMove(event) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    onMouseDown(event) {
+        this.isMouseDown = true;
+        
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(this.mouse, this.camera);
+        
+        let closestEmoji = null;
+        let closestDistance = Infinity;
+        
+        this.emojis.forEach(emoji => {
+            const distance = raycaster.ray.distanceToPoint(emoji.position);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestEmoji = emoji;
+            }
+        });
+        
+        if (closestEmoji && closestDistance < 8) {
+            const force = new THREE.Vector3(
+                (Math.random() - 0.5) * 0.8,
+                Math.random() * 0.6 + 0.4,
+                (Math.random() - 0.5) * 0.8
+            );
+            closestEmoji.velocity.add(force);
+            closestEmoji.giggleIntensity = 2.0;
+        }
+    }
+
+    onMouseUp(event) {
+        this.isMouseDown = false;
+    }
+
+    onWindowResize() {
+        if (this.camera && this.renderer) {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    }
+
+    start() {
+        this.initialize();
+        this.stop(); // Clear any existing animation
+        
+        this.animationStartTime = Date.now();
+        
+        // Create initial emojis
+        for (let i = 0; i < this.MIN_EMOJIS; i++) {
+            this.createAndAddEmoji();
+        }
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 15 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 15000);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        this.updatePhysics();
+        
+        // Camera movement
+        const cameraTime = Date.now() * 0.0005;
+        this.camera.position.x = Math.sin(cameraTime) * 2;
+        this.camera.position.z = 25 + Math.cos(cameraTime * 0.7) * 3;
+        this.camera.lookAt(0, 0, 0);
+        
+        this.renderer.render(this.scene, this.camera);
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear emojis
+        this.emojis.forEach(emoji => {
+            this.scene.remove(emoji);
+        });
+        this.emojis = [];
+    }
+
+    destroy() {
+        this.stop();
+        
+        // Remove event listeners
+        if (this.onWindowResize) window.removeEventListener('resize', this.onWindowResize);
+        if (this.renderer && this.renderer.domElement) {
+            this.renderer.domElement.removeEventListener('mousemove', this.onMouseMove);
+            this.renderer.domElement.removeEventListener('mousedown', this.onMouseDown);
+            this.renderer.domElement.removeEventListener('mouseup', this.onMouseUp);
+        }
+        
+        // Clean up Three.js
+        if (this.renderer) {
+            this.renderer.dispose();
+        }
+        if (this.container) {
+            this.container.remove();
+            this.container = null;
+        }
+        
+        this.scene = null;
+        this.camera = null;
+        this.renderer = null;
+    }
+}
+
+// Play delivery animation
+// Play delivery animation with lazy initialization
+function playDeliveryAnimation(animationType) {
+    console.log('🎆 Playing delivery animation:', animationType);
+    
+    // Lazy initialize animations if not already done
+if (Object.keys(deliveryAnimations).length === 0) {
+    deliveryAnimations = {
+        'heart-fireworks': new HeartFireworksSystem(),
+        'birthday-fireworks': new BirthdayFireworksSystem(),
+        'corporate-confetti': new CorporateConfettiSystem(),
+        'emoji-3d': new ThreeDEmojiSystem()
+    };
+}
+    
+    // Stop any currently running animation
+    if (currentDeliveryAnimation) {
+        currentDeliveryAnimation.stop();
+    }
+    
+    const animation = deliveryAnimations[animationType];
+    if (animation) {
+        currentDeliveryAnimation = animation;
+        animation.start();
+    }
+}
+
+
+// Stop all delivery animations
+// Stop all delivery animations with lazy initialization check
+function stopAllDeliveryAnimations() {
+    // Only try to stop if animations are initialized
+    if (Object.keys(deliveryAnimations).length > 0) {
+        Object.values(deliveryAnimations).forEach(animation => {
+            if (animation && typeof animation.stop === 'function') {
+                animation.stop();
+            }
+        });
+    }
+    currentDeliveryAnimation = null;
+}
+
 // Helper function to convert hex to RGB (keeping original for compatibility)
 function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -2273,6 +4117,7 @@ function hexToRgb(hex) {
         b: parseInt(result[3], 16)
     } : { r: 102, g: 126, b: 234 }; // Default blue
 }
+
 
 // Helper functions for environment darkening (UNCHANGED)
 function applyEnvironmentDarkening(intensity) {
@@ -2993,6 +4838,19 @@ function stopCurrentAudio() {
   currentlyPlayingAudio = null;
   currentlyPlayingElement = null;
 }
+
+// Clean up animations on page unload
+// Clean up animations on page unload with lazy initialization check
+window.addEventListener('beforeunload', () => {
+    stopAllDeliveryAnimations();
+    if (Object.keys(deliveryAnimations).length > 0) {
+        Object.values(deliveryAnimations).forEach(animation => {
+            if (animation && typeof animation.destroy === 'function') {
+                animation.destroy();
+            }
+        });
+    }
+});
 
 // Handle audio playback with proper controls
 // Handle audio selection with green border visual feedback

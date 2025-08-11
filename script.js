@@ -4728,6 +4728,117 @@ function showMyProjectsButton() {
   showMyProjects();
 }
 
+// Logo Upload Functionality - Add this to your existing script.js
+
+// Function to trigger logo upload
+function uploadLogo() {
+    // Create file input if it doesn't exist
+    let logoUpload = document.getElementById('logoUpload');
+    if (!logoUpload) {
+        logoUpload = document.createElement('input');
+        logoUpload.type = 'file';
+        logoUpload.id = 'logoUpload';
+        logoUpload.className = 'file-input';
+        logoUpload.accept = 'image/*';
+        logoUpload.style.display = 'none';
+        document.body.appendChild(logoUpload);
+    }
+    logoUpload.click();
+}
+
+// Handle logo upload
+document.addEventListener('DOMContentLoaded', function() {
+    // Create logo upload input if it doesn't exist
+    let logoUpload = document.getElementById('logoUpload');
+    if (!logoUpload) {
+        logoUpload = document.createElement('input');
+        logoUpload.type = 'file';
+        logoUpload.id = 'logoUpload';
+        logoUpload.className = 'file-input';
+        logoUpload.accept = 'image/*';
+        logoUpload.style.display = 'none';
+        document.body.appendChild(logoUpload);
+    }
+
+    // Add click event to logo section
+    const logoSection = document.querySelector('.logo-section');
+    if (logoSection) {
+        logoSection.style.cursor = 'pointer';
+        logoSection.addEventListener('click', uploadLogo);
+    }
+
+    // Handle file selection
+    logoUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Create or update logo image
+                let logoImage = document.getElementById('logoImage');
+                if (!logoImage) {
+                    logoImage = document.createElement('img');
+                    logoImage.id = 'logoImage';
+                    logoImage.alt = 'Logo';
+                    logoImage.style.cssText = `
+                        height: 50px;
+                        width: auto;
+                        max-width: 200px;
+                        object-fit: contain;
+                        cursor: pointer;
+                        border-radius: 8px;
+                        margin-right: 12px;
+                    `;
+                    
+                    // Insert before the logo icon
+                    const logoIcon = document.querySelector('.logo-icon');
+                    logoIcon.parentNode.insertBefore(logoImage, logoIcon);
+                }
+
+                // Set image source and show it
+                logoImage.src = e.target.result;
+                logoImage.style.display = 'block';
+
+                // Hide only the logo icon, keep the text visible
+                const logoIcon = document.querySelector('.logo-icon');
+                if (logoIcon) logoIcon.style.display = 'none';
+
+                // Keep the logo text visible
+                const logoText = document.querySelector('.logo-text');
+                if (logoText) logoText.style.display = 'block';
+
+                // Add double-click to reset logo
+                logoImage.addEventListener('dblclick', function() {
+                    if (confirm('Reset to original logo?')) {
+                        logoImage.style.display = 'none';
+                        if (logoIcon) logoIcon.style.display = 'flex';
+                        // Logo text stays visible since we never hid it
+                    }
+                });
+
+                console.log('Logo uploaded successfully');
+            };
+
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
 function saveDraftButton() {
   if (currentProject) {
     // Save existing project

@@ -1,1153 +1,3483 @@
-/**
- * PROFESSIONAL DUAL CANVAS SCRATCH CARD GENERATOR
- * USES EXACT SAME LOGIC AS JOE'S SCRIPT - PIXEL PERFECT SCRATCHING
- * - Two separate canvases: message canvas (bottom) + scratch canvas (top)
- * - Real image loading for scratch textures (no CSS bullshit)
- * - Professional pixel-by-pixel scratching only
- * - Fireworks effects during scratching
- * - Pure canvas-to-canvas revealing
- */
-
-class AdvancedCardGenerator {
-    constructor() {
-        this.baseUrl = process.env.BASE_URL || '';
+// Heart Fireworks Animation System
+class HeartFireworksParticle {
+    constructor(x, y, vx, vy, color, life, size = 2) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        this.size = size;
+        this.gravity = 0.02;
+        this.friction = 0.98;
     }
 
-    /**
-     * Generate a complete HTML scratch card with DUAL CANVAS SYSTEM
-     */
-    async generateCard(cardData) {
-        const {
-            id: cardId,
-            senderName,
-            hiddenMessage,
-            backgroundImage,
-            symbol,
-            animation,
-            scratchTexture,
-            soundEffect,
-            // Advanced features
-            backgroundImageBase64,
-            symbolBase64,
-            scratchTextureBase64,
-            soundEffectBase64,
-            elements = [],
-            cardStyle = {},
-            glowEffect = 30,
-            glowColor = '#667eea',
-            smokeEffect = false,
-            template = 'classic'
-        } = cardData;
-
-        // Generate the complete HTML document with DUAL CANVAS SYSTEM
-        const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 Scratch Card from ${senderName} - Masterm Cards</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <style>
-        ${this.generateWebAppCSS(cardData)}
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <div class="header">
-            <div class="logo-section">
-                <div class="logo-icon">🎯</div>
-                <div class="logo-text">Masterm Cards</div>
-            </div>
-            <div class="header-info">
-                <span>Interactive Scratch Card</span>
-            </div>
-        </div>
-        
-        <div class="main-content">
-            <div class="card-container">
-                <div class="card-preview floating ${this.getCardClasses(cardData)}" id="cardPreview" ${this.generateCardInlineStyles(cardData)}>
-                    ${this.generateDynamicCardElements(cardData)}
-                </div>
-            </div>
-        </div>
-        
-        <!-- Audio elements -->
-        <audio id="scratchSound" preload="auto">
-            ${this.generateAudioSources(cardData)}
-        </audio>
-        
-        <!-- Particle system container -->
-        <div id="particleContainer"></div>
-        
-        <!-- Smoke effect container -->
-        <div id="smokeContainer"></div>
-    </div>
-
-    <script>
-        ${this.generateDualCanvasJavaScript(cardData)}
-    </script>
-</body>
-</html>`;
-
-        return html;
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.life--;
     }
 
-    /**
-     * Get CSS classes for the card element - handles both gradients and images
-     */
-    getCardClasses(cardData) {
-        const { backgroundImage, cardStyle = {} } = cardData;
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        const brightness = Math.min(1, alpha * 1.5);
         
-        // Priority: cardStyle.className > backgroundImage gradients > default
-        if (cardStyle.className) {
-            // Extract just the background class from full className
-            const classes = cardStyle.className.split(' ');
-            const bgClass = classes.find(cls => cls.startsWith('bg-obsidian-'));
-            return bgClass || '';
-        }
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
         
-        // Check if backgroundImage is a gradient class
-        if (backgroundImage && backgroundImage.startsWith('bg-obsidian-')) {
-            return backgroundImage;
-        }
+        const glowSize = this.size * 3;
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+        gradient.addColorStop(0, `rgba(${this.color}, ${brightness * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(${this.color}, ${brightness * 0.4})`);
+        gradient.addColorStop(1, `rgba(${this.color}, 0)`);
         
-        return '';
-    }
-
-    /**
-     * Generate inline styles for the card element
-     */
-    generateCardInlineStyles(cardData) {
-        const { cardStyle = {}, backgroundImage, backgroundImageBase64 } = cardData;
-        let styles = [];
-
-        // Priority order: cardStyle.backgroundImage > backgroundImageBase64 > regular backgroundImage
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
         
-        if (cardStyle.backgroundImage && cardStyle.backgroundImage !== '') {
-            styles.push(`background-image: ${cardStyle.backgroundImage}`);
-            if (!cardStyle.backgroundSize) styles.push('background-size: cover');
-            if (!cardStyle.backgroundPosition) styles.push('background-position: center');
-        } else if (backgroundImageBase64) {
-            styles.push(`background-image: url('${backgroundImageBase64}')`);
-            styles.push('background-size: cover');
-            styles.push('background-position: center');
-        } else if (backgroundImage && !backgroundImage.startsWith('bg-obsidian-')) {
-            if (this.isWebAppAsset(backgroundImage)) {
-                styles.push(`background-image: url('${this.baseUrl}/assets/backgrounds/${backgroundImage}')`);
-            } else {
-                styles.push(`background-image: url('${backgroundImage}')`);
-            }
-            styles.push('background-size: cover');
-            styles.push('background-position: center');
-        }
-
-        // Apply other cardStyle properties
-        if (cardStyle.backgroundSize && !styles.some(s => s.includes('background-size'))) {
-            styles.push(`background-size: ${cardStyle.backgroundSize}`);
-        }
-        if (cardStyle.backgroundPosition && !styles.some(s => s.includes('background-position'))) {
-            styles.push(`background-position: ${cardStyle.backgroundPosition}`);
-        }
-        if (cardStyle.backgroundRepeat) styles.push(`background-repeat: ${cardStyle.backgroundRepeat}`);
-        if (cardStyle.aspectRatio) styles.push(`aspect-ratio: ${cardStyle.aspectRatio}`);
-        if (cardStyle.border) styles.push(`border: ${cardStyle.border}`);
-        if (cardStyle.borderRadius) styles.push(`border-radius: ${cardStyle.borderRadius}`);
-
-        return styles.length > 0 ? `style="${styles.join('; ')}"` : '';
-    }
-
-    /**
-     * Check if an asset is from the web app's asset collection
-     */
-    isWebAppAsset(assetPath) {
-        const fileNamePattern = /^[0-9a-zA-Z]+\.(jpeg|jpg|png|gif|mp3)$/;
+        ctx.fillStyle = `rgba(${this.color}, ${brightness})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
         
-        if (fileNamePattern.test(assetPath)) {
-            return true;
-        }
-        
-        if (assetPath.includes('/assets/backgrounds/') || 
-            assetPath.includes('/assets/symbols/') || 
-            assetPath.includes('/assets/scratchTextures/') ||
-            assetPath.includes('/assets/audio/')) {
-            return true;
-        }
-        
-        return false;
+        ctx.restore();
     }
 
-    /**
-     * Generate card elements with DUAL CANVAS SYSTEM for scratch areas
-     */
-    generateDynamicCardElements(cardData) {
-        const { 
-            elements = [],
-            template = 'classic',
-            hiddenMessage = 'Surprise!'
-        } = cardData;
-
-        // If no elements provided, create basic template elements
-        if (elements.length === 0) {
-            return this.generateFallbackElements(cardData);
-        }
-
-        // Generate elements from the elements array
-        let elementsHtml = '';
-        
-        elements.forEach((element, index) => {
-            const elementHtml = this.generateSingleElement(element, index, cardData);
-            if (elementHtml) {
-                elementsHtml += elementHtml + '\n';
-            }
-        });
-
-        return elementsHtml;
-    }
-
-    /**
-     * Generate a single element with DUAL CANVAS for scratch areas
-     */
-    generateSingleElement(element, index, cardData) {
-        const {
-            id = `element-${index}`,
-            type = 'text',
-            content = '',
-            innerHTML = '',
-            position = {},
-            style = {}
-        } = element;
-
-        // Build inline styles from position and style objects
-        let inlineStyles = [];
-
-        // Position styles
-        if (position.left) inlineStyles.push(`left: ${position.left}`);
-        if (position.top) inlineStyles.push(`top: ${position.top}`);
-        if (position.width) inlineStyles.push(`width: ${position.width}`);
-        if (position.height) inlineStyles.push(`height: ${position.height}`);
-
-        // Element styles
-        Object.keys(style).forEach(prop => {
-            if (style[prop] && style[prop] !== 'initial' && style[prop] !== '') {
-                const cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
-                inlineStyles.push(`${cssProp}: ${style[prop]}`);
-            }
-        });
-
-        // Ensure position absolute for all elements
-        if (!inlineStyles.some(s => s.startsWith('position:'))) {
-            inlineStyles.push('position: absolute');
-        }
-
-        const styleAttr = inlineStyles.length > 0 ? `style="${inlineStyles.join('; ')}"` : '';
-
-        // Generate element based on type
-        switch (type) {
-            case 'sender':
-            case 'sender-name':
-                return `<div class="card-element sender-name" id="${id}" ${styleAttr}>
-                    ${innerHTML || content || 'From Anonymous'}
-                </div>`;
-
-            case 'scratch':
-            case 'scratch-area':
-                const hiddenMsg = cardData.hiddenMessage || 'Surprise!';
-                const canvasWidth = this.parsePixels(position.width) || 350;
-                const canvasHeight = this.parsePixels(position.height) || 150;
-                
-                return `<div class="card-element scratch-container" id="${id}" ${styleAttr}>
-                    <canvas id="messageCanvas" width="${canvasWidth}" height="${canvasHeight}"></canvas>
-                    <canvas id="scratchCanvas" width="${canvasWidth}" height="${canvasHeight}"></canvas>
-                </div>`;
-
-            case 'symbol':
-            case 'card-symbol':
-                let symbolContent = innerHTML || content;
-                
-                if (symbolContent.includes('<img')) {
-                    // Already has image tag, keep as is
-                } else if (symbolContent && (symbolContent.includes('data:image') || this.isWebAppAsset(symbolContent))) {
-                    const imageSrc = this.isWebAppAsset(symbolContent) && !symbolContent.startsWith('data:') 
-                        ? `${this.baseUrl}/assets/symbols/${symbolContent}`
-                        : symbolContent;
-                    symbolContent = `<img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
-                } else {
-                    symbolContent = symbolContent || '❤️';
-                }
-                
-                return `<div class="card-element card-symbol" id="${id}" ${styleAttr}>
-                    ${symbolContent}
-                </div>`;
-
-            case 'text':
-            case 'custom-text':
-            default:
-                return `<div class="card-element custom-element" id="${id}" ${styleAttr}>
-                    ${innerHTML || content || 'Custom Element'}
-                </div>`;
-        }
-    }
-
-    /**
-     * Parse pixel values from CSS strings
-     */
-    parsePixels(value) {
-        if (typeof value === 'number') return value;
-        if (typeof value === 'string') {
-            const num = parseFloat(value);
-            return isNaN(num) ? null : num;
-        }
-        return null;
-    }
-
-    /**
-     * Fallback elements with DUAL CANVAS system
-     */
-    generateFallbackElements(cardData) {
-        const { 
-            senderName, 
-            hiddenMessage, 
-            symbol, 
-            symbolBase64,
-            template = 'classic' 
-        } = cardData;
-
-        if (template === 'blank') {
-            return '<!-- Blank template - no fallback elements -->';
-        }
-
-        // Classic template fallback with DUAL CANVAS
-        let symbolContent = '';
-        if (symbolBase64) {
-            symbolContent = `<img src="${symbolBase64}" alt="Symbol" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
-        } else if (symbol && (symbol.includes('data:image') || this.isWebAppAsset(symbol))) {
-            const symbolUrl = this.isWebAppAsset(symbol) && !symbol.startsWith('data:')
-                ? `${this.baseUrl}/assets/symbols/${symbol}`
-                : symbol;
-            symbolContent = `<img src="${symbolUrl}" alt="Symbol" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">`;
-        } else {
-            symbolContent = symbol || '❤️';
-        }
-
-        return `
-            <div class="card-element sender-name" id="senderName" 
-                 style="position: absolute; top: 20px; left: 20px;">
-                From ${senderName || 'Anonymous'}
-            </div>
-            
-            <div class="card-element scratch-container" id="scratchContainer" 
-                 style="position: absolute; top: 45%; left: 16%; width: 350px; height: 150px;">
-                <canvas id="messageCanvas" width="350" height="150"></canvas>
-                <canvas id="scratchCanvas" width="350" height="150"></canvas>
-            </div>
-            
-            <div class="card-element card-symbol" id="cardSymbol" 
-                 style="position: absolute; top: 20px; right: 20px; width: 80px; height: 80px;">
-                ${symbolContent}
-            </div>
-        `;
-    }
-
-    /**
-     * Generate CSS with DUAL CANVAS styling
-     */
-    generateWebAppCSS(cardData) {
-        const { 
-            backgroundImage, 
-            backgroundImageBase64, 
-            glowColor = '#667eea', 
-            glowEffect = 30,
-            cardStyle = {}
-        } = cardData;
-        
-        return `
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
-            min-height: 100vh;
-            color: white;
-            overflow-x: hidden;
-        }
-
-        .app-container {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            z-index: 1000;
-            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .logo-text {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-info {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 20px 20px;
-            position: relative;
-        }
-
-        .card-container {
-            position: relative;
-            max-width: 800px;
-            width: 100%;
-        }
-
-        /* CARD PREVIEW BASE STYLES */
-        .card-preview {
-            width: 100%;
-            max-width: 600px;
-            aspect-ratio: 1.6;
-            margin: 0 auto;
-            border-radius: 16px;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.5s ease;
-            transform-style: preserve-3d;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            
-            box-shadow: 
-                0 0 ${glowEffect}px ${this.hexToRgba(glowColor, 0.9)},
-                0 0 ${glowEffect * 2}px ${this.hexToRgba(glowColor, 0.6)},
-                0 0 ${glowEffect * 3}px ${this.hexToRgba(glowColor, 0.3)},
-                inset 0 0 ${glowEffect / 2}px rgba(255, 255, 255, 0.3),
-                0 10px 30px rgba(0, 0, 0, 0.5);
-            filter: drop-shadow(0 0 ${glowEffect}px ${this.hexToRgba(glowColor, 0.8)});
-            position: relative;
-            z-index: 10;
-        }
-
-        .card-preview:hover {
-            transform: rotateY(5deg) rotateX(5deg);
-            box-shadow: 
-                0 0 ${glowEffect * 1.5}px ${this.hexToRgba(glowColor, 1)},
-                0 0 ${glowEffect * 3}px ${this.hexToRgba(glowColor, 0.8)},
-                0 0 ${glowEffect * 4}px ${this.hexToRgba(glowColor, 0.4)},
-                0 20px 50px rgba(0, 0, 0, 0.7);
-        }
-
-        /* GRADIENT BACKGROUND CLASSES */
-        .bg-obsidian-rose {
-            background: linear-gradient(45deg, rgba(255, 154, 158, 0.3) 0%, rgba(254, 207, 239, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
-        }
-
-        .bg-obsidian-ocean {
-            background: linear-gradient(45deg, rgba(168, 237, 234, 0.3) 0%, rgba(254, 214, 227, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
-        }
-
-        .bg-obsidian-galaxy {
-            background: linear-gradient(45deg, rgba(210, 153, 194, 0.3) 0%, rgba(254, 249, 215, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
-        }
-
-        .bg-obsidian-gold {
-            background: linear-gradient(45deg, rgba(246, 211, 101, 0.3) 0%, rgba(253, 160, 133, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
-        }
-
-        .bg-obsidian-sunset {
-            background: linear-gradient(45deg, rgba(255, 138, 128, 0.3) 0%, rgba(255, 128, 171, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
-        }
-
-        .bg-obsidian-emerald {
-            background: linear-gradient(45deg, rgba(132, 250, 176, 0.3) 0%, rgba(143, 211, 244, 0.3) 50%, rgba(0, 0, 0, 0.8) 100%) !important;
-        }
-
-        /* CARD ELEMENTS */
-        .card-element {
-            position: absolute;
-            user-select: none;
-            transition: all 0.3s ease;
-        }
-
-        .sender-name {
-            color: white;
-            font-weight: 600;
-            font-size: 18px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            padding: 12px 16px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* DUAL CANVAS SYSTEM - EXACT SAME AS JOE'S SCRIPT */
-        .scratch-container {
-            position: relative;
-            cursor: crosshair;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        #messageCanvas, #scratchCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            border-radius: 12px;
-        }
-
-        #messageCanvas {
-            z-index: 1; /* Bottom layer - shows hidden message */
-        }
-
-        #scratchCanvas {
-            z-index: 2; /* Top layer - scratch surface */
-        }
-
-        .card-symbol {
-            font-size: 48px;
-            opacity: 0.9;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
-        }
-
-        .card-symbol:hover {
-            opacity: 1;
-            transform: scale(1.1) rotate(5deg);
-        }
-
-        .card-symbol img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 8px;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-        }
-
-        .custom-element {
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 8px 12px;
-            backdrop-filter: blur(5px);
-        }
-
-        /* FLOATING ANIMATION */
-        @keyframes floating {
-            0%, 100% {
-                transform: translateY(0px);
-            }
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        .floating {
-            animation: floating 3s ease-in-out infinite;
-        }
-
-        /* RESPONSIVE DESIGN */
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 80px 10px 20px;
-            }
-            
-            .card-preview {
-                max-width: 100%;
-            }
-            
-            .sender-name {
-                font-size: 16px;
-                padding: 10px 14px;
-            }
-            
-            .card-symbol {
-                font-size: 36px;
-            }
-        }
-        `;
-    }
-
-    /**
-     * Generate audio sources
-     */
-    generateAudioSources(cardData) {
-        const { soundEffect, soundEffectBase64 } = cardData;
-        
-        if (soundEffectBase64) {
-            return `<source src="${soundEffectBase64}" type="audio/mpeg">`;
-        } else if (soundEffect && soundEffect !== '#beep') {
-            const audioUrl = this.isWebAppAsset(soundEffect)
-                ? `${this.baseUrl}/assets/audio/${soundEffect}`
-                : soundEffect;
-            return `<source src="${audioUrl}" type="audio/mpeg">`;
-        }
-        
-        return '<!-- No custom audio - will use Web Audio API beep -->';
-    }
-
-    /**
-     * Generate JavaScript with EXACT DUAL CANVAS SYSTEM from joe's script
-     */
-    generateDualCanvasJavaScript(cardData) {
-        const { 
-            hiddenMessage = 'Surprise!', 
-            animation = 'hearts',
-            glowColor = '#667eea',
-            smokeEffect = false,
-            scratchTexture,
-            scratchTextureBase64
-        } = cardData;
-
-        // Get scratch texture URL
-        let scratchTextureUrl = '';
-        if (scratchTextureBase64) {
-            scratchTextureUrl = scratchTextureBase64;
-        } else if (scratchTexture && !scratchTexture.includes('data:image/svg+xml')) {
-            if (this.isWebAppAsset(scratchTexture)) {
-                scratchTextureUrl = `${this.baseUrl}/assets/scratchTextures/${scratchTexture}`;
-            } else {
-                scratchTextureUrl = scratchTexture;
-            }
-        }
-
-        return `
-        // DUAL CANVAS SYSTEM - EXACT SAME LOGIC AS JOE'S SCRIPT
-        const messageCanvas = document.getElementById('messageCanvas');
-        const scratchCanvas = document.getElementById('scratchCanvas');
-        
-        if (!messageCanvas || !scratchCanvas) {
-            console.error('Dual canvas system not found');
-        } else {
-            const messageCtx = messageCanvas.getContext('2d');
-            const scratchCtx = scratchCanvas.getContext('2d');
-            const scratchSound = document.getElementById('scratchSound');
-
-            // Set canvas dimensions
-            messageCanvas.width = ${this.getCanvasWidth(cardData)};
-            messageCanvas.height = ${this.getCanvasHeight(cardData)};
-            scratchCanvas.width = ${this.getCanvasWidth(cardData)};
-            scratchCanvas.height = ${this.getCanvasHeight(cardData)};
-
-            // Preload sound
-            const sound = new Audio('${this.getAudioUrl(cardData)}');
-            sound.loop = false;
-            sound.volume = 1.0;
-
-            // Draw the message on the message canvas (bottom layer) - EXACT SAME
-            function drawMessage() {
-                messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
-                messageCtx.font = '30px Comic Sans MS';
-                messageCtx.fillStyle = '#fff';
-                messageCtx.textAlign = 'center';
-                messageCtx.textBaseline = 'middle';
-                const message = "${hiddenMessage}";
-                messageCtx.fillText(message, messageCanvas.width / 2, messageCanvas.height / 2);
-            }
-
-            // Draw the scratch layer on the scratch canvas (top layer) - EXACT SAME
-            function drawScratchLayer() {
-                ${scratchTextureUrl ? `
-                const scratchLayer = new Image();
-                scratchLayer.src = '${scratchTextureUrl}';
-                scratchLayer.onload = () => {
-                    scratchCtx.drawImage(scratchLayer, 0, 0, scratchCanvas.width, scratchCanvas.height);
-                    scratchCtx.strokeStyle = '#000';
-                    scratchCtx.lineWidth = 2;
-                    scratchCtx.setLineDash([5, 5]);
-                    scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-                    scratchCtx.setLineDash([]);
-                    scratchCtx.font = '40px Comic Sans MS';
-                    scratchCtx.fillStyle = '#000';
-                    scratchCtx.textAlign = 'center';
-                    scratchCtx.textBaseline = 'middle';
-                    scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
-                };
-                scratchLayer.onerror = () => {
-                    console.log('Failed to load scratch texture. Using fallback.');
-                    drawFallbackScratchLayer();
-                };
-                ` : `
-                drawFallbackScratchLayer();
-                `}
-            }
-
-            function drawFallbackScratchLayer() {
-                scratchCtx.fillStyle = '#c0c0c0';
-                scratchCtx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-                scratchCtx.strokeStyle = '#000';
-                scratchCtx.lineWidth = 2;
-                scratchCtx.setLineDash([5, 5]);
-                scratchCtx.strokeRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-                scratchCtx.setLineDash([]);
-                scratchCtx.font = '40px Comic Sans MS';
-                scratchCtx.fillStyle = '#000';
-                scratchCtx.textAlign = 'center';
-                scratchCtx.textBaseline = 'middle';
-                scratchCtx.fillText('Scratch Me', scratchCanvas.width / 2, scratchCanvas.height / 2);
-            }
-
-            // Initialize both layers - EXACT SAME
-            drawMessage();
-            drawScratchLayer();
-
-            // Scratching logic on the scratch canvas - EXACT SAME
-            let isScratching = false;
-            let scratchedPixels = 0;
-            const brushRadius = 12;
-            const totalPixels = scratchCanvas.width * scratchCanvas.height;
-            const intervalThreshold = totalPixels * 0.05;
-            let lastBurstAt = 0;
-            let isSoundPlaying = false;
-
-            // Function to play the sound - EXACT SAME
-            function playSound() {
-                if (!isSoundPlaying) {
-                    isSoundPlaying = true;
-                    sound.volume = 1.0;
-                    sound.play().catch(err => console.log('Sound play error:', err));
-                }
-            }
-
-            // Add an event listener to detect when the sound ends naturally - EXACT SAME
-            sound.addEventListener('ended', () => {
-                isSoundPlaying = false;
-                console.log('Sound finished playing naturally.');
-                if (isScratching) {
-                    playSound();
-                }
-            });
-
-            // Stop sound if the mouse leaves the canvas - EXACT SAME
-            function stopSoundOnLeave() {
-                if (isScratching) {
-                    isScratching = false;
-                }
-            }
-
-            // Event listeners - EXACT SAME AS JOE'S SCRIPT
-            scratchCanvas.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                isScratching = true;
-                playSound();
-            });
-            scratchCanvas.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                isScratching = false;
-            });
-            scratchCanvas.addEventListener('mouseleave', stopSoundOnLeave);
-            scratchCanvas.addEventListener('mousemove', scratch);
-            scratchCanvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                isScratching = true;
-                playSound();
-            });
-            scratchCanvas.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                isScratching = false;
-            });
-            scratchCanvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                scratch(e.touches[0]);
-            });
-
-            // Scratch function - EXACT SAME PIXEL-BY-PIXEL LOGIC
-            function scratch(event) {
-                if (!isScratching) return;
-                const rect = scratchCanvas.getBoundingClientRect();
-                const scaleX = scratchCanvas.width / rect.width;
-                const scaleY = scratchCanvas.height / rect.height;
-                const x = (event.clientX - rect.left) * scaleX;
-                const y = (event.clientY - rect.top) * scaleY;
-                scratchCtx.globalCompositeOperation = 'destination-out';
-                scratchCtx.beginPath();
-                scratchCtx.arc(x, y, brushRadius, 0, Math.PI * 2);
-                scratchCtx.fillStyle = 'rgba(0, 0, 0, 1)';
-                scratchCtx.fill();
-
-                const scratchedArea = Math.PI * brushRadius * brushRadius;
-                scratchedPixels += scratchedArea;
-                console.log('Scratched pixels:', scratchedPixels, 'Interval threshold:', intervalThreshold);
-                checkReveal();
-            }
-
-            // Fireworks logic - EXACT SAME AS JOE'S SCRIPT
-            function checkReveal() {
-                const intervalsPassed = Math.floor(scratchedPixels / intervalThreshold);
-                if (intervalsPassed > lastBurstAt) {
-                    lastBurstAt = intervalsPassed;
-                    console.log('Firing ${animation}-themed fireworks at interval:', intervalsPassed);
-                    if (typeof confetti === 'function') {
-                        // Calculate the bottom of the scratch canvas in viewport coordinates
-                        const rect = scratchCanvas.getBoundingClientRect();
-                        const canvasBottomY = (rect.bottom / window.innerHeight);
-                        const canvasCenterX = (rect.left + rect.width / 2) / window.innerWidth;
-
-                        // Animation-based fireworks
-                        ${this.generateFireworksCode(animation)}
-                    } else {
-                        console.log('Confetti library not loaded.');
-                    }
-                }
-            }
-
-            // Check if confetti library loaded - EXACT SAME
-            window.addEventListener('load', () => {
-                if (typeof confetti === 'undefined') {
-                    console.log('Confetti library failed to load.');
-                } else {
-                    console.log('Confetti library loaded successfully.');
-                }
-            });
-
-            console.log('✅ DUAL CANVAS SCRATCH CARD INITIALIZED - PROFESSIONAL MODE');
-            console.log('🎯 Message Canvas (Bottom Layer):', messageCanvas.width + 'x' + messageCanvas.height);
-            console.log('🎨 Scratch Canvas (Top Layer):', scratchCanvas.width + 'x' + scratchCanvas.height);
-            console.log('🔥 Animation Type:', '${animation}');
-            console.log('💨 Smoke Effect:', ${smokeEffect});
-        }
-
-        // ADDITIONAL EFFECTS - Smoke system if enabled
-        ${smokeEffect ? this.generateSmokeSystem(glowColor) : '// Smoke effect disabled'}
-
-        console.log('🎯 PROFESSIONAL DUAL CANVAS CARD LOADED SUCCESSFULLY!');
-        `;
-    }
-
-    /**
-     * Get canvas width from card data
-     */
-    getCanvasWidth(cardData) {
-        const scratchElement = cardData.elements?.find(e => e.type === 'scratch' || e.type === 'scratch-area');
-        if (scratchElement && scratchElement.position?.width) {
-            return this.parsePixels(scratchElement.position.width) || 350;
-        }
-        return 350;
-    }
-
-    /**
-     * Get canvas height from card data
-     */
-    getCanvasHeight(cardData) {
-        const scratchElement = cardData.elements?.find(e => e.type === 'scratch' || e.type === 'scratch-area');
-        if (scratchElement && scratchElement.position?.height) {
-            return this.parsePixels(scratchElement.position.height) || 150;
-        }
-        return 150;
-    }
-
-    /**
-     * Get audio URL for scratch sound
-     */
-    getAudioUrl(cardData) {
-        const { soundEffect, soundEffectBase64 } = cardData;
-        
-        if (soundEffectBase64) {
-            return soundEffectBase64;
-        } else if (soundEffect && soundEffect !== '#beep') {
-            if (this.isWebAppAsset(soundEffect)) {
-                return `${this.baseUrl}/assets/audio/${soundEffect}`;
-            } else {
-                return soundEffect;
-            }
-        }
-        
-        return ''; // Will fallback to Web Audio API beep
-    }
-
-    /**
-     * Generate fireworks code based on animation type
-     */
-    generateFireworksCode(animation) {
-        switch (animation) {
-            case 'hearts':
-                return `
-                // First burst: Pink sparkles
-                confetti({
-                    particleCount: 30,
-                    spread: 40,
-                    origin: { x: canvasCenterX, y: canvasBottomY },
-                    colors: ['#FF69B4', '#FF1493'],
-                    scalar: 1.2,
-                    gravity: 0.8,
-                    ticks: 100,
-                    angle: 90,
-                    startVelocity: 20
-                });
-                // Second burst: Lighter pink accents
-                setTimeout(() => {
-                    confetti({
-                        particleCount: 20,
-                        spread: 60,
-                        origin: { x: canvasCenterX, y: canvasBottomY },
-                        colors: ['#C71585', '#FF69B4'],
-                        scalar: 0.8,
-                        gravity: 1.0,
-                        ticks: 80,
-                        angle: 90,
-                        startVelocity: 25
-                    });
-                }, 100);`;
-            
-            case 'sparkles':
-                return `
-                // Gold sparkle burst
-                confetti({
-                    particleCount: 25,
-                    spread: 50,
-                    origin: { x: canvasCenterX, y: canvasBottomY },
-                    colors: ['#FFD700', '#FFA500', '#FFFF00'],
-                    scalar: 1.0,
-                    gravity: 0.6,
-                    ticks: 120,
-                    angle: 90,
-                    startVelocity: 22
-                });
-                setTimeout(() => {
-                    confetti({
-                        particleCount: 15,
-                        spread: 70,
-                        origin: { x: canvasCenterX, y: canvasBottomY },
-                        colors: ['#FFE55C', '#FFD700'],
-                        scalar: 0.6,
-                        gravity: 0.8,
-                        ticks: 100,
-                        angle: 90,
-                        startVelocity: 18
-                    });
-                }, 150);`;
-            
-            default:
-                return `
-                // Default colorful burst
-                confetti({
-                    particleCount: 30,
-                    spread: 45,
-                    origin: { x: canvasCenterX, y: canvasBottomY },
-                    colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c'],
-                    scalar: 1.1,
-                    gravity: 0.7,
-                    ticks: 110,
-                    angle: 90,
-                    startVelocity: 21
-                });`;
-        }
-    }
-
-    /**
-     * Generate smoke system for enhanced effects
-     */
-    generateSmokeSystem(glowColor) {
-        return `
-        // CANVAS-BASED SMOKE EFFECT SYSTEM
-        class SmokeParticle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.vx = (Math.random() - 0.5) * 0.5;
-                this.vy = -(Math.random() * 2 + 1);
-                this.life = 1.0;
-                this.maxLife = Math.random() * 300 + 200;
-                this.age = 0;
-                this.size = Math.random() * 20 + 10;
-                this.maxSize = this.size * (2 + Math.random() * 2);
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.02;
-                this.baseColor = this.parseColor(color);
-            }
-            
-            parseColor(color) {
-                const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(color);
-                return result ? {
-                    r: parseInt(result[1], 16),
-                    g: parseInt(result[2], 16),
-                    b: parseInt(result[3], 16)
-                } : { r: 102, g: 126, b: 234 };
-            }
-            
-            update() {
-                this.age++;
-                this.vx += (Math.random() - 0.5) * 0.01;
-                this.vy -= 0.05;
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vx *= 0.995;
-                this.vy *= 0.995;
-                
-                if (this.size < this.maxSize) {
-                    this.size += 0.4;
-                }
-                
-                this.rotation += this.rotationSpeed;
-                this.life = Math.max(0, 1 - (this.age / this.maxLife));
-                
-                return this.life > 0;
-            }
-            
-            draw(ctx) {
-                ctx.save();
-                let alpha = this.life * 0.6;
-                if (this.y < 50) alpha *= (this.y / 50);
-                
-                let ageRatio = 1 - this.life;
-                let red = Math.floor(this.baseColor.r * (1 - ageRatio * 0.2));
-                let green = Math.floor(this.baseColor.g + ageRatio * 15);
-                let blue = Math.floor(this.baseColor.b + ageRatio * 25);
-                
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                
-                let gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
-                gradient.addColorStop(0, \`rgba(\${red}, \${green}, \${blue}, \${alpha})\`);
-                gradient.addColorStop(0.3, \`rgba(\${red}, \${green}, \${blue}, \${alpha * 0.7})\`);
-                gradient.addColorStop(0.7, \`rgba(\${red}, \${green}, \${blue}, \${alpha * 0.3})\`);
-                gradient.addColorStop(1, \`rgba(\${red}, \${green}, \${blue}, 0)\`);
-                
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
-        class SmokeSystem {
-            constructor() {
-                this.particles = [];
-                this.canvas = document.createElement('canvas');
-                this.ctx = this.canvas.getContext('2d');
-                this.setupCanvas();
-                this.isRunning = false;
-            }
-            
-            setupCanvas() {
-                this.canvas.style.cssText = \`
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    pointer-events: none;
-                    z-index: 3;
-                \`;
-                
-                const container = document.querySelector('.card-container');
-                if (container) {
-                    const rect = container.getBoundingClientRect();
-                    this.canvas.width = rect.width;
-                    this.canvas.height = rect.height;
-                    container.style.position = 'relative';
-                    container.appendChild(this.canvas);
-                }
-            }
-            
-            start() {
-                this.isRunning = true;
-                this.animate();
-            }
-            
-            animate() {
-                if (!this.isRunning) return;
-                
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Create new particles
-                if (Math.random() < 0.3) {
-                    const x = Math.random() * this.canvas.width;
-                    const y = this.canvas.height + 50;
-                    this.particles.push(new SmokeParticle(x, y, '${glowColor}'));
-                }
-                
-                // Update and filter particles
-                this.particles = this.particles.filter(particle => particle.update());
-                
-                // Draw particles
-                this.particles.forEach(particle => particle.draw(this.ctx));
-                
-                // Limit particles for performance
-                if (this.particles.length > 100) {
-                    this.particles = this.particles.slice(0, 80);
-                }
-                
-                requestAnimationFrame(() => this.animate());
-            }
-        }
-
-        // Initialize smoke system
-        const smokeSystem = new SmokeSystem();
-        smokeSystem.start();
-        console.log('💨 Smoke effect system initialized');`;
-    }
-
-    /**
-     * Helper function to convert hex to rgba
-     */
-    hexToRgba(hex, alpha) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (result) {
-            const r = parseInt(result[1], 16);
-            const g = parseInt(result[2], 16);
-            const b = parseInt(result[3], 16);
-            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        }
-        return `rgba(102, 126, 234, ${alpha})`;
+    isDead() {
+        return this.life <= 0;
     }
 }
 
-// Export the professional dual canvas generator
-module.exports = new AdvancedCardGenerator();
+class HeartFireworksEmojiParticle {
+    constructor(x, y, vx, vy, emoji, life, targetX = null, targetY = null) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.emoji = emoji;
+        this.life = life;
+        this.maxLife = life;
+        this.gravity = 0.015;
+        this.friction = 0.99;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.element = null;
+        this.hasExploded = false;
+        this.formationTime = 0;
+        this.isForming = targetX !== null;
+        this.formationDuration = 100;
+    }
+
+    update() {
+        if (this.isForming && this.formationTime < this.formationDuration) {
+            const progress = this.formationTime / this.formationDuration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            this.x = this.startX + (this.targetX - this.startX) * easeProgress;
+            this.y = this.startY + (this.targetY - this.startY) * easeProgress;
+            this.formationTime++;
+        } else {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += this.gravity;
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+        }
+        this.life--;
+        this.updateElement();
+    }
+
+    createElement() {
+        this.element = document.createElement('div');
+        this.element.className = 'emoji heart-fireworks-emoji';
+        this.element.textContent = this.emoji;
+        this.element.style.cssText = `
+            position: absolute;
+            font-size: 20px;
+            pointer-events: none;
+            z-index: 1000;
+            left: ${this.x}px;
+            top: ${this.y}px;
+        `;
+        document.body.appendChild(this.element);
+    }
+
+    updateElement() {
+        if (!this.element) this.createElement();
+        
+        const alpha = this.life / this.maxLife;
+        this.element.style.left = this.x + 'px';
+        this.element.style.top = this.y + 'px';
+        this.element.style.opacity = alpha;
+        this.element.style.transform = `scale(${0.5 + alpha * 0.5})`;
+    }
+
+    destroy() {
+        if (this.element) {
+            this.element.remove();
+            this.element = null;
+        }
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class HeartFireworksSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.particles = [];
+        this.emojiParticles = [];
+        this.isRunning = false;
+        this.animationId = null;
+    }
+
+    initialize() {
+        if (this.canvas) return; // Already initialized
+        
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        document.body.appendChild(this.canvas);
+        
+        // Handle resize
+        window.addEventListener('resize', () => {
+            if (this.canvas) {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+        });
+    }
+
+    createHeartShape() {
+        const points = [];
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height * 0.35;
+        const scale = 10;
+        
+        for (let t = 0; t < Math.PI * 2; t += 0.15) {
+            const x = scale * (16 * Math.sin(t) ** 3);
+            const y = scale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            points.push({
+                x: centerX + x,
+                y: centerY - y
+            });
+        }
+        return points;
+    }
+
+    start() {
+        this.initialize();
+        this.stop(); // Clear any existing animation
+        
+        const launchX = this.canvas.width / 2;
+        const launchY = this.canvas.height - 50;
+        const targetY = this.canvas.height * 0.35;
+        
+        // Launch trail
+        for (let i = 0; i < 25; i++) {
+            setTimeout(() => {
+                const trail = new HeartFireworksParticle(
+                    launchX + (Math.random() - 0.5) * 8,
+                    launchY - i * 12,
+                    (Math.random() - 0.5) * 1.5,
+                    -6 + Math.random() * 1.5,
+                    '255, 180, 80',
+                    50,
+                    2
+                );
+                this.particles.push(trail);
+            }, i * 25);
+        }
+
+        // Main explosion
+        setTimeout(() => {
+            this.explodeIntoHeart(launchX, targetY);
+        }, 700);
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 6 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 6000);
+    }
+
+    explodeIntoHeart(centerX, centerY) {
+        const heartPoints = this.createHeartShape();
+        
+        // Clear existing
+        this.particles = [];
+        this.emojiParticles.forEach(ep => ep.destroy());
+        this.emojiParticles = [];
+        
+        // Initial explosion
+        for (let i = 0; i < 30; i++) {
+            const angle = (Math.PI * 2 / 30) * i;
+            const speed = 12 + Math.random() * 8;
+            this.particles.push(new HeartFireworksParticle(
+                centerX,
+                centerY,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '255, 255, 200',
+                40,
+                3
+            ));
+        }
+
+        // Heart shape formation
+        setTimeout(() => {
+            heartPoints.forEach((point, index) => {
+                const emojiParticle = new HeartFireworksEmojiParticle(
+                    centerX,
+                    centerY,
+                    0, 0,
+                    '❤️',
+                    250,
+                    point.x,
+                    point.y
+                );
+                this.emojiParticles.push(emojiParticle);
+            });
+
+            // Sparkle particles
+            for (let i = 0; i < 80; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 4 + Math.random() * 8;
+                this.particles.push(new HeartFireworksParticle(
+                    centerX + (Math.random() - 0.5) * 20,
+                    centerY + (Math.random() - 0.5) * 20,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    `${255}, ${200 + Math.random() * 55}, ${100 + Math.random() * 100}`,
+                    120,
+                    1.5
+                ));
+            }
+        }, 150);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update particles
+        this.particles = this.particles.filter(particle => {
+            particle.update();
+            particle.draw(this.ctx);
+            return !particle.isDead();
+        });
+
+        // Update emoji particles
+        this.emojiParticles = this.emojiParticles.filter(emojiParticle => {
+            emojiParticle.update();
+            if (emojiParticle.isDead()) {
+                emojiParticle.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear particles
+        this.particles = [];
+        this.emojiParticles.forEach(ep => ep.destroy());
+        this.emojiParticles = [];
+        
+        // Clear canvas
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Remove emoji elements
+        document.querySelectorAll('.heart-fireworks-emoji').forEach(el => el.remove());
+    }
+
+    destroy() {
+        this.stop();
+        if (this.canvas) {
+            this.canvas.remove();
+            this.canvas = null;
+            this.ctx = null;
+        }
+    }
+}
+
+// Birthday Fireworks Animation System
+class BirthdayFireworksParticle {
+    constructor(x, y, vx, vy, color, life, size = 2) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.life = life;
+        this.maxLife = life;
+        this.size = size;
+        this.gravity = 0.02;
+        this.friction = 0.98;
+        this.isCakePart = false;
+        this.formationProgress = 0;
+        this.targetX = x;
+        this.targetY = y;
+        this.baseY = y;
+        this.isFlame = false;
+        this.flameOffset = 0;
+    }
+
+    update() {
+        if (this.isCakePart && this.formationProgress < 1) {
+            this.formationProgress = Math.min(1, this.formationProgress + 0.02);
+            const easeProgress = 1 - Math.pow(1 - this.formationProgress, 3);
+            
+            this.x = this.x + (this.targetX - this.x) * easeProgress * 0.1;
+            this.y = this.y + (this.targetY - this.y) * easeProgress * 0.1;
+            
+            if (this.isFlame) {
+                this.y = this.baseY + Math.sin(Date.now() * 0.01 + this.flameOffset) * 3;
+                this.x = this.targetX + Math.cos(Date.now() * 0.008 + this.flameOffset) * 2;
+            }
+        } else if (!this.isCakePart) {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += this.gravity;
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+        } else if (this.isFlame) {
+            this.y = this.baseY + Math.sin(Date.now() * 0.01 + this.flameOffset) * 3;
+            this.x = this.targetX + Math.cos(Date.now() * 0.008 + this.flameOffset) * 2;
+        }
+        
+        this.life--;
+    }
+
+    draw(ctx) {
+        const alpha = this.life / this.maxLife;
+        const brightness = Math.min(1, alpha * 1.5);
+        
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        
+        const glowSize = this.size * (this.isFlame ? 4 : 3);
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowSize);
+        gradient.addColorStop(0, `rgba(${this.color}, ${brightness * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(${this.color}, ${brightness * 0.4})`);
+        gradient.addColorStop(1, `rgba(${this.color}, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, glowSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = `rgba(${this.color}, ${brightness})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class BirthdayTextParticle {
+    constructor(x, y, char, targetX, targetY, color) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.char = char;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.color = color;
+        this.life = 300;
+        this.maxLife = 300;
+        this.element = null;
+        this.formationTime = 0;
+        this.formationDuration = 80;
+        this.isForming = true;
+        this.hasTriggeredExplosion = false;
+        this.birthdaySystem = null;
+    }
+
+    setBirthdaySystem(system) {
+        this.birthdaySystem = system;
+    }
+
+    update() {
+        if (this.isForming && this.formationTime < this.formationDuration) {
+            const progress = this.formationTime / this.formationDuration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            this.x = this.startX + (this.targetX - this.startX) * easeProgress;
+            this.y = this.startY + (this.targetY - this.startY) * easeProgress;
+            this.formationTime++;
+        } else {
+            this.isForming = false;
+            this.y += 1.2;
+            
+            if (!this.hasTriggeredExplosion && this.y > window.innerHeight * 0.6) {
+                this.hasTriggeredExplosion = true;
+                this.triggerSecondaryExplosion();
+            }
+        }
+        
+        this.life--;
+        this.updateElement();
+    }
+
+    triggerSecondaryExplosion() {
+        const launchX = Math.random() * window.innerWidth;
+        const launchY = window.innerHeight;
+        const targetX = this.x;
+        const targetY = Math.random() * window.innerHeight * 0.3 + window.innerHeight * 0.2;
+        
+        // Launch trail
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                const progress = i / 15;
+                const currentX = launchX + (targetX - launchX) * progress;
+                const currentY = launchY + (targetY - launchY) * progress;
+                
+                const trail = new BirthdayFireworksParticle(
+                    currentX + (Math.random() - 0.5) * 6,
+                    currentY + (Math.random() - 0.5) * 6,
+                    (Math.random() - 0.5) * 2,
+                    -2 + Math.random() * 1,
+                    '255, 150, 50',
+                    30,
+                    1.5
+                );
+                this.birthdaySystem.particles.push(trail);
+            }, i * 25);
+        }
+        
+        setTimeout(() => {
+            this.createSecondaryExplosion(targetX, targetY);
+        }, 400);
+    }
+
+    createSecondaryExplosion(x, y) {
+        const patterns = ['burst', 'ring', 'spiral', 'fountain'];
+        const pattern = patterns[Math.floor(Math.random() * patterns.length)];
+        const colors = ['255, 50, 100', '50, 255, 150', '100, 150, 255', '255, 200, 50', '200, 50, 255'];
+        const mainColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        let particlesToCreate = [];
+        
+        switch (pattern) {
+            case 'burst':
+                for (let i = 0; i < 40; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 3 + Math.random() * 8;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x, y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        80 + Math.random() * 40,
+                        1.5 + Math.random()
+                    ));
+                }
+                break;
+                
+            case 'ring':
+                for (let i = 0; i < 24; i++) {
+                    const angle = (Math.PI * 2 / 24) * i;
+                    const speed = 6 + Math.random() * 3;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x, y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        100,
+                        2
+                    ));
+                }
+                break;
+                
+            case 'spiral':
+                for (let i = 0; i < 30; i++) {
+                    const angle = (Math.PI * 4 / 30) * i;
+                    const radius = i * 0.3;
+                    const speed = 4 + Math.random() * 4;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x + Math.cos(angle) * radius,
+                        y + Math.sin(angle) * radius,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        90,
+                        1.8
+                    ));
+                }
+                break;
+                
+            case 'fountain':
+                for (let i = 0; i < 35; i++) {
+                    const angle = -Math.PI/3 + (Math.PI/3) * Math.random();
+                    const speed = 5 + Math.random() * 6;
+                    particlesToCreate.push(new BirthdayFireworksParticle(
+                        x + (Math.random() - 0.5) * 20,
+                        y,
+                        Math.cos(angle) * speed,
+                        Math.sin(angle) * speed,
+                        mainColor,
+                        120,
+                        1.5
+                    ));
+                }
+                break;
+        }
+        
+        if (this.birthdaySystem) {
+            this.birthdaySystem.particles.push(...particlesToCreate);
+        }
+    }
+
+    createElement() {
+        this.element = document.createElement('div');
+        this.element.className = 'text-char birthday-text-char';
+        this.element.textContent = this.char;
+        this.element.style.cssText = `
+            position: absolute;
+            font-size: 48px;
+            font-weight: 900;
+            color: ${this.color};
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.5);
+            pointer-events: none;
+            z-index: 1000;
+            font-family: 'Arial Black', sans-serif;
+            left: ${this.x}px;
+            top: ${this.y}px;
+        `;
+        document.body.appendChild(this.element);
+    }
+
+    updateElement() {
+        if (!this.element) this.createElement();
+        
+        const alpha = Math.min(1, this.life / this.maxLife);
+        this.element.style.left = this.x + 'px';
+        this.element.style.top = this.y + 'px';
+        this.element.style.opacity = alpha;
+        
+        const scale = this.isForming ? 
+            0.3 + (this.formationTime / this.formationDuration) * 0.7 : 
+            1;
+        this.element.style.transform = `scale(${scale})`;
+    }
+
+    destroy() {
+        if (this.element) {
+            this.element.remove();
+            this.element = null;
+        }
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class BirthdayCakeParticle {
+    constructor(x, y, targetX, targetY, birthdaySystem) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.targetX = targetX;
+        this.targetY = targetY;
+        this.life = 450;
+        this.maxLife = 450;
+        this.formationTime = 0;
+        this.formationDuration = 100;
+        this.isForming = true;
+        this.cakeParticles = [];
+        this.hasFormedCake = false;
+        this.birthdaySystem = birthdaySystem;
+    }
+
+    update() {
+        if (this.isForming && this.formationTime < this.formationDuration) {
+            const progress = this.formationTime / this.formationDuration;
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            this.x = this.startX + (this.targetX - this.startX) * easeProgress;
+            this.y = this.startY + (this.targetY - this.startY) * easeProgress;
+            this.formationTime++;
+        } else {
+            this.isForming = false;
+            if (!this.hasFormedCake) {
+                this.hasFormedCake = true;
+                this.createFireworksCake();
+            }
+            this.y += 0.3;
+            
+            this.cakeParticles.forEach(particle => {
+                particle.baseY += 0.3;
+            });
+        }
+        
+        this.life--;
+        
+        this.cakeParticles = this.cakeParticles.filter(particle => {
+            particle.update();
+            return !particle.isDead();
+        });
+    }
+
+    createFireworksCake() {
+        const centerX = this.targetX;
+        const centerY = this.targetY;
+        
+        this.createCakeLayer(centerX, centerY + 20, 80, 30, '139, 69, 19', 'base');
+        this.createCakeLayer(centerX, centerY - 5, 70, 20, '255, 182, 193', 'frosting');
+        this.createDecorations(centerX, centerY);
+        this.createCandles(centerX, centerY - 25);
+        this.createFlames(centerX, centerY - 45);
+    }
+
+    createCakeLayer(centerX, centerY, width, height, color, type) {
+        const particleCount = type === 'base' ? 200 : 150;
+        for (let i = 0; i < particleCount; i++) {
+            const x = centerX + (Math.random() - 0.5) * width;
+            const y = centerY + (Math.random() - 0.5) * height;
+            
+            const cakeParticle = new BirthdayFireworksParticle(
+                this.x, this.y,
+                0, 0,
+                color,
+                400,
+                type === 'base' ? 2.5 : 2
+            );
+            cakeParticle.targetX = x;
+            cakeParticle.targetY = y;
+            cakeParticle.baseY = y;
+            cakeParticle.isCakePart = true;
+            cakeParticle.formationProgress = 0;
+            cakeParticle.gravity = 0;
+            
+            this.cakeParticles.push(cakeParticle);
+        }
+    }
+
+    createDecorations(centerX, centerY) {
+        const decorationColors = ['255, 20, 147', '0, 255, 127', '255, 215, 0', '138, 43, 226'];
+        
+        for (let i = 0; i < 20; i++) {
+            const angle = (Math.PI * 2 / 20) * i;
+            const radius = 35;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * 8 - 5;
+            
+            const decoration = new BirthdayFireworksParticle(
+                this.x, this.y,
+                0, 0,
+                decorationColors[i % decorationColors.length],
+                400,
+                3
+            );
+            decoration.targetX = x;
+            decoration.targetY = y;
+            decoration.baseY = y;
+            decoration.isCakePart = true;
+            decoration.formationProgress = 0;
+            decoration.gravity = 0;
+            
+            this.cakeParticles.push(decoration);
+        }
+    }
+
+    createCandles(centerX, centerY) {
+        const candlePositions = [-30, -10, 10, 30];
+        
+        candlePositions.forEach(offset => {
+            for (let i = 0; i < 8; i++) {
+                const x = centerX + offset + (Math.random() - 0.5) * 6;
+                const y = centerY + i * 2;
+                
+                const candle = new BirthdayFireworksParticle(
+                    this.x, this.y,
+                    0, 0,
+                    '255, 215, 0',
+                    400,
+                    1.5
+                );
+                candle.targetX = x;
+                candle.targetY = y;
+                candle.baseY = y;
+                candle.isCakePart = true;
+                candle.formationProgress = 0;
+                candle.gravity = 0;
+                
+                this.cakeParticles.push(candle);
+            }
+        });
+    }
+
+    createFlames(centerX, centerY) {
+        const candlePositions = [-30, -10, 10, 30];
+        
+        candlePositions.forEach((offset, index) => {
+            for (let i = 0; i < 12; i++) {
+                const x = centerX + offset + (Math.random() - 0.5) * 8;
+                const y = centerY + (Math.random() - 0.5) * 12;
+                
+                const flame = new BirthdayFireworksParticle(
+                    this.x, this.y,
+                    0, 0,
+                    i < 6 ? '255, 100, 0' : '255, 200, 0',
+                    400,
+                    1 + Math.random()
+                );
+                flame.targetX = x;
+                flame.targetY = y;
+                flame.baseY = y;
+                flame.isCakePart = true;
+                flame.isFlame = true;
+                flame.flameOffset = Math.random() * Math.PI * 2;
+                flame.formationProgress = 0;
+                flame.gravity = 0;
+                
+                this.cakeParticles.push(flame);
+            }
+        });
+    }
+
+    draw() {
+        if (this.hasFormedCake && Math.random() < 0.1) {
+            const sparkle = new BirthdayFireworksParticle(
+                this.targetX + (Math.random() - 0.5) * 100,
+                this.targetY + (Math.random() - 0.5) * 60,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                '255, 255, 255',
+                30,
+                1
+            );
+            this.birthdaySystem.particles.push(sparkle);
+        }
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+
+    destroy() {
+        this.cakeParticles.forEach(particle => {
+            // Particles will be cleaned up by main system
+        });
+    }
+}
+
+class BirthdayFireworksSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.particles = [];
+        this.textParticles = [];
+        this.cakeParticles = [];
+        this.isRunning = false;
+        this.animationId = null;
+    }
+
+    initialize() {
+        if (this.canvas) return;
+        
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        document.body.appendChild(this.canvas);
+        
+        window.addEventListener('resize', () => {
+            if (this.canvas) {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+        });
+    }
+
+    getTextPositions() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height * 0.35;
+        const text = "HAPPY BIRTHDAY";
+        const charSpacing = 55;
+        const startX = centerX - (text.length * charSpacing) / 2;
+        
+        return text.split('').map((char, index) => ({
+            char: char === ' ' ? '\u00A0' : char,
+            x: startX + index * charSpacing,
+            y: centerY,
+            color: `hsl(${(index * 25) % 360}, 80%, 65%)`
+        }));
+    }
+
+    start() {
+        this.initialize();
+        this.stop();
+        
+        const launchX = this.canvas.width / 2;
+        const launchY = this.canvas.height - 50;
+        const targetY = this.canvas.height * 0.35;
+        
+        // Launch trail
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                const trail = new BirthdayFireworksParticle(
+                    launchX + (Math.random() - 0.5) * 8,
+                    launchY - i * 15,
+                    (Math.random() - 0.5) * 1.5,
+                    -7 + Math.random() * 2,
+                    '255, 200, 100',
+                    50,
+                    2
+                );
+                this.particles.push(trail);
+            }, i * 30);
+        }
+
+        setTimeout(() => {
+            this.explodeIntoBirthday(launchX, targetY);
+        }, 650);
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 8 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 12000);
+    }
+
+    explodeIntoBirthday(centerX, centerY) {
+        // Clear existing
+        this.particles = [];
+        this.textParticles.forEach(tp => tp.destroy());
+        this.textParticles = [];
+        this.cakeParticles.forEach(cp => cp.destroy());
+        this.cakeParticles = [];
+        
+        // Initial explosion
+        for (let i = 0; i < 25; i++) {
+            const angle = (Math.PI * 2 / 25) * i;
+            const speed = 10 + Math.random() * 8;
+            this.particles.push(new BirthdayFireworksParticle(
+                centerX,
+                centerY,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                '255, 255, 255',
+                40,
+                3
+            ));
+        }
+
+        // Create text and cake
+        setTimeout(() => {
+            const positions = this.getTextPositions();
+            positions.forEach((pos, index) => {
+                const textParticle = new BirthdayTextParticle(
+                    centerX,
+                    centerY,
+                    pos.char,
+                    pos.x,
+                    pos.y,
+                    pos.color
+                );
+                textParticle.setBirthdaySystem(this);
+                this.textParticles.push(textParticle);
+            });
+
+            // Add birthday cake
+            const cakeX = this.canvas.width / 2;
+            const cakeY = this.canvas.height * 0.55;
+            const cake = new BirthdayCakeParticle(centerX, centerY, cakeX, cakeY, this);
+            this.cakeParticles.push(cake);
+
+            // Celebration sparkles
+            for (let i = 0; i < 60; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 3 + Math.random() * 6;
+                const colors = ['255, 215, 0', '255, 105, 180', '50, 205, 50', '255, 165, 0', '138, 43, 226'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                this.particles.push(new BirthdayFireworksParticle(
+                    centerX + (Math.random() - 0.5) * 30,
+                    centerY + (Math.random() - 0.5) * 30,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    color,
+                    100,
+                    1.5
+                ));
+            }
+        }, 120);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update particles
+        this.particles = this.particles.filter(particle => {
+            particle.update();
+            particle.draw(this.ctx);
+            return !particle.isDead();
+        });
+
+        // Update text particles
+        this.textParticles = this.textParticles.filter(textParticle => {
+            textParticle.update();
+            if (textParticle.isDead()) {
+                textParticle.destroy();
+                return false;
+            }
+            return true;
+        });
+
+        // Update cake particles
+        this.cakeParticles = this.cakeParticles.filter(cakeParticle => {
+            cakeParticle.update();
+            cakeParticle.draw();
+            if (cakeParticle.isDead()) {
+                cakeParticle.destroy();
+                return false;
+            }
+            
+            // Add cake particles to main rendering
+            if (cakeParticle.cakeParticles) {
+                this.particles.push(...cakeParticle.cakeParticles.filter(p => !p.addedToMain));
+                cakeParticle.cakeParticles.forEach(p => p.addedToMain = true);
+            }
+            
+            return true;
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear particles
+        this.particles = [];
+        this.textParticles.forEach(tp => tp.destroy());
+        this.textParticles = [];
+        this.cakeParticles.forEach(cp => cp.destroy());
+        this.cakeParticles = [];
+        
+        // Clear canvas
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Remove text elements
+        document.querySelectorAll('.birthday-text-char').forEach(el => el.remove());
+    }
+
+    destroy() {
+        this.stop();
+        if (this.canvas) {
+            this.canvas.remove();
+            this.canvas = null;
+            this.ctx = null;
+        }
+    }
+}
+
+// Corporate Confetti Animation System
+class CorporateConfetti {
+    constructor(x, y, type = 'gold', launchAngle = 0) {
+        this.x = x;
+        this.y = y;
+        
+        const speed = 25 + Math.random() * 15;
+        const angle = launchAngle + (Math.random() - 0.5) * 0.8;
+        
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.3;
+        this.gravity = 0.12;
+        this.airResistance = 0.995;
+        this.life = 400 + Math.random() * 200;
+        this.maxLife = this.life;
+        this.type = type;
+        
+        this.shapes = ['rect', 'circle', 'triangle', 'diamond'];
+        this.shape = this.shapes[Math.floor(Math.random() * this.shapes.length)];
+        this.size = 6 + Math.random() * 8;
+        this.width = this.size + Math.random() * 4;
+        this.height = this.size + Math.random() * 4;
+        
+        if (type === 'gold') {
+            this.baseColors = [
+                { r: 255, g: 215, b: 0, name: 'pure_gold' },
+                { r: 218, g: 165, b: 32, name: 'goldenrod' },
+                { r: 255, g: 193, b: 7, name: 'amber_gold' },
+                { r: 184, g: 134, b: 11, name: 'dark_gold' }
+            ];
+        } else {
+            this.baseColors = [
+                { r: 192, g: 192, b: 192, name: 'silver' },
+                { r: 169, g: 169, b: 169, name: 'dark_silver' },
+                { r: 211, g: 211, b: 211, name: 'light_gray' },
+                { r: 128, g: 128, b: 128, name: 'gunmetal' }
+            ];
+        }
+        
+        this.currentColorIndex = 0;
+        this.shineFactor = Math.random() * 0.4 + 0.6;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.vx *= this.airResistance;
+        this.vy *= this.airResistance;
+        this.rotation += this.rotationSpeed;
+        this.life--;
+        
+        const rotationCycle = Math.sin(this.rotation * 2) * 0.5 + 0.5;
+        this.currentColorIndex = Math.floor(rotationCycle * this.baseColors.length);
+        
+        // Realistic bouncing
+        if (this.y > window.innerHeight - 10 && this.vy > 0) {
+            this.vy *= -0.4;
+            this.vx *= 0.8;
+            this.y = window.innerHeight - 10;
+            this.rotationSpeed *= 1.5;
+        }
+        
+        // Side wall bouncing
+        if ((this.x < 0 && this.vx < 0) || (this.x > window.innerWidth && this.vx > 0)) {
+            this.vx *= -0.6;
+            this.x = Math.max(0, Math.min(window.innerWidth, this.x));
+        }
+    }
+
+    draw(ctx) {
+        const alpha = Math.min(1, this.life / this.maxLife * 1.2);
+        const shimmer = Math.sin(Date.now() * 0.005 + this.x * 0.01 + this.y * 0.01) * 0.3 + 0.7;
+        
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        
+        const color = this.baseColors[this.currentColorIndex];
+        const brightness = shimmer * this.shineFactor;
+        
+        let gradient;
+        const gradientRadius = Math.max(this.width, this.height);
+        gradient = ctx.createRadialGradient(-gradientRadius/3, -gradientRadius/3, 0, 0, 0, gradientRadius);
+        
+        const highlightR = Math.min(255, color.r + 60 * brightness);
+        const highlightG = Math.min(255, color.g + 60 * brightness);
+        const highlightB = Math.min(255, color.b + 60 * brightness);
+        
+        const shadowR = Math.max(0, color.r - 50);
+        const shadowG = Math.max(0, color.g - 50);
+        const shadowB = Math.max(0, color.b - 50);
+        
+        gradient.addColorStop(0, `rgba(${highlightR}, ${highlightG}, ${highlightB}, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(${color.r}, ${color.g}, ${color.b}, ${alpha})`);
+        gradient.addColorStop(1, `rgba(${shadowR}, ${shadowG}, ${shadowB}, ${alpha})`);
+        
+        ctx.fillStyle = gradient;
+        
+        switch(this.shape) {
+            case 'rect':
+                ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+                break;
+            case 'circle':
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size/2, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+            case 'triangle':
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size/2);
+                ctx.lineTo(-this.size/2, this.size/2);
+                ctx.lineTo(this.size/2, this.size/2);
+                ctx.closePath();
+                ctx.fill();
+                break;
+            case 'diamond':
+                ctx.beginPath();
+                ctx.moveTo(0, -this.size/2);
+                ctx.lineTo(this.size/2, 0);
+                ctx.lineTo(0, this.size/2);
+                ctx.lineTo(-this.size/2, 0);
+                ctx.closePath();
+                ctx.fill();
+                break;
+        }
+        
+        // Premium highlight effect
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha * brightness * 0.4})`;
+        if (this.shape === 'rect') {
+            ctx.fillRect(-this.width/2, -this.height/2, this.width/3, this.height/3);
+        } else {
+            ctx.beginPath();
+            ctx.arc(-this.size/4, -this.size/4, this.size/6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+
+    isDead() {
+        return this.life <= 0;
+    }
+}
+
+class CorporateConfettiSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.confettiPieces = [];
+        this.isRunning = false;
+        this.animationId = null;
+        this.isLaunching = false;
+    }
+
+    initialize() {
+        if (this.canvas) return;
+        
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        document.body.appendChild(this.canvas);
+        
+        window.addEventListener('resize', () => {
+            if (this.canvas) {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+        });
+    }
+
+    start() {
+        this.initialize();
+        this.stop();
+        
+        if (this.isLaunching) return;
+        this.isLaunching = true;
+        
+        const leftCannonX = this.canvas.width * 0.15;
+        const rightCannonX = this.canvas.width * 0.85;
+        const cannonY = this.canvas.height + 20;
+        
+        // Professional launch sequence
+        const launchSequence = [
+            { delay: 0, burst: 40 },
+            { delay: 200, burst: 60 },
+            { delay: 400, burst: 80 },
+            { delay: 600, burst: 40 }
+        ];
+        
+        launchSequence.forEach(sequence => {
+            setTimeout(() => {
+                // Left cannon
+                for (let i = 0; i < sequence.burst; i++) {
+                    setTimeout(() => {
+                        const type = Math.random() > 0.5 ? 'gold' : 'silver';
+                        const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/3;
+                        this.confettiPieces.push(new CorporateConfetti(leftCannonX, cannonY, type, angle));
+                    }, i * 8);
+                }
+                
+                // Right cannon (slightly offset)
+                setTimeout(() => {
+                    for (let i = 0; i < sequence.burst; i++) {
+                        setTimeout(() => {
+                            const type = Math.random() > 0.5 ? 'gold' : 'silver';
+                            const angle = -Math.PI/2 + (Math.random() - 0.5) * Math.PI/3;
+                            this.confettiPieces.push(new CorporateConfetti(rightCannonX, cannonY, type, angle));
+                        }, i * 8);
+                    }
+                }, 50);
+            }, sequence.delay);
+        });
+        
+        // Re-enable launching after sequence
+        setTimeout(() => {
+            this.isLaunching = false;
+        }, 2000);
+        
+        this.isRunning = true;
+        this.animate();
+        
+        // Auto-stop after 10 seconds
+        setTimeout(() => {
+            this.stop();
+        }, 10000);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        // Transparent background - no dark overlay
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Update confetti
+        this.confettiPieces = this.confettiPieces.filter(piece => {
+            piece.update();
+            piece.draw(this.ctx);
+            return !piece.isDead();
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        this.isLaunching = false;
+        
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Clear confetti
+        this.confettiPieces = [];
+        
+        // Clear canvas
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    destroy() {
+        this.stop();
+        if (this.canvas) {
+            this.canvas.remove();
+            this.canvas = null;
+            this.ctx = null;
+        }
+    }
+}
+
+class CanvasEmojiSystem {
+    constructor() {
+        this.canvas = null;
+        this.ctx = null;
+        this.emojis = [];
+        this.isRunning = false;
+        this.animationId = null;
+        this.container = null;
+        this.animationStartTime = 0;
+        this.mouse = { x: 0, y: 0 };
+        this.isMouseDown = false;
+        
+        this.gravity = -0.018;
+        this.gravityEnabled = true;
+        this.BOUNCE_DAMPING = 0.85;
+        this.FRICTION = 0.99;
+        this.BOUNDS = { x: 15, y: 15, z: 15 };
+        this.MAX_EMOJIS = 12;
+        this.MIN_EMOJIS = 6;
+    }
+
+    initialize() {
+        if (this.canvas) return;
+        
+        this.container = document.createElement('div');
+        this.container.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 999;
+            background: transparent;
+        `;
+        document.body.appendChild(this.container);
+
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.canvas.style.cssText = `
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        `;
+        this.container.appendChild(this.canvas);
+
+        this.onWindowResize = this.onWindowResize.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
+        
+        window.addEventListener('resize', this.onWindowResize);
+        this.canvas.addEventListener('mousemove', this.onMouseMove);
+        this.canvas.addEventListener('mousedown', this.onMouseDown);
+        this.canvas.addEventListener('mouseup', this.onMouseUp);
+    }
+
+    createEmojiObject() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        
+        return {
+            x: (Math.random() - 0.5) * screenWidth * 0.8 + screenWidth / 2,
+            y: Math.random() * screenHeight * 0.3 + 100,
+            z: (Math.random() - 0.5) * 20,
+            
+            vx: (Math.random() - 0.5) * 0.6,
+            vy: Math.random() * 0.8 + 0.4,
+            vz: (Math.random() - 0.5) * 0.6,
+            
+            rotation: Math.random() * Math.PI * 2,
+            rotationSpeed: (Math.random() - 0.5) * 0.3,
+            glowIntensity: Math.random() * 0.5 + 0.5,
+            baseScale: Math.random() * 0.3 + 1.2,
+            pulseSpeed: Math.random() * 0.02 + 0.01,
+            giggleIntensity: 0.5,
+            lifespan: 8000 + Math.random() * 10000,
+            birthTime: Date.now(),
+            isDisappearing: false,
+            
+            size: 60 + Math.random() * 40,
+            alpha: 1.0
+        };
+    }
+
+    createAndAddEmoji() {
+        const emoji = this.createEmojiObject();
+        this.emojis.push(emoji);
+    }
+
+    startEmojiDisappearing(emoji) {
+        emoji.isDisappearing = true;
+    }
+
+    manageEmojiLifecycle() {
+        const currentTime = Date.now();
+        
+        if (this.emojis.length < this.MAX_EMOJIS && 
+            Math.random() < 0.02 && 
+            currentTime - this.animationStartTime > 2000) {
+            this.createAndAddEmoji();
+        }
+        
+        if (this.emojis.length < this.MIN_EMOJIS) {
+            this.createAndAddEmoji();
+        }
+    }
+
+    updatePhysics() {
+        this.manageEmojiLifecycle();
+        
+        this.emojis.forEach((emoji, index) => {
+            const age = Date.now() - emoji.birthTime;
+            if (age > emoji.lifespan && !emoji.isDisappearing) {
+                this.startEmojiDisappearing(emoji);
+            }
+
+            if (emoji.isDisappearing) {
+                emoji.baseScale *= 0.95;
+                emoji.alpha *= 0.9;
+                
+                if (emoji.baseScale < 0.1) {
+                    this.emojis.splice(index, 1);
+                    return;
+                }
+            }
+
+            emoji.vy += 0.008;
+            if (this.gravityEnabled) {
+                emoji.vy += this.gravity;
+            }
+
+            emoji.x += emoji.vx * 20;
+            emoji.y -= emoji.vy * 20;
+            emoji.z += emoji.vz;
+
+            const screenBoundsX = window.innerWidth / 40;
+            const screenBoundsY = window.innerHeight / 40;
+            
+            if (emoji.y > window.innerHeight - screenBoundsY) {
+                emoji.y = window.innerHeight - screenBoundsY;
+                emoji.vy *= -this.BOUNCE_DAMPING * 1.1;
+                emoji.vy += 0.15;
+                emoji.giggleIntensity = 2.0;
+            }
+            if (emoji.y < screenBoundsY) {
+                emoji.y = screenBoundsY;
+                emoji.vy *= -this.BOUNCE_DAMPING;
+                emoji.giggleIntensity = 1.2;
+            }
+
+            if (emoji.x < screenBoundsX) {
+                emoji.x = screenBoundsX;
+                emoji.vx *= -this.BOUNCE_DAMPING;
+                emoji.giggleIntensity = 1.2;
+            }
+            if (emoji.x > window.innerWidth - screenBoundsX) {
+                emoji.x = window.innerWidth - screenBoundsX;
+                emoji.vx *= -this.BOUNCE_DAMPING;
+                emoji.giggleIntensity = 1.2;
+            }
+
+            emoji.vx *= this.FRICTION;
+            emoji.vz *= this.FRICTION;
+            
+            if (emoji.giggleIntensity) {
+                emoji.giggleIntensity *= 0.95;
+                if (emoji.giggleIntensity < 0.1) emoji.giggleIntensity = 0;
+            }
+
+            for (let j = index + 1; j < this.emojis.length; j++) {
+                const other = this.emojis[j];
+                const dx = emoji.x - other.x;
+                const dy = emoji.y - other.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 100) {
+                    const angle = Math.atan2(dy, dx);
+                    const force = (100 - distance) * 0.002;
+                    
+                    emoji.vx += Math.cos(angle) * force;
+                    emoji.vy += Math.sin(angle) * force;
+                    other.vx -= Math.cos(angle) * force;
+                    other.vy -= Math.sin(angle) * force;
+                    
+                    const separation = (100 - distance) * 0.5;
+                    emoji.x += Math.cos(angle) * separation * 0.5;
+                    emoji.y += Math.sin(angle) * separation * 0.5;
+                    other.x -= Math.cos(angle) * separation * 0.5;
+                    other.y -= Math.sin(angle) * separation * 0.5;
+                    
+                    emoji.giggleIntensity = 1.5;
+                    other.giggleIntensity = 1.5;
+                }
+            }
+        });
+    }
+
+    drawEmoji(emoji) {
+        this.ctx.save();
+        
+        this.ctx.translate(emoji.x, emoji.y);
+        
+        const currentTime = Date.now() * 0.001;
+        const giggleIntensity = emoji.giggleIntensity || 0;
+        
+        if (giggleIntensity > 0.1) {
+            const giggleWobble = Math.sin(currentTime * 12) * giggleIntensity * 8;
+            this.ctx.translate(giggleWobble, 0);
+        }
+        
+        const pulseTime = Date.now() * emoji.pulseSpeed;
+        const pulseScale = emoji.baseScale + Math.sin(pulseTime) * 0.1;
+        this.ctx.scale(pulseScale, pulseScale);
+        
+        this.ctx.globalAlpha = emoji.alpha;
+        
+        this.ctx.font = `${emoji.size * pulseScale}px Arial`;
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('😊', 0, 0);
+        
+        this.ctx.restore();
+    }
+
+    onMouseMove(event) {
+        this.mouse.x = event.clientX;
+        this.mouse.y = event.clientY;
+    }
+
+    onMouseDown(event) {
+        this.isMouseDown = true;
+        
+        let closestEmoji = null;
+        let closestDistance = Infinity;
+        
+        this.emojis.forEach(emoji => {
+            const dx = emoji.x - this.mouse.x;
+            const dy = emoji.y - this.mouse.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestEmoji = emoji;
+            }
+        });
+        
+        if (closestEmoji && closestDistance < 150) {
+            const angle = Math.atan2(this.mouse.y - closestEmoji.y, this.mouse.x - closestEmoji.x);
+            closestEmoji.vx += Math.cos(angle) * 0.8;
+            closestEmoji.vy += Math.sin(angle) * 0.6;
+            closestEmoji.giggleIntensity = 2.0;
+        }
+    }
+
+    onMouseUp(event) {
+        this.isMouseDown = false;
+    }
+
+    onWindowResize() {
+        if (this.canvas) {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        }
+    }
+
+    start() {
+        this.initialize();
+        this.stop();
+        
+        this.animationStartTime = Date.now();
+        
+        for (let i = 0; i < this.MIN_EMOJIS; i++) {
+            this.createAndAddEmoji();
+        }
+        
+        this.isRunning = true;
+        this.animate();
+        
+        setTimeout(() => {
+            this.stop();
+        }, 15000);
+    }
+
+    animate() {
+        if (!this.isRunning) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.updatePhysics();
+        
+        this.emojis.sort((a, b) => b.z - a.z);
+        
+        this.emojis.forEach(emoji => {
+            this.drawEmoji(emoji);
+        });
+        
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stop() {
+        this.isRunning = false;
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        this.emojis = [];
+        
+        if (this.ctx) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+    destroy() {
+        this.stop();
+        
+        if (this.onWindowResize) window.removeEventListener('resize', this.onWindowResize);
+        if (this.canvas) {
+            this.canvas.removeEventListener('mousemove', this.onMouseMove);
+            this.canvas.removeEventListener('mousedown', this.onMouseDown);
+            this.canvas.removeEventListener('mouseup', this.onMouseUp);
+        }
+        
+        if (this.container) {
+            this.container.remove();
+            this.container = null;
+        }
+        
+        this.canvas = null;
+        this.ctx = null;
+    }
+}
+
+
+// Play delivery animation
+// Play delivery animation with lazy initialization
+function playDeliveryAnimation(animationType) {
+    console.log('🎆 Playing delivery animation:', animationType);
+    
+    // Lazy initialize animations if not already done
+if (Object.keys(deliveryAnimations).length === 0) {
+    deliveryAnimations = {
+        'heart-fireworks': new HeartFireworksSystem(),
+        'birthday-fireworks': new BirthdayFireworksSystem(),
+        'corporate-confetti': new CorporateConfettiSystem(),
+        'emoji-3d': new CanvasEmojiSystem()
+    };
+}
+    
+    // Stop any currently running animation
+    if (currentDeliveryAnimation) {
+        currentDeliveryAnimation.stop();
+    }
+    
+    const animation = deliveryAnimations[animationType];
+    if (animation) {
+        currentDeliveryAnimation = animation;
+        animation.start();
+    }
+}
+
+
+// Stop all delivery animations
+// Stop all delivery animations with lazy initialization check
+function stopAllDeliveryAnimations() {
+    // Only try to stop if animations are initialized
+    if (Object.keys(deliveryAnimations).length > 0) {
+        Object.values(deliveryAnimations).forEach(animation => {
+            if (animation && typeof animation.stop === 'function') {
+                animation.stop();
+            }
+        });
+    }
+    currentDeliveryAnimation = null;
+}
+
+// Helper function to convert hex to RGB (keeping original for compatibility)
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : { r: 102, g: 126, b: 234 }; // Default blue
+}
+
+
+// Helper functions for environment darkening (UNCHANGED)
+function applyEnvironmentDarkening(intensity) {
+  const darknessLevel = Math.min(0.8, intensity / 30 * 0.8); // Max 80% darkness
+  
+  // Find the card development area/platform (the container holding the card preview)
+  const cardContainer = document.querySelector('.card-container') || 
+                       document.querySelector('.preview-section') || 
+                       document.querySelector('.main-content') ||
+                       document.getElementById('cardPreview')?.parentElement;
+  
+  if (cardContainer) {
+    // Create overlay specifically for the card development platform
+    if (!document.getElementById('cardPlatformOverlay')) {
+      const platformOverlay = document.createElement('div');
+      platformOverlay.id = 'cardPlatformOverlay';
+      platformOverlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, ${darknessLevel});
+        pointer-events: none;
+        z-index: 1;
+        transition: all 0.4s ease;
+        border-radius: inherit;
+      `;
+      
+      // Ensure container has relative positioning
+      if (cardContainer.style.position !== 'relative') {
+        cardContainer.style.position = 'relative';
+      }
+      
+      cardContainer.appendChild(platformOverlay);
+    } else {
+      const platformOverlay = document.getElementById('cardPlatformOverlay');
+      platformOverlay.style.background = `rgba(0, 0, 0, ${darknessLevel})`;
+    }
+    
+    // Ensure the card preview stays above the overlay
+    const cardPreview = document.getElementById('cardPreview');
+    if (cardPreview) {
+      cardPreview.style.position = 'relative';
+      cardPreview.style.zIndex = '10'; // Higher than overlay
+    }
+    
+    console.log(`🌑 Card platform darkened: ${Math.round(darknessLevel * 100)}%`);
+  } else {
+    console.warn('⚠️ Card container not found, applying fallback darkening');
+    
+    // Fallback: darken the immediate background of the card preview
+    const cardPreview = document.getElementById('cardPreview');
+    if (cardPreview && cardPreview.parentElement) {
+      cardPreview.parentElement.style.background = `rgba(0, 0, 0, ${darknessLevel})`;
+      cardPreview.parentElement.style.transition = 'background 0.4s ease';
+    }
+  }
+}
+function removeEnvironmentDarkening() {
+  // Remove card platform overlay
+  const platformOverlay = document.getElementById('cardPlatformOverlay');
+  if (platformOverlay) {
+    platformOverlay.remove();
+  }
+  
+  // Reset card container background if we used fallback
+  const cardPreview = document.getElementById('cardPreview');
+  if (cardPreview && cardPreview.parentElement) {
+    cardPreview.parentElement.style.background = '';
+    cardPreview.parentElement.style.transition = '';
+  }
+  
+  // Keep card preview z-index for minimum glow
+  if (cardPreview) {
+    cardPreview.style.zIndex = '10';
+  }
+  
+  // DON'T automatically remove smoke - let user control it independently
+  
+  console.log('🌅 Card platform darkening removed');
+}
+}
+  // Enhanced function to apply glow with dynamic background darkening
+function applyCardGlow(intensity) {
+  const cardPreview = document.getElementById('cardPreview');
+  if (cardPreview) {
+    if (intensity > 0) {
+      // Apply intense glow to card (card stays bright and visible)
+      cardPreview.style.boxShadow = `
+        0 0 ${intensity}px rgba(102, 126, 234, 0.9),
+        0 0 ${intensity * 2}px rgba(102, 126, 234, 0.6),
+        0 0 ${intensity * 3}px rgba(102, 126, 234, 0.4),
+        0 10px 30px rgba(0, 0, 0, 0.5)
+      `;
+      cardPreview.style.filter = `drop-shadow(0 0 ${intensity}px rgba(102, 126, 234, 0.8))`;
+      cardPreview.style.position = 'relative';
+      cardPreview.style.zIndex = '10'; // Keep card above darkened platform
+      
+      // Darken only the card development platform
+      applyEnvironmentDarkening(intensity);
+      
+    } else {
+      // Reset everything when glow is 0
+      cardPreview.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.3)';
+      cardPreview.style.filter = '';
+      cardPreview.style.zIndex = '';
+      
+      // Remove platform darkening
+      removeEnvironmentDarkening();
+    }
+  }
+}
+  // Animation Type
+  animationType?.addEventListener('change', function() {
+    const cardPreview = document.getElementById('cardPreview');
+    cardPreview.classList.remove('floating', 'pulsing');
+    
+    switch(this.value) {
+      case 'hearts':
+        cardPreview.classList.add('pulsing');
+        break;
+      case 'sparkles':
+        cardPreview.classList.add('floating');
+        break;
+    }
+    saveToHistory();
+  });
+
+  // TEST: Add visual feedback to see if clicks are detected
+function addClickDebugger() {
+  document.addEventListener('click', function(e) {
+    console.log('CLICK DETECTED:', {
+      target: e.target,
+      className: e.target.className,
+      id: e.target.id,
+      tagName: e.target.tagName
+    });
+  });
+}
+
+// FIXED: Background selection - properly apply backgrounds
+function applyBackgroundToCard() {
+  document.querySelectorAll('.background-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const cardPreview = document.getElementById('cardPreview');
+      
+      // Handle built-in gradient backgrounds
+      if (this.classList.contains('bg-obsidian-rose')) {
+        cardPreview.style.backgroundImage = '';
+        cardPreview.className = 'card-preview floating bg-obsidian-rose';
+        selectedAssets.background = 'bg-obsidian-rose';
+      } else if (this.classList.contains('bg-obsidian-ocean')) {
+        cardPreview.style.backgroundImage = '';
+        cardPreview.className = 'card-preview floating bg-obsidian-ocean';
+        selectedAssets.background = 'bg-obsidian-ocean';
+      } else if (this.classList.contains('bg-obsidian-galaxy')) {
+        cardPreview.style.backgroundImage = '';
+        cardPreview.className = 'card-preview floating bg-obsidian-galaxy';
+        selectedAssets.background = 'bg-obsidian-galaxy';
+      } else if (this.classList.contains('bg-obsidian-gold')) {
+        cardPreview.style.backgroundImage = '';
+        cardPreview.className = 'card-preview floating bg-obsidian-gold';
+        selectedAssets.background = 'bg-obsidian-gold';
+      } else if (this.classList.contains('bg-obsidian-sunset')) {
+        cardPreview.style.backgroundImage = '';
+        cardPreview.className = 'card-preview floating bg-obsidian-sunset';
+        selectedAssets.background = 'bg-obsidian-sunset';
+      } else if (this.classList.contains('bg-obsidian-emerald')) {
+        cardPreview.style.backgroundImage = '';
+        cardPreview.className = 'card-preview floating bg-obsidian-emerald';
+        selectedAssets.background = 'bg-obsidian-emerald';
+      } else {
+        // Handle custom/uploaded backgrounds
+        const bgUrl = this.dataset.background;
+        if (bgUrl) {
+          cardPreview.className = 'card-preview floating';
+          cardPreview.style.backgroundImage = `url(${bgUrl})`;
+          cardPreview.style.backgroundSize = 'cover';
+          cardPreview.style.backgroundPosition = 'center';
+          selectedAssets.background = bgUrl;
+        }
+      }
+      
+      // Update active state
+      document.querySelectorAll('.background-item').forEach(bg => bg.classList.remove('active'));
+      this.classList.add('active');
+      
+      saveToHistory();
+      console.log('🎨 Background applied:', selectedAssets.background);
+    });
+  });
+}
+
+// FIXED: Symbol addition - properly replace card symbol
+function addSymbolToCard() {
+  document.querySelectorAll('.symbol-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const cardPreview = document.getElementById('cardPreview');
+      const symbolData = this.dataset.symbol;
+      
+      if (symbolData) {
+        // Check if we're in blank template mode
+        let cardSymbol = document.getElementById('cardSymbol');
+        
+        if (!cardSymbol) {
+          // Create symbol element for blank template - NO BACKGROUND WRAPPER
+          cardSymbol = document.createElement('div');
+          cardSymbol.className = 'card-element card-symbol';
+          cardSymbol.id = 'cardSymbol';
+          cardSymbol.style.cssText = 'position: absolute; top: 50px; left: 50px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px;';
+          
+          // Add resize handles
+          ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = `resize-handle ${pos}`;
+            cardSymbol.appendChild(handle);
+          });
+          
+          cardPreview.appendChild(cardSymbol);
+          makeElementInteractive(cardSymbol);
+        }
+        
+        // Clear existing content but preserve handles
+        const handles = cardSymbol.querySelectorAll('.resize-handle');
+        cardSymbol.innerHTML = '';
+        
+        // Add new symbol content WITHOUT background wrapper
+        if (symbolData.includes('data:image') || symbolData.includes('.png') || symbolData.includes('.jpg') || symbolData.includes('.jpeg')) {
+          cardSymbol.innerHTML = `<img src="${symbolData}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
+        } else {
+          // For emoji/text symbols, no background
+          cardSymbol.textContent = symbolData;
+          cardSymbol.style.background = 'transparent';
+        }
+        
+        // Re-add resize handles
+        handles.forEach(handle => cardSymbol.appendChild(handle));
+        
+        selectedAssets.symbol = symbolData;
+        
+        // Update active state
+        document.querySelectorAll('.symbol-item').forEach(sym => sym.classList.remove('active'));
+        this.classList.add('active');
+        
+        saveToHistory();
+        console.log('🎭 Symbol applied:', selectedAssets.symbol);
+      }
+    });
+  });
+}
+// FIXED: Scratch texture application
+function applyScratchTexture() {
+  document.querySelectorAll('.scratch-texture-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const cardPreview = document.getElementById('cardPreview');
+      const textureData = this.dataset.scratchTexture;
+      
+      if (textureData) {
+        let scratchArea = document.getElementById('scratchArea');
+        
+        if (!scratchArea) {
+          // Create scratch area for blank template
+          scratchArea = document.createElement('div');
+          scratchArea.className = 'card-element scratch-area';
+          scratchArea.id = 'scratchArea';
+          scratchArea.style.cssText = 'position: absolute; top: 150px; left: 76px; width: 350px; height: 150px; display: flex; align-items: center; justify-content: center; border-radius: 8px; padding: 10px; box-sizing: border-box;';
+          scratchArea.innerHTML = '<p style="width: 100%; height: 100%; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 25px; line-height: 1.2;">Scratch Me!</p>';
+          
+          // Add resize handles
+          ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+            const handle = document.createElement('div');
+            handle.className = `resize-handle ${pos}`;
+            scratchArea.appendChild(handle);
+          });
+          
+          cardPreview.appendChild(scratchArea);
+          makeElementInteractive(scratchArea);
+        }
+        
+        // Make sure the paragraph takes full area
+        const paragraph = scratchArea.querySelector('p');
+        if (paragraph) {
+          paragraph.style.cssText = 'width: 100%; height: 100%; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 16px; line-height: 1.2; box-sizing: border-box;';
+        }
+        
+        scratchArea.style.backgroundImage = `url(${textureData})`;
+        scratchArea.style.backgroundSize = 'cover';
+        scratchArea.style.backgroundPosition = 'center';
+        scratchArea.style.padding = '10px';
+        scratchArea.style.boxSizing = 'border-box';
+        
+        selectedAssets.scratchTexture = textureData;
+        
+        // Update active state
+        document.querySelectorAll('.scratch-texture-item').forEach(tex => tex.classList.remove('active'));
+        this.classList.add('active');
+        
+        saveToHistory();
+        console.log('🎨 Scratch texture applied:', selectedAssets.scratchTexture);
+      }
+    });
+  });
+}
+// FIXED: ensureSenderNameElement function - ABSOLUTELY NO BACKGROUND
+function ensureSenderNameElement() {
+  const cardPreview = document.getElementById('cardPreview');
+  let senderName = document.getElementById('senderName');
+  
+  if (!senderName && cardPreview.dataset.template === 'blank') {
+    senderName = document.createElement('div');
+    senderName.className = 'card-element sender-name';
+    senderName.id = 'senderName';
+    
+    // ✅ REMOVED ALL BACKGROUND BULLSHIT - COMPLETELY TRANSPARENT
+    senderName.style.cssText = 'position: absolute; top: 10px; left: 10px; font-weight: bold; color: #4a5568; font-size: 16px; background: transparent; background-color: transparent;';
+    senderName.textContent = 'From Sarah';
+    
+    // Add resize handles
+    ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+      const handle = document.createElement('div');
+      handle.className = `resize-handle ${pos}`;
+      senderName.appendChild(handle);
+    });
+    
+    cardPreview.appendChild(senderName);
+    makeElementInteractive(senderName);
+  }
+  
+  return senderName;
+}
+
+// Restore this function for dynamic element creation in blank template
+function ensureSymbolElement() {
+  const cardPreview = document.getElementById('cardPreview');
+  let cardSymbol = document.getElementById('cardSymbol');
+  
+  if (!cardSymbol && cardPreview.dataset.template === 'blank') {
+    cardSymbol = document.createElement('div');
+    cardSymbol.className = 'card-element card-symbol';
+    cardSymbol.id = 'cardSymbol';
+    cardSymbol.style.cssText = 'position: absolute; top: 50px; left: 50px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 24px; background: transparent; background-color: transparent;';
+    
+    // Add resize handles
+    ['nw', 'ne', 'sw', 'se'].forEach(pos => {
+      const handle = document.createElement('div');
+      handle.className = `resize-handle ${pos}`;
+      cardSymbol.appendChild(handle);
+    });
+    
+    cardPreview.appendChild(cardSymbol);
+    makeElementInteractive(cardSymbol);
+  }
+  
+  return cardSymbol;
+}
+
+// FIXED: Upload button functionality
+function initializeUploadButtons() {
+  // Background upload
+  backgroundUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        // Create new background item
+        const item = document.createElement('div');
+        item.className = 'background-item uploaded-item';
+        item.dataset.background = url;
+        item.style.backgroundImage = `url(${url})`;
+        item.style.backgroundSize = 'cover';
+        item.style.backgroundPosition = 'center';
+        item.title = `Uploaded: ${file.name}`;
+        
+        // Add delete button
+        const deleteBtn = document.createElement('div');
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.style.cssText = `
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          background: rgba(255, 107, 107, 0.9);
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          cursor: pointer;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        `;
+        
+        item.style.position = 'relative';
+        item.appendChild(deleteBtn);
+        
+        // Show delete button on hover
+        item.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        item.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0');
+        
+        // Delete functionality
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.remove();
+          URL.revokeObjectURL(url);
+        });
+        
+        // Click functionality
+        item.addEventListener('click', function() {
+          const cardPreview = document.getElementById('cardPreview');
+          cardPreview.className = 'card-preview floating';
+          cardPreview.style.backgroundImage = `url(${url})`;
+          cardPreview.style.backgroundSize = 'cover';
+          cardPreview.style.backgroundPosition = 'center';
+          selectedAssets.background = url;
+          
+          document.querySelectorAll('.background-item').forEach(bg => bg.classList.remove('active'));
+          this.classList.add('active');
+          saveToHistory();
+        });
+        
+        // Add to grid at the beginning
+        backgroundGrid.insertBefore(item, backgroundGrid.firstChild);
+        
+        // Store base64 for saving
+        uploadedFiles.backgroundImage = reader.result;
+        
+        // Auto-select the uploaded background
+        item.click();
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Symbol upload
+  symbolUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const item = document.createElement('div');
+        item.className = 'symbol-item uploaded-item';
+        item.dataset.symbol = url;
+        item.style.backgroundImage = `url(${url})`;
+        item.style.backgroundSize = 'cover';
+        item.style.backgroundPosition = 'center';
+        item.style.position = 'relative';
+        item.title = `Uploaded: ${file.name}`;
+        
+        // Add delete button
+        const deleteBtn = document.createElement('div');
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.style.cssText = `
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          background: rgba(255, 107, 107, 0.9);
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          cursor: pointer;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        `;
+        
+        item.appendChild(deleteBtn);
+        
+        item.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        item.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0');
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.remove();
+          URL.revokeObjectURL(url);
+        });
+        
+        item.addEventListener('click', function() {
+          const cardSymbol = document.getElementById('cardSymbol');
+          if (cardSymbol) {
+            const handles = cardSymbol.querySelectorAll('.resize-handle');
+            cardSymbol.innerHTML = `<img src="${url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
+            handles.forEach(handle => cardSymbol.appendChild(handle));
+            
+            selectedAssets.symbol = url;
+            document.querySelectorAll('.symbol-item').forEach(sym => sym.classList.remove('active'));
+            this.classList.add('active');
+            saveToHistory();
+          }
+        });
+        
+        symbolGrid.insertBefore(item, symbolGrid.firstChild);
+        uploadedFiles.symbol = reader.result;
+        item.click();
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Scratch texture upload
+  scratchTextureUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const item = document.createElement('div');
+        item.className = 'scratch-texture-item uploaded-item';
+        item.dataset.scratchTexture = url;
+        item.style.backgroundImage = `url(${url})`;
+        item.style.backgroundSize = 'cover';
+        item.style.backgroundPosition = 'center';
+        item.style.position = 'relative';
+        item.title = `Uploaded: ${file.name}`;
+        
+        // Add delete button
+        const deleteBtn = document.createElement('div');
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.style.cssText = `
+          position: absolute;
+          top: 5px;
+          right: 5px;
+          background: rgba(255, 107, 107, 0.9);
+          color: white;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          cursor: pointer;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        `;
+        
+        item.appendChild(deleteBtn);
+        
+        item.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        item.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0');
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.remove();
+          URL.revokeObjectURL(url);
+        });
+        
+        item.addEventListener('click', function() {
+          const scratchArea = document.getElementById('scratchArea');
+          if (scratchArea) {
+            scratchArea.style.backgroundImage = `url(${url})`;
+            scratchArea.style.backgroundSize = 'cover';
+            scratchArea.style.backgroundPosition = 'center';
+            
+            selectedAssets.scratchTexture = url;
+            document.querySelectorAll('.scratch-texture-item').forEach(tex => tex.classList.remove('active'));
+            this.classList.add('active');
+            saveToHistory();
+          }
+        });
+        
+        scratchTextureGrid.insertBefore(item, scratchTextureGrid.firstChild);
+        uploadedFiles.scratchTexture = reader.result;
+        item.click();
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Audio upload
+  audioUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('audio/')) {
+      const url = URL.createObjectURL(file);
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const item = document.createElement('div');
+        item.className = 'audio-item uploaded-item';
+        item.dataset.audio = url;
+        item.style.position = 'relative';
+        
+        item.innerHTML = `
+          <i class="fas fa-play play-btn"></i>
+          <span>Uploaded: ${file.name.replace(/\.[^/.]+$/, "")}</span>
+          <audio preload="metadata">
+            <source src="${url}" type="${file.type}">
+          </audio>
+          <div class="delete-btn" style="
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          ">🗑️</div>
+        `;
+        
+        const deleteBtn = item.querySelector('.delete-btn');
+        const audio = item.querySelector('audio');
+        
+        item.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        item.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0');
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.remove();
+          URL.revokeObjectURL(url);
+        });
+        
+        item.addEventListener('click', () => handleAudioClick(audio, item));
+        
+        audioGrid.insertBefore(item, audioGrid.firstChild);
+        uploadedFiles.soundEffect = reader.result;
+        selectAsset('audio', item);
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
+}
+// AI Voice upload - add this right before the closing brace of initializeUploadButtons
+  aiVoiceUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('audio/')) {
+      const url = URL.createObjectURL(file);
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const item = document.createElement('div');
+        item.className = 'ai-voice-item uploaded-item';
+        item.dataset.aiVoice = url;
+        item.style.position = 'relative';
+        
+        item.innerHTML = `
+          <i class="fas fa-play play-btn"></i>
+          <span>🤖 ${file.name.replace(/\.[^/.]+$/, "")}</span>
+          <audio preload="metadata">
+            <source src="${url}" type="${file.type}">
+          </audio>
+          <div class="delete-btn" style="
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          ">🗑️</div>
+        `;
+        
+        const deleteBtn = item.querySelector('.delete-btn');
+        const audio = item.querySelector('audio');
+        
+        item.addEventListener('mouseenter', () => deleteBtn.style.opacity = '1');
+        item.addEventListener('mouseleave', () => deleteBtn.style.opacity = '0');
+        
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          item.remove();
+          URL.revokeObjectURL(url);
+        });
+        
+        item.addEventListener('click', () => handleAIVoiceClick(audio, item));
+        
+        aiVoiceGrid.insertBefore(item, aiVoiceGrid.firstChild);
+        uploadedFiles.aiVoice = reader.result;
+        selectAsset('aiVoices', item);
+      };
+      
+      reader.readAsDataURL(file);
+    }
+  });
+
+// Enhanced save/export functions - with project naming
+function showMyProjectsButton() {
+  showMyProjects();
+}
+
+// Logo Upload Functionality - Add this to your existing script.js
+
+// Function to trigger logo upload
+function uploadLogo() {
+    // Create file input if it doesn't exist
+    let logoUpload = document.getElementById('logoUpload');
+    if (!logoUpload) {
+        logoUpload = document.createElement('input');
+        logoUpload.type = 'file';
+        logoUpload.id = 'logoUpload';
+        logoUpload.className = 'file-input';
+        logoUpload.accept = 'image/*';
+        logoUpload.style.display = 'none';
+        document.body.appendChild(logoUpload);
+    }
+    logoUpload.click();
+}
+
+// Handle logo upload
+document.addEventListener('DOMContentLoaded', function() {
+    // Create logo upload input if it doesn't exist
+    let logoUpload = document.getElementById('logoUpload');
+    if (!logoUpload) {
+        logoUpload = document.createElement('input');
+        logoUpload.type = 'file';
+        logoUpload.id = 'logoUpload';
+        logoUpload.className = 'file-input';
+        logoUpload.accept = 'image/*';
+        logoUpload.style.display = 'none';
+        document.body.appendChild(logoUpload);
+    }
+
+    // Add click event to logo section
+    const logoSection = document.querySelector('.logo-section');
+    if (logoSection) {
+        logoSection.style.cursor = 'pointer';
+        logoSection.addEventListener('click', uploadLogo);
+    }
+
+    // Handle file selection
+    logoUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Create or update logo image
+                let logoImage = document.getElementById('logoImage');
+                if (!logoImage) {
+                    logoImage = document.createElement('img');
+                    logoImage.id = 'logoImage';
+                    logoImage.alt = 'Logo';
+                    logoImage.style.cssText = `
+                        height: 50px;
+                        width: auto;
+                        max-width: 200px;
+                        object-fit: contain;
+                        cursor: pointer;
+                        border-radius: 8px;
+                        margin-right: 12px;
+                    `;
+                    
+                    // Insert before the logo icon
+                    const logoIcon = document.querySelector('.logo-icon');
+                    logoIcon.parentNode.insertBefore(logoImage, logoIcon);
+                }
+
+                // Set image source and show it
+                logoImage.src = e.target.result;
+                logoImage.style.display = 'block';
+
+                // Hide only the logo icon, keep the text visible
+                const logoIcon = document.querySelector('.logo-icon');
+                if (logoIcon) logoIcon.style.display = 'none';
+
+                // Keep the logo text visible
+                const logoText = document.querySelector('.logo-text');
+                if (logoText) logoText.style.display = 'block';
+
+                // Add double-click to reset logo
+                logoImage.addEventListener('dblclick', function() {
+                    if (confirm('Reset to original logo?')) {
+                        logoImage.style.display = 'none';
+                        if (logoIcon) logoIcon.style.display = 'flex';
+                        // Logo text stays visible since we never hid it
+                    }
+                });
+
+                console.log('Logo uploaded successfully');
+            };
+
+            reader.onerror = function() {
+                alert('Error reading file. Please try again.');
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+function saveDraftButton() {
+  if (currentProject) {
+    // Save existing project
+    saveCurrentProject();
+    
+    // Show save confirmation
+    const saveBtn = event.target;
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+    saveBtn.style.background = '#48bb78';
+    setTimeout(() => {
+      saveBtn.innerHTML = originalText;
+      saveBtn.style.background = '';
+    }, 2000);
+  } else {
+    // New project - show naming dialog
+    showProjectNameDialog((projectName, autoId) => {
+      if (projectName) {
+        saveCurrentProject(projectName, autoId);
+        
+        // Show save confirmation
+        const saveBtn = event.target;
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+        saveBtn.style.background = '#48bb78';
+        setTimeout(() => {
+          saveBtn.innerHTML = originalText;
+          saveBtn.style.background = '';
+        }, 2000);
+      }
+    });
+  }
+}
+
+// Function to check if an asset exists
+async function checkAssetExists(url) {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Stop currently playing audio
+function stopCurrentAudio() {
+  if (currentlyPlayingAudio && !currentlyPlayingAudio.paused) {
+    currentlyPlayingAudio.pause();
+    currentlyPlayingAudio.currentTime = 0;
+  }
+  
+  if (currentlyPlayingElement) {
+    const playButton = currentlyPlayingElement.querySelector('.play-btn, i');
+    if (playButton) {
+      if (playButton.classList.contains('fa-pause')) {
+        playButton.classList.remove('fa-pause');
+        playButton.classList.add('fa-play');
+      } else if (playButton.textContent === '⏸️') {
+        playButton.textContent = '▶️';
+      }
+    }
+    currentlyPlayingElement.classList.remove('playing');
+  }
+  
+  currentlyPlayingAudio = null;
+  currentlyPlayingElement = null;
+}
+
+// Clean up animations on page unload
+// Clean up animations on page unload with lazy initialization check
+window.addEventListener('beforeunload', () => {
+    stopAllDeliveryAnimations();
+    if (Object.keys(deliveryAnimations).length > 0) {
+        Object.values(deliveryAnimations).forEach(animation => {
+            if (animation && typeof animation.destroy === 'function') {
+                animation.destroy();
+            }
+        });
+    }
+});
+
+// Handle audio playback with proper controls
+// Handle audio selection with green border visual feedback
+// Handle audio selection with green border visual feedback
+async function handleAudioClick(audioElement, item) {
+  // If this audio is currently playing, stop it but keep it selected
+  if (currentlyPlayingAudio === audioElement && !audioElement.paused) {
+    stopCurrentAudio();
+    return; // Keep the green border and selection
+  }
+  
+  // Stop any currently playing preview audio
+  stopCurrentAudio();
+  
+  // Remove green border from all audio items
+  document.querySelectorAll('.audio-item').forEach(audioItem => {
+    audioItem.style.border = '';
+    audioItem.classList.remove('selected-audio');
+  });
+  
+  // Add green border to selected audio
+  item.style.border = '3px solid #48bb78';
+  item.classList.add('selected-audio');
+  
+  // Store selected audio for scratch integration
+  selectedAssets.soundEffect = item.dataset.audio;
+  
+  // Preview play the selected audio
+  try {
+    currentlyPlayingAudio = audioElement;
+    currentlyPlayingElement = item;
+    
+    const playButton = item.querySelector('.play-btn, i');
+    if (playButton) {
+      if (playButton.classList.contains('fa-play')) {
+        playButton.classList.remove('fa-play');
+        playButton.classList.add('fa-pause');
+      }
+    }
+    
+    item.classList.add('playing');
+    
+    audioElement.currentTime = 0;
+    await audioElement.play();
+    
+    audioElement.addEventListener('ended', () => {
+      stopCurrentAudio();
+    }, { once: true });
+    
+    console.log('🎵 Audio selected and previewed:', selectedAssets.soundEffect);
+    
+  } catch (err) {
+    console.log('Audio preview failed:', err);
+    playBeepSound();
+  }
+  
+  saveToHistory();
+}
+function extractElementStyles() {
+    const styles = {};
+    document.querySelectorAll('.card-element').forEach(element => {
+        const computed = window.getComputedStyle(element);
+        const className = element.className.split(' ').find(cls => 
+            cls === 'sender-name' || cls === 'scratch-area' || cls === 'card-symbol' || cls === 'custom-element'
+        ) || 'card-element';
+        
+        styles[className] = {
+            fontFamily: computed.fontFamily,
+            fontSize: computed.fontSize,
+            fontWeight: computed.fontWeight,
+            fontStyle: computed.fontStyle,
+            lineHeight: computed.lineHeight,
+            letterSpacing: computed.letterSpacing,
+            textAlign: computed.textAlign,
+            color: computed.color,
+            textShadow: computed.textShadow,
+            textTransform: computed.textTransform
+        };
+    });
+    return styles;
+}
+
+// Add this function anywhere in your script (before the generateCard function)
+function getHiddenMessageContent() {
+  const scratchArea = document.getElementById('scratchArea');
+  
+  function extractElementStyles() {
+    const styles = {};
+    document.querySelectorAll('.card-element').forEach(element => {
+        const computed = window.getComputedStyle(element);
+        const className = element.className.split(' ').find(cls => 
+            cls === 'sender-name' || cls === 'scratch-area' || cls === 'card-symbol' || cls === 'custom-element'
+        ) || 'card-element';
+        
+        styles[className] = {
+            // Text styling
+            fontFamily: computed.fontFamily,
+            fontSize: computed.fontSize,
+            fontWeight: computed.fontWeight,
+            fontStyle: computed.fontStyle,
+            lineHeight: computed.lineHeight,
+            letterSpacing: computed.letterSpacing,
+            textAlign: computed.textAlign,
+            color: computed.color,
+            textShadow: computed.textShadow,
+            textTransform: computed.textTransform,
+            wordWrap: computed.wordWrap,
+            wordBreak: computed.wordBreak,
+            whiteSpace: computed.whiteSpace,
+            overflow: computed.overflow,
+            textOverflow: computed.textOverflow,
+            
+            // Box styling
+            padding: computed.padding,
+            margin: computed.margin,
+            border: computed.border,
+            borderRadius: computed.borderRadius,
+            background: computed.background,
+            boxShadow: computed.boxShadow,
+            opacity: computed.opacity,
+            
+            // Positioning
+            position: computed.position,
+            zIndex: computed.zIndex,
+            transform: computed.transform
+        };
+    });
+    return styles;
+}
+}
+
+function getHiddenMessageContent() {
+  const scratchArea = document.getElementById('scratchArea');
+  const hiddenMsg = scratchArea?.querySelector('.hidden-message');
+  
+  if (hiddenMsg && hiddenMsg.textContent.trim() !== 'Your hidden message') {
+    return hiddenMsg.textContent.trim();
+  }
+  
+  // Fallback: check if there's a hidden message input
+  const hiddenMessageInput = document.getElementById('hiddenMessage');
+  if (hiddenMessageInput && hiddenMessageInput.value.trim()) {
+    return hiddenMessageInput.value.trim();
+  }
+  
+  return 'Surprise! You found the hidden message!';
+}
+
+// Load assets into grids with fallbacks - FIXED VERSION
+async function loadAssets(type, gridElement, page = 0) {
+  console.log(`🎯 Loading assets for type: ${type}, page: ${page}`);
+  
+  const isAudio = type === 'audio';
+  const isAIVoice = type === 'aiVoices';
+  const currentItemsPerPage = (isAudio || isAIVoice) ? audioItemsPerPage : itemsPerPage;
+  const start = page * currentItemsPerPage;
+  let items;
+
+  // Load actual assets from server
+  items = allAssets[type].slice(start, start + currentItemsPerPage);
+  console.log(`🌐 Attempting to load ${items.length} server assets for ${type}`);
+
+  for (const file of items) {
+    if (!loadedAssets[type].items.includes(file)) {
+      // Set correct asset path based on type
+      let assetPath;
+      if (isAIVoice) {
+        assetPath = `${BASE_URL}/assets/AI Delivery Agent/${file}`;
+      } else {
+        assetPath = `${BASE_URL}/assets/${type}/${file}`;
+      }
+      
+      // Check if asset exists
+      const exists = await checkAssetExists(assetPath);
+      
+      if (exists) {
+        const item = document.createElement('div');
+        
+        // Set consistent naming for all types
+        if (type === 'scratchTextures') {
+          item.className = 'scratch-texture-item';
+          item.dataset.scratchTexture = assetPath;
+        } else if (isAudio) {
+          item.className = 'audio-item';
+          item.dataset.audio = assetPath;
+        } else if (isAIVoice) {
+          item.className = 'ai-voice-item';
+          item.dataset.aiVoice = assetPath;
+        } else {
+          item.className = `${type.slice(0, -1)}-item`;
+          item.dataset[type.slice(0, -1)] = assetPath;
+        }
+        
+        if (!isAudio && !isAIVoice) {
+          item.style.backgroundImage = `url(${assetPath})`;
+          item.style.backgroundSize = 'cover';
+          item.style.backgroundPosition = 'center';
+          item.title = file;
+          
+          // Add click functionality based on type
+          if (type === 'backgrounds') {
+            item.addEventListener('click', function() {
+              const cardPreview = document.getElementById('cardPreview');
+              cardPreview.className = 'card-preview floating';
+              cardPreview.style.backgroundImage = `url(${assetPath})`;
+              cardPreview.style.backgroundSize = 'cover';
+              cardPreview.style.backgroundPosition = 'center';
+              selectedAssets.background = assetPath;
+              
+              document.querySelectorAll('.background-item').forEach(bg => bg.classList.remove('active'));
+              this.classList.add('active');
+              saveToHistory();
+            });
+          } else if (type === 'symbols') {
+            item.addEventListener('click', function() {
+              const cardSymbol = document.getElementById('cardSymbol');
+              if (cardSymbol) {
+                const handles = cardSymbol.querySelectorAll('.resize-handle');
+                cardSymbol.innerHTML = `<img src="${assetPath}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
+                handles.forEach(handle => cardSymbol.appendChild(handle));
+                
+                selectedAssets.symbol = assetPath;
+                document.querySelectorAll('.symbol-item').forEach(sym => sym.classList.remove('active'));
+                this.classList.add('active');
+                saveToHistory();
+              }
+            });
+          } else if (type === 'scratchTextures') {
+            item.addEventListener('click', function() {
+              const scratchArea = document.getElementById('scratchArea');
+              if (scratchArea) {
+                scratchArea.style.backgroundImage = `url(${assetPath})`;
+                scratchArea.style
+                scratchArea.style.backgroundSize = 'cover';
+               scratchArea.style.backgroundPosition = 'center';
+               
+               selectedAssets.scratchTexture = assetPath;
+               document.querySelectorAll('.scratch-texture-item').forEach(tex => tex.classList.remove('active'));
+               this.classList.add('active');
+               saveToHistory();
+             }
+           });
+         }
+         
+         console.log(`✅ Added server ${type} asset: ${file}`);
+       } else if (isAudio) {
+         item.innerHTML = `
+           <i class="fas fa-play play-btn"></i>
+           <span>${file.replace('.mp3', '')}</span>
+           <audio preload="metadata" crossorigin="anonymous">
+             <source src="${assetPath}" type="audio/mpeg">
+           </audio>
+         `;
+         
+         const audio = item.querySelector('audio');
+         item.addEventListener('click', () => handleAudioClick(audio, item));
+       } else if (isAIVoice) {
+         item.innerHTML = `
+           <i class="fas fa-play play-btn"></i>
+           <span>🤖 ${file.replace('.mp3', '')}</span>
+           <audio preload="metadata" crossorigin="anonymous">
+             <source src="${assetPath}" type="audio/mpeg">
+           </audio>
+         `;
+         
+         const audio = item.querySelector('audio');
+         item.addEventListener('click', () => handleAIVoiceClick(audio, item));
+       }
+       
+       gridElement.appendChild(item);
+       loadedAssets[type].items.push(file);
+     } else {
+       console.log(`❌ Asset not found: ${assetPath}`);
+     }
+   }
+ }
+
+ // Show/hide Load More button
+ const loadMoreButton = document.getElementById(`loadMore${type.charAt(0).toUpperCase() + type.slice(1)}`);
+ if (loadMoreButton) {
+   const totalAvailable = allAssets[type]?.length || 0;
+   const totalLoaded = loadedAssets[type].items.length;
+   
+   const hasMoreItems = totalLoaded < totalAvailable;
+   loadMoreButton.style.display = hasMoreItems ? 'flex' : 'none';
+   
+   console.log(`📊 ${type}: ${totalLoaded}/${totalAvailable} items loaded, hasMore: ${hasMoreItems}`);
+ }
+}
+
+// Play a simple beep sound using Web Audio API
+function playBeepSound() {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 800; // 800 Hz beep
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.log('Web Audio API not supported:', error);
+  }
+}
+
+// AI Voice Control Functions
+function stopCurrentAIVoice() {
+  if (currentlyPlayingAIVoice && !currentlyPlayingAIVoice.paused) {
+    currentlyPlayingAIVoice.pause();
+    currentlyPlayingAIVoice.currentTime = 0;
+  }
+  
+  if (currentlyPlayingAIElement) {
+    const playButton = currentlyPlayingAIElement.querySelector('.play-btn, i');
+    if (playButton) {
+      if (playButton.classList.contains('fa-pause')) {
+        playButton.classList.remove('fa-pause');
+        playButton.classList.add('fa-play');
+      } else if (playButton.textContent === '⏸️') {
+        playButton.textContent = '▶️';
+      }
+    }
+    currentlyPlayingAIElement.classList.remove('playing');
+  }
+  
+  // Unfreeze card when AI stops
+  unfreezeCard();
+  
+  currentlyPlayingAIVoice = null;
+  currentlyPlayingAIElement = null;
+}
+
+function freezeCard() {
+  console.log('🧊 Freezing card - AI is speaking');
+  isCardFrozen = true;
+  
+  const cardPreview = document.getElementById('cardPreview');
+  if (cardPreview) {
+    // Store original interactivity
+    originalCardInteractivity = {
+      pointerEvents: cardPreview.style.pointerEvents,
+      cursor: cardPreview.style.cursor,
+      opacity: cardPreview.style.opacity
+    };
+    
+    // Apply frozen state
+    cardPreview.style.pointerEvents = 'none';
+    cardPreview.style.cursor = 'not-allowed';
+    cardPreview.style.opacity = '0.7';
+    cardPreview.style.filter = (cardPreview.style.filter || '') + ' grayscale(50%)';
+    
+    // Disable all card elements
+    document.querySelectorAll('.card-element').forEach(element => {
+      element.style.pointerEvents = 'none';
+      element.style.opacity = '0.7';
+    });
+    
+    // Add frozen overlay indicator
+    if (!document.getElementById('frozenOverlay')) {
+      const overlay = document.createElement('div');
+      overlay.id = 'frozenOverlay';
+      overlay.innerHTML = '🤖 AI Delivery Agent Speaking...';
+      overlay.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        z-index: 999;
+        animation: pulse 2s infinite;
+        pointer-events: none;
+      `;
+      cardPreview.appendChild(overlay);
+    }
+  }
+}
+
+function unfreezeCard() {
+  console.log('🔥 Unfreezing card - AI finished speaking');
+  isCardFrozen = false;
+  const cardPreview = document.getElementById('cardPreview');
+  if (cardPreview && originalCardInteractivity) {
+    // Restore original interactivity
+    cardPreview.style.pointerEvents = originalCardInteractivity.pointerEvents || '';
+    cardPreview.style.cursor = originalCardInteractivity.cursor || '';
+    cardPreview.style.opacity = originalCardInteractivity.opacity || '';
+    cardPreview.style.filter = cardPreview.style.filter.replace(' grayscale(50%)', '');
+    
+    // Re-enable all card elements
+    document.querySelectorAll('.card-element').forEach(element => {
+      element.style.pointerEvents = '';
+      element.style.opacity = '';
+    });
+    
+    // Remove frozen overlay
+    const overlay = document.getElementById('frozenOverlay');
+    if (overlay) {
+      overlay.remove();
+    }
+    
+    originalCardInteractivity = null;
+  }
+}
+
+async function handleAIVoiceClick(audioElement, item) {
+  const audio = audioElement;
+  const playButton = item.querySelector('.play-btn, i');
+  
+  // If this AI voice is currently playing, stop it
+  if (currentlyPlayingAIVoice === audio && !audio.paused) {
+    stopCurrentAIVoice();
+    return;
+  }
+  
+  // Stop any currently playing AI voice
+  stopCurrentAIVoice();
+  
+  // Also stop regular audio if playing
+  stopCurrentAudio();
+  
+  try {
+    // Set up the new AI voice
+    currentlyPlayingAIVoice = audio;
+    currentlyPlayingAIElement = item;
+    
+    // Freeze card before AI starts speaking
+    freezeCard();
+    
+    // Update play button to pause icon
+    if (playButton) {
+      if (playButton.classList.contains('fa-play')) {
+        playButton.classList.remove('fa-play');
+        playButton.classList.add('fa-pause');
+      } else if (playButton.textContent === '▶️') {
+        playButton.textContent = '⏸️';
+      }
+    }
+    
+    item.classList.add('playing');
+    
+    // Reset audio to beginning and play
+    audio.currentTime = 0;
+    await audio.play();
+    
+    console.log('🤖 AI Delivery Agent started speaking');
+    
+    // When AI voice ends, unfreeze the card
+    audio.addEventListener('ended', () => {
+      console.log('🤖 AI Delivery Agent finished speaking');
+      stopCurrentAIVoice(); // This will call unfreezeCard()
+    }, { once: true });
+    
+    // Select this AI voice asset
+    selectAsset('aiVoices', item);
+    
+  } catch (err) {
+    console.log('AI Voice play failed, playing fallback beep:', err);
+    stopCurrentAIVoice();
+    playBeepSound();
+    selectAsset('aiVoices', item);
+  }
+}
+
+// Scratch-integrated audio playback system
+function initializeScratchAudio() {
+  if (!selectedAssets.soundEffect) return null;
+  
+  if (scratchAudio) {
+    scratchAudio.pause();
+    scratchAudio = null;
+  }
+  
+  scratchAudio = new Audio(selectedAssets.soundEffect);
+  scratchAudio.loop = false;
+  scratchAudio.volume = 1.0;
+  
+  // Key logic: Auto-restart if still scratching when audio ends
+  scratchAudio.addEventListener('ended', () => {
+  console.log('Scratch audio finished playing naturally.');
+  if (isScratching && selectedAssets.soundEffect) {
+    isScratchSoundPlaying = false;
+    playScratchSound(); // Auto-restart if still scratching
+  } else {
+    isScratchSoundPlaying = false;
+  }
+});
+}
+function playScratchSound() {
+  if (!selectedAssets.soundEffect) return;
+  
+  if (!isScratchSoundPlaying) {
+    if (!scratchAudio) {
+      initializeScratchAudio();
+    }
+    
+    isScratchSoundPlaying = true;
+    scratchAudio.volume = 1.0;
+    scratchAudio.currentTime = 0;
+    scratchAudio.play().catch(err => console.log('Scratch sound play error:', err));
+    console.log('🎵 Scratch audio started');
+  }
+}
+
+function stopScratchSound() {
+  isScratching = false;
+  isScratchSoundPlaying = false; // Add this line
+  console.log('🎵 Scratch flag set to false - audio will finish naturally');
+}
+
+// Select an asset - FIXED VERSION
+function selectAsset(type, element) {
+  const grid = document.getElementById(`${type}Grid`);
+  
+  // Add null check for grid
+  if (!grid) {
+    console.warn(`Grid not found for type: ${type}. Grid ID: ${type}Grid`);
+    return;
+  }
+  
+  // Handle different item classes properly
+  let itemClass;
+  if (type === 'scratchTextures') {
+    itemClass = 'scratch-texture-item';
+  } else if (type === 'audio') {
+    itemClass = 'audio-item';
+  } else if (type === 'aiVoices') {
+    itemClass = 'ai-voice-item';
+  } else {
+    itemClass = `${type.slice(0, -1)}-item`;
+  }
+  
+  // Remove active class from all items
+  grid.querySelectorAll(`.${itemClass}`).forEach(item => item.classList.remove('active'));
+  element.classList.add('active');
+  
+  // Map type to correct selectedAssets key and dataset attribute
+  let assetKey, datasetKey;
+  if (type === 'scratchTextures') {
+    assetKey = 'scratchTexture';
+    datasetKey = 'scratchTexture';
+  } else if (type === 'audio') {
+    assetKey = 'soundEffect';
+    datasetKey = 'audio';
+  } else if (type === 'aiVoices') {
+    assetKey = 'aiVoice';
+    datasetKey = 'aiVoice';
+  } else {
+    assetKey = type.slice(0, -1);
+    datasetKey = type.slice(0, -1);
+  }
+  
+  selectedAssets[assetKey] = element.dataset[datasetKey];
+  console.log(`🎯 Selected ${type}:`, selectedAssets[assetKey]);
+  updatePreview();
+}
+
+// Load more assets - FIXED VERSION
+function setupLoadMore() {
+  loadMoreBackgrounds?.addEventListener('click', () => {
+    loadedAssets.backgrounds.page++;
+    loadAssets('backgrounds', backgroundGrid, loadedAssets.backgrounds.page);
+  });
+  loadMoreSymbols?.addEventListener('click', () => {
+    loadedAssets.symbols.page++;
+    loadAssets('symbols', symbolGrid, loadedAssets.symbols.page);
+  });
+  loadMoreScratchTextures?.addEventListener('click', () => {
+    loadedAssets.scratchTextures.page++;
+    loadAssets('scratchTextures', scratchTextureGrid, loadedAssets.scratchTextures.page);
+  });
+  loadMoreAudio?.addEventListener('click', () => {
+    loadedAssets.audio.page++;
+    loadAssets('audio', audioGrid, loadedAssets.audio.page);
+  });
+  loadMoreAiVoices?.addEventListener('click', () => {
+    loadedAssets.aiVoices.page++;
+    loadAssets('aiVoices', aiVoiceGrid, loadedAssets.aiVoices.page);
+  });
+}
+
+// Live preview update - IMPROVED
+function updatePreview() {
+  const senderName = senderNameInput?.textContent?.replace('From ', '') || 'Your Name';
+  
+  // FIXED: Don't auto-fill with placeholder text
+  const hiddenMessage = hiddenMessageInput?.value || '';
+
+  if (senderNameInput) {
+    senderNameInput.textContent = `From ${senderName}`;
+  }
+  
+  // FIXED: Only set value if it's actually empty and we want to show placeholder
+  // But don't force the placeholder back in
+  
+  // Apply selected background
+  if (selectedAssets.background) {
+    if (selectedAssets.background.startsWith('bg-obsidian-')) {
+      cardPreview.className = `card-preview floating ${selectedAssets.background}`;
+      cardPreview.style.backgroundImage = '';
+    } else {
+      cardPreview.className = 'card-preview floating';
+      cardPreview.style.backgroundImage = `url(${selectedAssets.background})`;
+      cardPreview.style.backgroundSize = 'cover';
+      cardPreview.style.backgroundPosition = 'center';
+    }
+  }
+  
+  // Apply selected symbol
+  const cardSymbol = document.getElementById('cardSymbol');
+  if (cardSymbol && selectedAssets.symbol) {
+    const handles = cardSymbol.querySelectorAll('.resize-handle');
+    if (selectedAssets.symbol.includes('data:image/svg+xml') && selectedAssets.symbol.includes('<text')) {
+      const emojiMatch = selectedAssets.symbol.match(/>([^<]+)<\/text>/);
+      cardSymbol.innerHTML = emojiMatch ? emojiMatch[1] : '';
+    } else if (selectedAssets.symbol.includes('data:image') || selectedAssets.symbol.includes('.png') || selectedAssets.symbol.includes('.jpg') || selectedAssets.symbol.includes('.jpeg')) {
+      cardSymbol.innerHTML = `<img src="${selectedAssets.symbol}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Symbol">`;
+    } else {
+      cardSymbol.textContent = selectedAssets.symbol;
+    }
+    handles.forEach(handle => cardSymbol.appendChild(handle));
+  }
+  
+  // Apply selected scratch texture
+  const scratchArea = document.getElementById('scratchArea');
+  if (scratchArea && selectedAssets.scratchTexture) {
+    scratchArea.style.backgroundImage = `url(${selectedAssets.scratchTexture})`;
+    scratchArea.style.backgroundSize = 'cover';
+    scratchArea.style.backgroundPosition = 'center';
+  }
+}
+// File upload functions - UPDATED
+function uploadCustomBackground() {
+  backgroundUpload?.click();
+}
+
+function uploadCustomSymbol() {
+  symbolUpload?.click();
+}
+
+function uploadCustomScratchTexture() {
+  scratchTextureUpload?.click();
+}
+
+function uploadCustomAudio() {
+  audioUpload?.click();
+}
+
+// Generate card - ENHANCED to capture ALL web app features
+async function generateCard() {
+  const fab = document.querySelector('.fab');
+  if (fab) {
+    fab.style.transform = 'scale(1.2)';
+    setTimeout(() => fab.style.transform = 'scale(1)', 200);
+  }
+
+  if (!window.currentUser) {
+    showAuthenticationGate();
+    return;
+  }
+
+  try {
+    if (createButton) {
+      createButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      createButton.disabled = true;
+    }
+
+    // CAPTURE ALL ADVANCED WEB APP FEATURES
+    const cardData = {
+      // Basic card info
+      // ENHANCED: Basic card info with proper hidden message extraction
+  senderName: senderNameInput?.textContent?.replace('From ', '').trim() || 'Anonymous',
+  hiddenMessage: getHiddenMessageContent(), // Use the new function
+  // ... rest
+      backgroundImage: selectedAssets.background || placeholderAssets.backgrounds[0],
+      symbol: selectedAssets.symbol || placeholderAssets.symbols[0],
+      animation: document.getElementById('animationType')?.value || 'hearts',
+      scratchTexture: selectedAssets.scratchTexture || placeholderAssets.scratchTextures[0],
+      soundEffect: selectedAssets.soundEffect || '#beep',
+      
+      // User info
+      userId: window.currentUser?.uid,
+      userEmail: window.currentUser?.email,
+      userName: window.currentUser?.displayName || window.currentUser?.email,
+      
+      // Base64 uploaded files
+      backgroundImageBase64: uploadedFiles.backgroundImage,
+      symbolBase64: uploadedFiles.symbol,
+      scratchTextureBase64: uploadedFiles.scratchTexture,
+      soundEffectBase64: uploadedFiles.soundEffect,
+      
+      // ADVANCED FEATURES - EXACTLY from web app
+      template: currentTemplate || 'classic',
+      
+      // Glow effect settings
+      glowEffect: parseInt(document.getElementById('glowEffect')?.value || '15') + 15, // Add minimum glow
+      glowColor: document.getElementById('glowColor')?.value || '#667eea',
+      
+      // Smoke effect settings
+      smokeEffect: document.getElementById('smokeEffect')?.checked || isSmokeEnabled || false,
+      
+      // Card orientation
+      cardOrientation: document.getElementById('cardOrientation')?.value || 'landscape',
+      
+      // Animation settings
+      animationType: document.getElementById('animationType')?.value || 'hearts',
+      animationSpeed: parseFloat(document.getElementById('animSpeed')?.value || '1'),
+      
+      // Element positions and styles - CAPTURE EXACT POSITIONING
+      elements: Array.from(document.querySelectorAll('.card-element')).map(el => ({
+        id: el.id,
+        type: el.classList.contains('sender-name') ? 'sender' :
+              el.classList.contains('scratch-area') ? 'scratch' : 'symbol',
+        content: el.textContent.trim(),
+        innerHTML: el.innerHTML,
+        position: {
+          left: el.style.left || getComputedStyle(el).left,
+          top: el.style.top || getComputedStyle(el).top,
+          width: el.style.width || getComputedStyle(el).width,
+          height: el.style.height || getComputedStyle(el).height
+        },
+        style: {
+          fontSize: el.style.fontSize || getComputedStyle(el).fontSize,
+          opacity: el.style.opacity || getComputedStyle(el).opacity,
+          color: el.style.color || getComputedStyle(el).color,
+          fontFamily: el.style.fontFamily || getComputedStyle(el).fontFamily,
+          fontWeight: el.style.fontWeight || getComputedStyle(el).fontWeight,
+          textShadow: el.style.textShadow || getComputedStyle(el).textShadow,
+          backgroundImage: el.style.backgroundImage || getComputedStyle(el).backgroundImage,
+          backgroundSize: el.style.backgroundSize || getComputedStyle(el).backgroundSize,
+          backgroundPosition: el.style.backgroundPosition || getComputedStyle(el).backgroundPosition
+        }
+      })),
+      
+      // Card preview styling - CAPTURE EXACT CARD STATE
+      cardStyle: {
+        backgroundImage: cardPreview?.style.backgroundImage || '',
+        backgroundSize: cardPreview?.style.backgroundSize || 'cover',
+        backgroundPosition: cardPreview?.style.backgroundPosition || 'center',
+        className: cardPreview?.className || 'card-preview floating',
+        aspectRatio: cardPreview?.style.aspectRatio || '1.6',
+        filter: cardPreview?.style.filter || '',
+        boxShadow: cardPreview?.style.boxShadow || '',
+        transform: cardPreview?.style.transform || ''
+      },
+      
+      // Project metadata
+      projectId: currentProject?.id || null,
+      projectName: currentProject?.name || null,
+      
+      // Timestamp
+      createdAt: new Date().toISOString(),
+      
+      // Version info
+      version: '2.0-advanced',
+      features: [
+        'drag-drop-elements',
+        'resizable-components',
+        'advanced-glow-effects',
+        'particle-systems',
+        'smoke-effects',
+        'custom-uploads',
+        'interactive-scratch',
+        'multi-templates',
+        'undo-redo-system'
+      ]
+    };
+
+    console.log('🎯 Generating advanced card with features:', cardData.features);
+    console.log('📊 Card data size:', JSON.stringify(cardData).length, 'characters');
+
+    const response = await fetch(`${BASE_URL}/api/cards`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': window.currentUser ? `Bearer ${await window.currentUser.getIdToken()}` : ''
+      },
+      body: JSON.stringify(cardData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create card');
+    }
+
+    const result = await response.json();
+    showSuccessModal(result.cardId, result.cardUrl);
+    
+    console.log('✅ Advanced card generated successfully:', result.cardId);
+    
+  } catch (error) {
+    console.error('❌ Error creating advanced card:', error);
+    alert(`❌ Error creating card: ${error.message}\n\nMake sure the backend server is running on port 3000!`);
+  } finally {
+    if (createButton) {
+      createButton.innerHTML = '<i class="fas fa-magic"></i>';
+      createButton.disabled = false;
+    }
+  }
+}
+
+// Show success modal
+function showSuccessModal(cardId, cardUrl) {
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+  `;
+
+  modal.innerHTML = `
+    <div style="background: white; padding: 3rem; border-radius: 20px; text-align: center; max-width: 500px; width: 90%; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);">
+      <h2 style="color: #4a5568; margin-bottom: 1rem; font-size: 2rem;">🎉 Card Created!</h2>
+      <p style="color: #718096; margin-bottom: 2rem; font-size: 1.1rem;">Your revolutionary scratch card is ready to share!</p>
+      <div style="background: #f7fafc; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
+        <p style="margin-bottom: 1rem; font-weight: bold; color: #4a5568;">Share this link:</p>
+        <input type="text" value="${cardUrl}" readonly 
+               style="width: 100%; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; text-align: center; font-size: 0.9rem;"
+               onclick="this.select()">
+        <p style="margin-top: 0.5rem; font-size: 0.8rem; color: #718096;">Click to select and copy</p>
+      </div>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <button onclick="window.open('${cardUrl}', '_blank')" 
+                style="background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer; font-weight: bold;">
+          🎯 View Card
+        </button>
+        <button onclick="copyToClipboard('${cardUrl}')" 
+                style="background: #48bb78; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer; font-weight: bold;">
+          📋 Copy Link
+        </button>
+        <button onclick="document.body.removeChild(document.querySelector('.success-modal'))" 
+                style="background: #cbd5e0; color: #4a5568; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer; font-weight: bold;">
+          ✨ Create Another
+        </button>
+      </div>
+      <p style="margin-top: 2rem; font-size: 0.8rem; color: #a0aec0;">Card ID: ${cardId}</p>
+      <p style="margin-top: 0.5rem; font-size: 0.75rem; color: #d0d0d0;">Created by: ${window.currentUser?.displayName || window.currentUser?.email}</p>
+    </div>
+  `;
+  modal.className = 'success-modal';
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) document.body.removeChild(modal);
+  });
+}

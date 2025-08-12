@@ -22,14 +22,16 @@ class AdvancedCardGenerator {
             hiddenMessage,
             backgroundImage,
             symbol,
-            animation,
+            deliveryAnimation,
             scratchTexture,
             soundEffect,
+            aiVoice,
             // Advanced features
             backgroundImageBase64,
             symbolBase64,
             scratchTextureBase64,
             soundEffectBase64,
+            aiVoiceBase64,
             elements = [],
             cardStyle = {},
             glowEffect = 30,
@@ -75,11 +77,15 @@ class AdvancedCardGenerator {
         <audio id="scratchSound" preload="auto">
             ${this.generateAudioSources(cardData)}
         </audio>
+
+        <!-- AI Voice element -->
+        <audio id="aiVoice" preload="auto">
+            ${this.generateAIVoiceSources(cardData)}
+        </audio>
         
-        <!-- Particle system container -->
+        <!-- Animation Containers -->
+        <div id="animationContainer" class="animation-container"></div>
         <div id="particleContainer"></div>
-        
-        <!-- Smoke effect container -->
         <div id="smokeContainer"></div>
     </div>
 
@@ -767,12 +773,43 @@ generateWebAppCSS(cardData) {
     }
 
     /**
+     * Generate AI voice sources with proper asset handling
+     */
+    generateAIVoiceSources(cardData) {
+        const { aiVoice, aiVoiceBase64 } = cardData;
+        
+        if (aiVoiceBase64) {
+            return `<source src="${aiVoiceBase64}" type="audio/mpeg">`;
+        } else if (aiVoice && aiVoice !== '#beep') {
+            let voiceUrl;
+            if (this.isWebAppAsset(aiVoice)) {
+                const filename = this.extractFilename(aiVoice);
+                voiceUrl = `${this.baseUrl}/assets/aiVoices/${filename}`;
+            } else {
+                voiceUrl = aiVoice;
+            }
+            return `<source src="${voiceUrl}" type="audio/mpeg">`;
+        }
+        
+        return '<!-- No AI voice selected -->';
+    }
+
+    /**
+     * HYBRID SCRATCH SYSTEM - Joe's simple logic + Your dynamic assets
+     */
+    /**
+     * HYBRID SCRATCH SYSTEM - Joe's simple logic + Your dynamic assets
+     */
+    /**
+     * HYBRID SCRATCH SYSTEM - Joe's simple logic + Your dynamic assets
+     */
+     /**
      * HYBRID SCRATCH SYSTEM - Joe's simple logic + Your dynamic assets
      */
     generateWebAppJavaScript(cardData) {
     const { 
         hiddenMessage = 'Surprise!', 
-        animation = 'hearts',
+        animation = 'heart-fireworks',
         glowColor = '#667eea',
         smokeEffect = false,
         elements = [],
@@ -803,16 +840,16 @@ generateWebAppCSS(cardData) {
     let scratchedPixels = 0;
     const brushRadius = 20;
     
-    // Scratch audio integration variables - NEW
+    // Scratch audio integration variables
     let scratchAudio = null;
     let isScratchSoundPlaying = false;
 
-    // Get audio URL for scratch integration - NEW
+    // Get audio URL for scratch integration
     function getScratchAudioUrl() {
         ${audioUrlFunction}
     }
 
-    // Initialize scratch audio system - NEW
+    // Initialize scratch audio system
     function initializeScratchAudio() {
         const audioUrl = getScratchAudioUrl();
         if (!audioUrl) return null;
@@ -838,7 +875,7 @@ generateWebAppCSS(cardData) {
         return scratchAudio;
     }
 
-    // Play scratch sound - NEW
+    // Play scratch sound
     function playScratchSound() {
     const audioUrl = getScratchAudioUrl();
     if (!audioUrl) return;
@@ -858,7 +895,7 @@ generateWebAppCSS(cardData) {
     }
 }
 
-    // Stop scratch sound - NEW
+    // Stop scratch sound
     function stopScratchSound() {
     isScratching = false;
     isScratchSoundPlaying = false;  // Just set the flag
@@ -866,7 +903,7 @@ generateWebAppCSS(cardData) {
     // DON'T pause or reset - let it play to completion
 }
 
-    // Initialize scratch areas when DOM is ready - KEPT EXISTING
+    // Initialize scratch areas when DOM is ready
     function initializeScratchAreas() {
         const scratchAreas = document.querySelectorAll('.scratch-area');
         
@@ -892,13 +929,13 @@ generateWebAppCSS(cardData) {
                 // Draw scratch canvas (top layer) - DYNAMIC VERSION  
                 drawScratchLayer(scratchCtx, scratchCanvas, textureUrl);
                 
-                // Setup events with audio - MODIFIED TO INCLUDE AUDIO
+                // Setup events with audio
                 setupScratchEvents(scratchCanvas, scratchCtx);
             }
         });
     }
 
-    // KEPT ALL EXISTING FUNCTIONS - Draw message with text wrapping
+    // Draw message with text wrapping
     function drawMessage(messageCtx, messageCanvas, message) {
         messageCtx.clearRect(0, 0, messageCanvas.width, messageCanvas.height);
         
@@ -1024,7 +1061,7 @@ generateWebAppCSS(cardData) {
         return parts.length > 0 ? parts : [word];
     }
 
-    // KEPT EXISTING - Draw scratch layer function
+    // Draw scratch layer function
     function drawScratchLayer(scratchCtx, scratchCanvas, textureUrl) {
         if (textureUrl && textureUrl !== '' && !textureUrl.includes('data:image/svg+xml')) {
             const scratchTexture = new Image();
@@ -1070,7 +1107,7 @@ generateWebAppCSS(cardData) {
         }
     }
 
-    // KEPT EXISTING - Fallback scratch surface
+    // Fallback scratch surface
     function drawFallbackScratchSurface(scratchCtx, scratchCanvas) {
         scratchCtx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
         
@@ -1105,41 +1142,43 @@ generateWebAppCSS(cardData) {
         console.log('⚠️ Fallback scratch surface drawn');
     }
 
-    // MODIFIED - Event setup with audio integration
+    // Event setup with audio integration and delivery animation start
     function setupScratchEvents(scratchCanvas, scratchCtx) {
-        // Mouse events with audio integration
+        // Mouse events
         scratchCanvas.addEventListener('mousedown', (e) => {
             e.preventDefault();
             isScratching = true;
-            playScratchSound(); // NEW: Start audio when scratching begins
+            playScratchSound();
+            startDeliveryAnimation();
             scratch(e, scratchCtx, scratchCanvas);
         });
         
         scratchCanvas.addEventListener('mouseup', (e) => {
             e.preventDefault();
-            stopScratchSound(); // NEW: Stop audio when mouse up
+            stopScratchSound();
         });
         
         scratchCanvas.addEventListener('mouseleave', () => {
-            stopScratchSound(); // NEW: Stop audio when leaving canvas
+            stopScratchSound();
         });
         
         scratchCanvas.addEventListener('mousemove', (e) => {
             scratch(e, scratchCtx, scratchCanvas);
         });
         
-        // Touch events with audio integration
+        // Touch events
         scratchCanvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             isScratching = true;
-            playScratchSound(); // NEW: Start audio when touching
+            playScratchSound();
+            startDeliveryAnimation();
             const touch = e.touches[0];
             scratch(touch, scratchCtx, scratchCanvas);
         });
         
         scratchCanvas.addEventListener('touchend', (e) => {
             e.preventDefault();
-            stopScratchSound(); // NEW: Stop audio when touch ends
+            stopScratchSound();
         });
         
         scratchCanvas.addEventListener('touchmove', (e) => {
@@ -1149,7 +1188,7 @@ generateWebAppCSS(cardData) {
         });
     }
 
-    // KEPT EXISTING - Scratch function
+    // Scratch function
     function scratch(event, scratchCtx, scratchCanvas) {
         if (!isScratching) return;
         
@@ -1166,7 +1205,577 @@ generateWebAppCSS(cardData) {
         scratchCtx.fill();
     }
 
-    // Initialize when DOM loads - KEPT EXISTING
+    // Delivery animation classes
+    class HeartFireworksSystem {
+        constructor() {
+            this.canvas = null;
+            this.ctx = null;
+            this.particles = [];
+            this.emojiParticles = [];
+            this.isRunning = false;
+            this.animationId = null;
+            this.launchInterval = null;
+        }
+        initialize() {
+            if (this.canvas) return;
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.style.cssText = \`position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999; background: transparent;\`;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            document.body.appendChild(this.canvas);
+            window.addEventListener('resize', () => {
+                if (this.canvas) {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                }
+            });
+        }
+        launchFirework() {
+            const launchX = Math.random() * this.canvas.width;
+            const targetY = Math.random() * (this.canvas.height / 3) + 50;
+            const trailParticle = new HeartFireworksParticle(launchX, this.canvas.height, launchX, targetY, '#ff69b4');
+            this.particles.push(trailParticle);
+        }
+        update() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.particles = this.particles.filter(p => !p.exploded);
+            this.emojiParticles = this.emojiParticles.filter(p => p.lifespan > 0);
+            this.particles.forEach(p => p.update(this));
+            this.emojiParticles.forEach(p => p.update());
+            if (this.particles.length === 0 && this.emojiParticles.length === 0) {
+                if (isScratching) {
+                    this.launchFirework();
+                } else {
+                    this.stop();
+                    return;
+                }
+            }
+            this.animationId = requestAnimationFrame(() => this.update());
+        }
+        start() {
+            this.initialize();
+            this.isRunning = true;
+            this.launchInterval = setInterval(() => this.launchFirework(), 300);
+            this.update();
+            console.log('🎆 Heart fireworks started');
+        }
+        stop() {
+            this.isRunning = false;
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            if (this.launchInterval) clearInterval(this.launchInterval);
+            if (this.canvas) this.canvas.remove();
+            this.emojiParticles.forEach(p => p.destroy());
+            this.canvas = null;
+            this.particles = [];
+            this.emojiParticles = [];
+            console.log('⛔ Heart fireworks stopped');
+        }
+    }
+
+    class HeartFireworksParticle {
+        constructor(startX, startY, targetX, targetY, color) {
+            this.x = startX;
+            this.y = startY;
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.color = color;
+            this.speed = 5 + Math.random() * 3;
+            this.angle = Math.atan2(targetY - startY, targetX - startX);
+            this.vx = Math.cos(this.angle) * this.speed;
+            this.vy = Math.sin(this.angle) * this.speed;
+            this.gravity = 0.05;
+            this.friction = 0.99;
+            this.exploded = false;
+            this.trail = [];
+        }
+        update(system) {
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 10) this.trail.shift();
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 5) {
+                this.explode(system);
+            }
+            system.ctx.beginPath();
+            system.ctx.moveTo(this.trail[0]?.x || this.x, this.trail[0]?.y || this.y);
+            this.trail.forEach(point => system.ctx.lineTo(point.x, point.y));
+            system.ctx.lineTo(this.x, this.y);
+            system.ctx.strokeStyle = this.color;
+            system.ctx.lineWidth = 2;
+            system.ctx.stroke();
+        }
+        explode(system) {
+            this.exploded = true;
+            const heartPoints = system.createHeartShape(this.x, this.y, 1 + Math.random() * 1.5);
+            heartPoints.forEach(point => {
+                const emoji = new HeartFireworksEmojiParticle(point.x, point.y, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4 - 2, '❤️', 100 + Math.random() * 50);
+                system.emojiParticles.push(emoji);
+            });
+        }
+    }
+
+    class HeartFireworksEmojiParticle {
+        constructor(x, y, vx, vy, emoji, lifespan) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.emoji = emoji;
+            this.lifespan = lifespan;
+            this.gravity = 0.1;
+            this.friction = 0.98;
+            this.rotation = 0;
+            this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+            this.scale = 1 + Math.random() * 0.5;
+            this.element = null;
+            this.createElement();
+        }
+        createElement() {
+            this.element = document.createElement('div');
+            this.element.textContent = this.emoji;
+            this.element.style.position = 'fixed';
+            this.element.style.pointerEvents = 'none';
+            this.element.style.zIndex = '9999';
+            this.element.style.fontSize = '20px';
+            document.body.appendChild(this.element);
+        }
+        update() {
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.rotation += this.rotationSpeed;
+            this.lifespan--;
+            if (this.element) {
+                this.element.style.left = \`\${this.x}px\`;
+                this.element.style.top = \`\${this.y}px\`;
+                this.element.style.transform = \`rotate(\${this.rotation}rad) scale(\${this.scale})\`;
+                this.element.style.opacity = this.lifespan / 150;
+            }
+        }
+        destroy() {
+            if (this.element) this.element.remove();
+        }
+    }
+
+    class CorporateConfettiSystem {
+        constructor() {
+            this.canvas = null;
+            this.ctx = null;
+            this.particles = [];
+            this.isRunning = false;
+            this.animationId = null;
+        }
+        initialize() {
+            if (this.canvas) return;
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.style.cssText = \`position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999; background: transparent;\`;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            document.body.appendChild(this.canvas);
+            window.addEventListener('resize', () => {
+                if (this.canvas) {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                }
+            });
+        }
+        createParticles() {
+            const colors = ['#4a90e2', '#50c878', '#f5a623', '#d0021b', '#bd10e0'];
+            const shapes = ['square', 'circle', 'triangle'];
+            for (let i = 0; i < 200; i++) {
+                const p = {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height - this.canvas.height,
+                    size: Math.random() * 8 + 4,
+                    speedX: (Math.random() - 0.5) * 4,
+                    speedY: Math.random() * 3 + 2,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.1,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    shape: shapes[Math.floor(Math.random() * shapes.length)],
+                    gravity: 0.05,
+                    friction: 0.99,
+                    alpha: 1
+                };
+                this.particles.push(p);
+            }
+        }
+        update() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.particles.forEach((p, index) => {
+                p.speedX *= p.friction;
+                p.speedY += p.gravity;
+                p.speedY *= p.friction;
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.rotation += p.rotationSpeed;
+                p.alpha -= 0.002;
+                if (p.alpha <= 0 || p.y > this.canvas.height) {
+                    this.particles.splice(index, 1);
+                    return;
+                }
+                this.ctx.save();
+                this.ctx.translate(p.x, p.y);
+                this.ctx.rotate(p.rotation);
+                this.ctx.globalAlpha = p.alpha;
+                this.ctx.fillStyle = p.color;
+                const halfSize = p.size / 2;
+                if (p.shape === 'square') {
+                    this.ctx.fillRect(-halfSize, -halfSize, p.size, p.size);
+                } else if (p.shape === 'circle') {
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, halfSize, 0, Math.PI * 2);
+                    this.ctx.fill();
+                } else if (p.shape === 'triangle') {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, -halfSize);
+                    this.ctx.lineTo(-halfSize, halfSize);
+                    this.ctx.lineTo(halfSize, halfSize);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                }
+                this.ctx.restore();
+            });
+            if (this.particles.length === 0) {
+                if (isScratching) {
+                    this.createParticles();
+                } else {
+                    this.stop();
+                    return;
+                }
+            }
+            this.animationId = requestAnimationFrame(() => this.update());
+        }
+        start() {
+            this.initialize();
+            this.isRunning = true;
+            this.createParticles();
+            this.update();
+            console.log('🎆 Corporate confetti started');
+        }
+        stop() {
+            this.isRunning = false;
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            if (this.canvas) this.canvas.remove();
+            this.canvas = null;
+            this.particles = [];
+            console.log('⛔ Corporate confetti stopped');
+        }
+    }
+
+    class CanvasEmojiSystem {
+        constructor() {
+            this.canvas = null;
+            this.ctx = null;
+            this.emojis = [];
+            this.maxEmojis = 20;
+            this.isRunning = false;
+            this.animationId = null;
+            this.mouse = { x: null, y: null, down: false, particle: null };
+        }
+        initialize() {
+            if (this.canvas) return;
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.style.cssText = \`position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: auto; z-index: 999; background: transparent;\`;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            document.body.appendChild(this.canvas);
+            window.addEventListener('resize', () => {
+                if (this.canvas) {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                }
+            });
+            this.canvas.addEventListener('mousemove', (e) => {
+                this.mouse.x = e.clientX;
+                this.mouse.y = e.clientY;
+            });
+            this.canvas.addEventListener('mousedown', (e) => {
+                this.mouse.down = true;
+                this.checkGrab(e.clientX, e.clientY);
+            });
+            this.canvas.addEventListener('mouseup', () => {
+                this.mouse.down = false;
+                this.mouse.particle = null;
+            });
+        }
+        checkGrab(mouseX, mouseY) {
+            for (let i = this.emojis.length - 1; i >= 0; i--) {
+                const p = this.emojis[i];
+                const dx = mouseX - p.x;
+                const dy = mouseY - p.y;
+                if (Math.sqrt(dx * dx + dy * dy) < p.size / 2) {
+                    this.mouse.particle = p;
+                    p.offsetX = dx;
+                    p.offsetY = dy;
+                    return;
+                }
+            }
+        }
+        createParticle() {
+            if (this.emojis.length >= this.maxEmojis) return;
+            const emojiList = ['🎉', '🥳', '🎂', '🎈', '❤️'];
+            const emoji = emojiList[Math.floor(Math.random() * emojiList.length)];
+            const p = {
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotationSpeed: (Math.random() - 0.5) * 0.05,
+                size: 30 + Math.random() * 20,
+                emoji: emoji,
+                gravity: 0.002,
+                bounceDamping: 0.7,
+                friction: 0.99,
+                birthTime: Date.now(),
+                lifespan: 8000 + Math.random() * 10000,
+                alpha: 1
+            };
+            this.emojis.push(p);
+        }
+        update() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.emojis = this.emojis.filter(p => {
+                const age = Date.now() - p.birthTime;
+                if (age > p.lifespan) return false;
+                p.alpha = Math.max(0, 1 - (age / p.lifespan));
+                if (this.mouse.down && this.mouse.particle === p) {
+                    p.x = this.mouse.x - p.offsetX;
+                    p.y = this.mouse.y - p.offsetY;
+                    p.vx = 0;
+                    p.vy = 0;
+                } else {
+                    p.vx *= p.friction;
+                    p.vy += p.gravity;
+                    p.vy *= p.friction;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > this.canvas.width) p.vx *= -p.bounceDamping;
+                    if (p.y < 0 || p.y > this.canvas.height) p.vy *= -p.bounceDamping;
+                    p.x = Math.max(0, Math.min(this.canvas.width, p.x));
+                    p.y = Math.max(0, Math.min(this.canvas.height, p.y));
+                }
+                p.rotation += p.rotationSpeed;
+                this.ctx.save();
+                this.ctx.translate(p.x, p.y);
+                this.ctx.rotate(p.rotation);
+                this.ctx.globalAlpha = p.alpha;
+                this.ctx.font = \`\${p.size}px Arial\`;
+                this.ctx.fillText(p.emoji, -p.size / 4, p.size / 4);
+                this.ctx.restore();
+                return true;
+            });
+            if (this.emojis.length === 0) {
+                if (isScratching) {
+                    this.createParticle();
+                } else {
+                    this.stop();
+                    return;
+                }
+            }
+            if (this.emojis.length < this.maxEmojis && Math.random() < 0.1) {
+                this.createParticle();
+            }
+            this.animationId = requestAnimationFrame(() => this.update());
+        }
+        start() {
+            this.initialize();
+            this.isRunning = true;
+            this.update();
+            console.log('🎆 Canvas emoji started');
+        }
+        stop() {
+            this.isRunning = false;
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            if (this.canvas) this.canvas.remove();
+            this.canvas = null;
+            this.emojis = [];
+            console.log('⛔ Canvas emoji stopped');
+        }
+    }
+
+    class BirthdayFireworksSystem {
+        constructor() {
+            this.canvas = null;
+            this.ctx = null;
+            this.particles = [];
+            this.emojiParticles = [];
+            this.isRunning = false;
+            this.animationId = null;
+            this.launchInterval = null;
+        }
+        initialize() {
+            if (this.canvas) return;
+            this.canvas = document.createElement('canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.canvas.style.cssText = \`position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999; background: transparent;\`;
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            document.body.appendChild(this.canvas);
+            window.addEventListener('resize', () => {
+                if (this.canvas) {
+                    this.canvas.width = window.innerWidth;
+                    this.canvas.height = window.innerHeight;
+                }
+            });
+        }
+        launchFirework() {
+            const launchX = Math.random() * this.canvas.width;
+            const targetY = Math.random() * (this.canvas.height / 3) + 50;
+            const trailParticle = new BirthdayFireworksParticle(launchX, this.canvas.height, launchX, targetY, '#ffd700');
+            this.particles.push(trailParticle);
+        }
+        update() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.particles = this.particles.filter(p => !p.exploded);
+            this.emojiParticles = this.emojiParticles.filter(p => p.lifespan > 0);
+            this.particles.forEach(p => p.update(this));
+            this.emojiParticles.forEach(p => p.update(this.ctx));
+            if (this.particles.length === 0 && this.emojiParticles.length === 0) {
+                if (isScratching) {
+                    this.launchFirework();
+                } else {
+                    this.stop();
+                    return;
+                }
+            }
+            this.animationId = requestAnimationFrame(() => this.update());
+        }
+        start() {
+            this.initialize();
+            this.isRunning = true;
+            this.launchInterval = setInterval(() => this.launchFirework(), 300);
+            this.update();
+            console.log('🎆 Birthday fireworks started');
+        }
+        stop() {
+            this.isRunning = false;
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            if (this.launchInterval) clearInterval(this.launchInterval);
+            if (this.canvas) this.canvas.remove();
+            this.canvas = null;
+            this.particles = [];
+            this.emojiParticles = [];
+            console.log('⛔ Birthday fireworks stopped');
+        }
+    }
+
+    class BirthdayFireworksParticle {
+        constructor(startX, startY, targetX, targetY, color) {
+            this.x = startX;
+            this.y = startY;
+            this.targetX = targetX;
+            this.targetY = targetY;
+            this.color = color;
+            this.speed = 5 + Math.random() * 3;
+            this.angle = Math.atan2(targetY - startY, targetX - startX);
+            this.vx = Math.cos(this.angle) * this.speed;
+            this.vy = Math.sin(this.angle) * this.speed;
+            this.gravity = 0.05;
+            this.friction = 0.99;
+            this.exploded = false;
+            this.trail = [];
+        }
+        update(system) {
+            this.trail.push({ x: this.x, y: this.y });
+            if (this.trail.length > 10) this.trail.shift();
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            if (Math.sqrt(dx * dx + dy * dy) < 5) {
+                this.explode(system);
+            }
+            system.ctx.beginPath();
+            system.ctx.moveTo(this.trail[0]?.x || this.x, this.trail[0]?.y || this.y);
+            this.trail.forEach(point => system.ctx.lineTo(point.x, point.y));
+            system.ctx.lineTo(this.x, this.y);
+            system.ctx.strokeStyle = this.color;
+            system.ctx.lineWidth = 2;
+            system.ctx.stroke();
+        }
+        explode(system) {
+            this.exploded = true;
+            for (let i = 0; i < 20; i++) {
+                const cakeParticle = new BirthdayCakeParticle(this.x, this.y, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6 - 3, '🎂', 80 + Math.random() * 40);
+                system.emojiParticles.push(cakeParticle);
+            }
+        }
+    }
+
+    class BirthdayCakeParticle {
+        constructor(x, y, vx, vy, emoji, lifespan) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.emoji = emoji;
+            this.lifespan = lifespan;
+            this.gravity = 0.15;
+            this.friction = 0.98;
+            this.rotation = 0;
+            this.rotationSpeed = (Math.random() - 0.5) * 0.15;
+            this.scale = 1 + Math.random() * 0.5;
+        }
+        update(ctx) {
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+            this.vy += this.gravity;
+            this.x += this.vx;
+            this.y += this.vy;
+            this.rotation += this.rotationSpeed;
+            this.lifespan--;
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
+            ctx.scale(this.scale, this.scale);
+            ctx.globalAlpha = this.lifespan / 120;
+            ctx.font = '24px Arial';
+            ctx.fillText(this.emoji, 0, 0);
+            ctx.restore();
+        }
+    }
+
+    // Delivery animation control
+    let currentDeliverySystem = null;
+
+    function startDeliveryAnimation() {
+        if (currentDeliverySystem) {
+            currentDeliverySystem.stop();
+        }
+        const selectedAnimation = '${animation}';
+        console.log('Selected animation from cardData:', selectedAnimation);
+        if (selectedAnimation === 'heart-fireworks') {
+            currentDeliverySystem = new HeartFireworksSystem();
+        } else if (selectedAnimation === 'corporate-confetti') {
+            currentDeliverySystem = new CorporateConfettiSystem();
+        } else if (selectedAnimation === 'emoji-3d') {
+            currentDeliverySystem = new CanvasEmojiSystem();
+        } else if (selectedAnimation === 'birthday-fireworks') {
+            currentDeliverySystem = new BirthdayFireworksSystem();
+        }
+        if (currentDeliverySystem) {
+            currentDeliverySystem.start();
+        } else {
+            console.warn('Unknown animation type:', selectedAnimation);
+        }
+    }
+
+    // Initialize when DOM loads
     document.addEventListener('DOMContentLoaded', () => {
         console.log('🎯 Starting Hybrid Scratch System with Audio...');
         setTimeout(() => {

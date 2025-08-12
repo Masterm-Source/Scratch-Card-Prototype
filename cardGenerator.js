@@ -809,7 +809,7 @@ generateWebAppCSS(cardData) {
     generateWebAppJavaScript(cardData) {
     const { 
         hiddenMessage = 'Surprise!', 
-        animation = 'heart-fireworks',
+        deliveryAnimation = 'heartFireworks',
         glowColor = '#667eea',
         smokeEffect = false,
         elements = [],
@@ -1757,15 +1757,15 @@ generateWebAppCSS(cardData) {
         if (currentDeliverySystem) {
             currentDeliverySystem.stop();
         }
-        const selectedAnimation = '${animation}';
+        const selectedAnimation = '${deliveryAnimation}';
         console.log('Selected animation from cardData:', selectedAnimation);
-        if (selectedAnimation === 'heart-fireworks') {
+        if (selectedAnimation === 'heartFireworks') {
             currentDeliverySystem = new HeartFireworksSystem();
-        } else if (selectedAnimation === 'corporate-confetti') {
+        } else if (selectedAnimation === 'corporateConfetti') {
             currentDeliverySystem = new CorporateConfettiSystem();
-        } else if (selectedAnimation === 'emoji-3d') {
+        } else if (selectedAnimation === 'emoji3d') {
             currentDeliverySystem = new CanvasEmojiSystem();
-        } else if (selectedAnimation === 'birthday-fireworks') {
+        } else if (selectedAnimation === 'birthdayFireworks') {
             currentDeliverySystem = new BirthdayFireworksSystem();
         }
         if (currentDeliverySystem) {
@@ -1803,4 +1803,4 @@ generateWebAppCSS(cardData) {
 }
 
 // Export the advanced generator
-module.exports = new AdvancedCardGenerator();
+module.exports = new AdvancedCardGenerator

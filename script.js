@@ -21,6 +21,34 @@ const loadMoreScratchTextures = document.getElementById('loadMoreScratchTextures
 const loadMoreAudio = document.getElementById('loadMoreAudio');
 const deliveryAnimationSelect = document.getElementById('deliveryAnimation');
 
+// Add styles for selection feedback
+const selectionStyles = document.createElement('style');
+selectionStyles.textContent = `
+  .selected-voice {
+    border: 3px solid #48bb78 !important;
+    transition: border-color 0.2s ease;
+  }
+  
+  .selected-animation {
+    background-color: #48bb78 !important;
+    color: white !important;
+  }
+  
+  #deliveryAnimation {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  #deliveryAnimation.has-selection {
+    border-color: #48bb78;
+    box-shadow: 0 0 0 1px #48bb78;
+  }
+  
+  .ai-voice-item {
+    transition: border-color 0.2s ease;
+  }
+`;
+document.head.appendChild(selectionStyles);
+
 // New variables for additional functionality
 let selectedElement = null;
 let isDragging = false;
@@ -1514,16 +1542,33 @@ textTypeDropdown?.addEventListener('change', function() {
     saveToHistory();
   });
 
-  // Delivery Animation Dropdown
+  // Delivery Animation Dropdown with selection feedback
 deliveryAnimationSelect?.addEventListener('change', function() {
   const selectedAnimation = this.value;
+  
+  // Remove active state from all animation options
+  Array.from(this.options).forEach(option => {
+    option.classList.remove('selected-animation');
+  });
+  
+  // Add active state to selected option
+  this.options[this.selectedIndex].classList.add('selected-animation');
+  
+  // Update selected assets
   selectedAssets.deliveryAnimation = selectedAnimation;
   
   if (selectedAnimation) {
+    // Add visual feedback to the select element
+    this.style.borderColor = '#48bb78';
+    this.style.boxShadow = '0 0 0 1px #48bb78';
+    
     // Play preview when selected
     playDeliveryAnimation(selectedAnimation);
     console.log('🎆 Selected delivery animation:', selectedAnimation);
   } else {
+    // Reset select element styling when "None" is selected
+    this.style.borderColor = '';
+    this.style.boxShadow = '';
     // Stop any running animation when "None" is selected
     stopAllDeliveryAnimations();
     console.log('🎆 Delivery animation disabled');
@@ -5250,6 +5295,11 @@ function stopCurrentAIVoice() {
       }
     }
     currentlyPlayingAIElement.classList.remove('playing');
+    
+    // Keep the green border if this was the selected voice
+    if (!currentlyPlayingAIElement.classList.contains('selected-voice')) {
+      currentlyPlayingAIElement.style.border = '';
+    }
   }
   
   // Unfreeze card when AI stops
@@ -5311,7 +5361,6 @@ function freezeCard() {
 function unfreezeCard() {
   console.log('🔥 Unfreezing card - AI finished speaking');
   isCardFrozen = false;
-  
   const cardPreview = document.getElementById('cardPreview');
   if (cardPreview && originalCardInteractivity) {
     // Restore original interactivity
@@ -5340,10 +5389,10 @@ async function handleAIVoiceClick(audioElement, item) {
   const audio = audioElement;
   const playButton = item.querySelector('.play-btn, i');
   
-  // If this AI voice is currently playing, stop it
+  // If this AI voice is currently playing, stop it but keep it selected
   if (currentlyPlayingAIVoice === audio && !audio.paused) {
     stopCurrentAIVoice();
-    return;
+    return; // Keep the selection
   }
   
   // Stop any currently playing AI voice
@@ -5352,10 +5401,23 @@ async function handleAIVoiceClick(audioElement, item) {
   // Also stop regular audio if playing
   stopCurrentAudio();
   
+  // Remove green border from all AI voice items
+  document.querySelectorAll('.ai-voice-item').forEach(voiceItem => {
+    voiceItem.style.border = '';
+    voiceItem.classList.remove('selected-voice');
+  });
+  
+  // Add green border to selected AI voice
+  item.style.border = '3px solid #48bb78';
+  item.classList.add('selected-voice');
+  
   try {
     // Set up the new AI voice
     currentlyPlayingAIVoice = audio;
     currentlyPlayingAIElement = item;
+    
+    // Store selected AI voice
+    selectedAssets.aiVoice = item.dataset.aiVoice;
     
     // Freeze card before AI starts speaking
     freezeCard();
